@@ -1,6 +1,4 @@
-import { STATIONS, EDGES } from "../data/metroData";
-
-// Retrieve weights based on routing mode
+// Modified Dijkstra Routing Engine decoupled from static imports
 export function getWeights(mode) {
   switch (mode) {
     case "Fastest":
@@ -15,7 +13,7 @@ export function getWeights(mode) {
   }
 }
 
-// Haversine distance helper
+// Haversine distance calculator
 export function getHaversineDistance(coord1, coord2) {
   const [lat1, lon1] = coord1;
   const [lat2, lon2] = coord2;
@@ -35,54 +33,63 @@ export function getHaversineDistance(coord1, coord2) {
   return R * c;
 }
 
-// Build adjacency graph from metro edges
-function buildGraph() {
+// Build adjacency graph dynamically from edge array
+function buildGraph(stations, edges) {
   const graph = {};
   
-  STATIONS.forEach(station => {
+  stations.forEach(station => {
     graph[station.id] = [];
   });
 
-  EDGES.forEach(edge => {
-    // Forward direction
-    graph[edge.source].push({
-      to: edge.target,
-      line: edge.line,
-      baseTime: edge.baseTime,
-      crowdFactor: edge.crowdFactor,
-      safetyRating: edge.safetyRating,
-      comfortFactor: edge.comfortFactor
-    });
+  edges.forEach(edge => {
+    // Add forward direction (undirected)
+    if (graph[edge.source]) {
+      graph[edge.source].push({
+        to: edge.target,
+        line: edge.line,
+        baseTime: edge.baseTime,
+        crowdFactor: edge.crowdFactor,
+        safetyRating: edge.safetyRating,
+        comfortFactor: edge.comfortFactor
+      });
+    }
 
-    // Backward direction
-    graph[edge.target].push({
-      to: edge.source,
-      line: edge.line,
-      baseTime: edge.baseTime,
-      crowdFactor: edge.crowdFactor,
-      safetyRating: edge.safetyRating,
-      comfortFactor: edge.comfortFactor
-    });
+    // Add backward direction
+    if (graph[edge.target]) {
+      graph[edge.target].push({
+        to: edge.source,
+        line: edge.line,
+        baseTime: edge.baseTime,
+        crowdFactor: edge.crowdFactor,
+        safetyRating: edge.safetyRating,
+        comfortFactor: edge.comfortFactor
+      });
+    }
   });
 
   return graph;
 }
 
 /**
- * Calculates the optimal route from start to end station using Modified Dijkstra
+ * Calculates optimal path using Dijkstra dynamically supplied with station & edge datasets
  */
-export function calculateRoute(startId, endId, mode, timeOfDay = "Off-Peak") {
-  if (!startId || !endId) return null;
+export function calculateRoute(stations, edges, startId, endId, mode, timeOfDay = "Off-Peak") {
+  if (!startId || !endId || !stations || !edges) return null;
+
+  const startStation = stations.find(s => s.id === startId);
+  const endStation = stations.find(s => s.id === endId);
+
+  if (!startStation || !endStation) return null;
+
   if (startId === endId) {
-    const station = STATIONS.find(s => s.id === startId);
     return {
-      path: [station],
+      path: [startStation],
       edges: [],
       metrics: {
         time: 0,
         transfers: 0,
         fare: 0,
-        crowd: station.baseCrowd,
+        crowd: startStation.baseCrowd,
         comfort: 10,
         safety: 10,
         distance: 0
@@ -91,19 +98,13 @@ export function calculateRoute(startId, endId, mode, timeOfDay = "Off-Peak") {
     };
   }
 
-  const graph = buildGraph();
+  const graph = buildGraph(stations, edges);
   const weights = getWeights(mode);
   const isPeak = timeOfDay === "Peak";
 
-  // Dijkstra variables
   const dist = {};
   const prev = {};
   const queue = [];
-
-  const startStation = STATIONS.find(s => s.id === startId);
-  const endStation = STATIONS.find(s => s.id === endId);
-
-  if (!startStation || !endStation) return null;
 
   // Initialize start states
   startStation.lines.forEach(line => {
@@ -122,18 +123,14 @@ export function calculateRoute(startId, endId, mode, timeOfDay = "Off-Peak") {
     const neighbors = graph[curr.stationId] || [];
     neighbors.forEach(neighbor => {
       const isTransfer = curr.line !== neighbor.line;
-      
-      // PEAK HOUR PENALTIES:
       const transferTimePenalty = isTransfer ? (isPeak ? 8 : 5) : 0;
       const transferComfortPenalty = isTransfer ? 2 : 0;
 
       let adjustedBaseTime = neighbor.baseTime;
-      // High-speed Airport Express is unaffected by standard traffic boardings
       if (isPeak && neighbor.crowdFactor >= 7 && neighbor.line !== "Orange") {
         adjustedBaseTime = neighbor.baseTime * 1.25;
       }
 
-      // Edge cost function
       const edgeCost = 
         (weights.time * adjustedBaseTime) + 
         (weights.crowd * neighbor.crowdFactor) + 
@@ -171,7 +168,7 @@ export function calculateRoute(startId, endId, mode, timeOfDay = "Off-Peak") {
     });
   }
 
-  // Find optimal end state
+  // Find optimal terminus
   let bestEndKey = null;
   let minEndCost = Infinity;
 
@@ -199,16 +196,19 @@ export function calculateRoute(startId, endId, mode, timeOfDay = "Off-Peak") {
   const transfersList = [];
 
   pathStates.forEach((state, idx) => {
-    const station = STATIONS.find(s => s.id === state.stationId);
-    pathStations.push(station);
+    const station = stations.find(s => s.id === state.stationId);
+    if (station) {
+      pathStations.push(station);
+    }
 
     if (idx > 0) {
       const prevInfo = state.prevInfo;
       pathEdges.push(prevInfo.edgeUsed);
 
       if (prevInfo.edgeUsed.isTransfer) {
+        const transferStation = stations.find(s => s.id === prevInfo.stationId);
         transfersList.push({
-          stationName: STATIONS.find(s => s.id === prevInfo.stationId).name,
+          stationName: transferStation ? transferStation.name : prevInfo.stationId,
           fromLine: prevInfo.line,
           toLine: prevInfo.edgeUsed.line
         });
@@ -233,9 +233,12 @@ export function calculateRoute(startId, endId, mode, timeOfDay = "Off-Peak") {
       totalTime += isPeak ? 8 : 5;
     }
 
-    const sCoord = STATIONS.find(s => s.id === edge.source).coordinates;
-    const tCoord = STATIONS.find(s => s.id === edge.target).coordinates;
-    totalDistance += getHaversineDistance(sCoord, tCoord);
+    const sCoord = stations.find(s => s.id === edge.source)?.coordinates;
+    const tCoord = stations.find(s => s.id === edge.target)?.coordinates;
+    
+    if (sCoord && tCoord) {
+      totalDistance += getHaversineDistance(sCoord, tCoord);
+    }
   });
 
   const edgeCount = pathEdges.length;
@@ -246,8 +249,6 @@ export function calculateRoute(startId, endId, mode, timeOfDay = "Off-Peak") {
   let comfortScore = 10 - (avgCrowd * 0.6 + transfersCount * 1.2 + peakPenalty);
   comfortScore = Math.max(1, Math.min(10, Math.round(comfortScore * 10) / 10));
 
-  // Premium Fare logic for Orange Line (Airport Express)
-  // If the path utilizes the Airport Express, DMRC applies a premium flat ₹60 ticket
   const hasAirportExpress = pathEdges.some(edge => edge.line === "Orange");
   let fare = 0;
   if (hasAirportExpress) {
@@ -267,7 +268,7 @@ export function calculateRoute(startId, endId, mode, timeOfDay = "Off-Peak") {
       crowd: Math.round(avgCrowd * 10) / 10,
       comfort: comfortScore,
       safety: Math.round(avgSafety * 10) / 10,
-      distance: Math.round(totalDistance * 10) / 10 // km
+      distance: Math.round(totalDistance * 10) / 10
     },
     transfersList
   };

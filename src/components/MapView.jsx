@@ -2,14 +2,13 @@ import React, { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Polyline, Marker, Popup, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import { useMetroStore } from "../store/useMetroStore";
-import { STATIONS, EDGES, LINE_COLORS } from "../data/metroData";
+import { LINE_COLORS } from "../data/metroData";
 import { Plus, Minus, Navigation, Layers, HelpCircle, Construction } from "lucide-react";
 
-// Hook to control map zoom & centering dynamically
-function MapController({ activeRoute, zoomLevel, centerCoords }) {
+// Hook to auto-fit map view to the current active route
+function RouteBoundsFitter({ activeRoute }) {
   const map = useMap();
 
-  // Handle active route bounding box centering
   useEffect(() => {
     if (activeRoute && activeRoute.path && activeRoute.path.length > 0) {
       const coordinates = activeRoute.path.map((s) => s.coordinates);
@@ -22,34 +21,19 @@ function MapController({ activeRoute, zoomLevel, centerCoords }) {
     }
   }, [activeRoute, map]);
 
-  // Handle custom zoom controls
-  useEffect(() => {
-    if (zoomLevel !== null) {
-      map.setZoom(zoomLevel);
-    }
-  }, [zoomLevel, map]);
-
-  // Handle locating/re-centering
-  useEffect(() => {
-    if (centerCoords) {
-      map.setView(centerCoords, map.getZoom(), { animate: true, duration: 0.8 });
-    }
-  }, [centerCoords, map]);
-
   return null;
 }
 
 export default function MapView() {
-  const { activeRoute, startStationId, endStationId, infrastructureStatus } = useMetroStore();
+  // Query stations and edges dynamically from the persisted store
+  const { stations, edges, activeRoute, startStationId, endStationId, infrastructureStatus } = useMetroStore();
   
-  // Custom states for our Apple-style map controls
   const [customZoom, setCustomZoom] = useState(null);
   const [centerCoords, setCenterCoords] = useState(null);
   const [mapRef, setMapRef] = useState(null);
 
   const delhiCenter = [28.6143, 77.2106];
 
-  // Helper to re-center map to original view
   const handleRecenter = () => {
     setCenterCoords([...delhiCenter]);
   };
@@ -66,18 +50,13 @@ export default function MapView() {
     }
   };
 
-  // Apple-transit styled marker icons (clean, vector-style dot nodes)
+  // Custom marker icons
   const getStationIcon = (station) => {
     const isOrigin = station.id === startStationId;
     const isDest = station.id === endStationId;
     const isInRoute = activeRoute?.path.some((s) => s.id === station.id) || false;
 
-    // Default dimensions
-    let size = isInRoute ? 12 : 8;
-    let iconClass = "bg-white border-2 border-slate-900 shadow-md";
-    let pulseDiv = "";
-
-    // Origin Pin (Apple Maps style: glowing cyan pin)
+    // Origin Pin
     if (isOrigin) {
       return L.divIcon({
         className: "custom-pin-origin",
@@ -90,7 +69,7 @@ export default function MapView() {
       });
     }
 
-    // Destination Pin (Apple Maps style: glowing rose pin)
+    // Destination Pin
     if (isDest) {
       return L.divIcon({
         className: "custom-pin-dest",
@@ -116,7 +95,7 @@ export default function MapView() {
       });
     }
 
-    // Regular Station Nodes
+    // Single line stations
     const primaryLine = station.lines[0];
     let dotColor = "bg-slate-400";
     if (primaryLine === "Yellow") dotColor = "bg-[#FFC72C]";
@@ -125,6 +104,11 @@ export default function MapView() {
     else if (primaryLine === "Red") dotColor = "bg-[#E31B23]";
     else if (primaryLine === "Pink") dotColor = "bg-[#FF69B4]";
     else if (primaryLine === "Magenta") dotColor = "bg-[#8B008B]";
+    else if (primaryLine === "Orange") dotColor = "bg-[#FF8C00]";
+    else if (primaryLine === "Green") dotColor = "bg-[#00FF00]";
+    else if (primaryLine === "Grey") dotColor = "bg-[#808080]";
+    else if (primaryLine === "Rapid") dotColor = "bg-[#A52A2A]";
+    else if (primaryLine === "Aqua") dotColor = "bg-[#00FFFF]";
 
     const activeScale = isInRoute ? "scale-110 border-white border" : "opacity-45 border-slate-950/20 border-[1px] scale-90";
 
@@ -137,9 +121,9 @@ export default function MapView() {
   };
 
   const renderNetworkEdges = () => {
-    return EDGES.map((edge, idx) => {
-      const sourceStation = STATIONS.find((s) => s.id === edge.source);
-      const targetStation = STATIONS.find((s) => s.id === edge.target);
+    return edges.map((edge, idx) => {
+      const sourceStation = stations.find((s) => s.id === edge.source);
+      const targetStation = stations.find((s) => s.id === edge.target);
       
       if (!sourceStation || !targetStation) return null;
 
@@ -168,16 +152,13 @@ export default function MapView() {
     if (!activeRoute || !activeRoute.edges) return null;
 
     return activeRoute.edges.map((edge, idx) => {
-      const sourceStation = STATIONS.find((s) => s.id === edge.source);
-      const targetStation = STATIONS.find((s) => s.id === edge.target);
+      const sourceStation = stations.find((s) => s.id === edge.source);
+      const targetStation = stations.find((s) => s.id === edge.target);
 
       if (!sourceStation || !targetStation) return null;
 
       const routeColor = edge.isTransfer ? "#a855f7" : (LINE_COLORS[edge.line] || "#06b6d4");
 
-      // Draw two polylines for the clean Apple Maps transit path layout:
-      // 1. Core solid bright color line
-      // 2. Underlying soft-glowing path to give it a neat overlay depth
       return (
         <React.Fragment key={`active-edge-${idx}`}>
           <Polyline
@@ -208,25 +189,24 @@ export default function MapView() {
   return (
     <div className="relative w-full h-[350px] lg:h-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-10 bg-slate-950">
       
-      {/* Interactive Map */}
+      {/* Map */}
       <MapContainer
         center={delhiCenter}
         zoom={11}
-        zoomControl={false} // Disable standard bulky Leaflet controls
+        zoomControl={false}
         className="w-full h-full"
         ref={setMapRef}
       >
-        {/* CartoDB Positron: Sleek desaturated light-grey tiles that mimic premium engineering views */}
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
         />
 
-        <MapController activeRoute={activeRoute} zoomLevel={customZoom} centerCoords={centerCoords} />
+        <RouteBoundsFitter activeRoute={activeRoute} zoomLevel={customZoom} centerCoords={centerCoords} />
         {renderNetworkEdges()}
         {renderActiveRoute()}
 
-        {STATIONS.map((station) => {
+        {stations.map((station) => {
           const infra = infrastructureStatus[station.id] || { escalator: "Operational", elevator: "Operational" };
           const isEscalatorBroken = infra.escalator === "Under Maintenance";
           const isElevatorBroken = infra.elevator === "Under Maintenance";
@@ -253,9 +233,9 @@ export default function MapView() {
                         key={l}
                         className="text-[9px] font-bold px-1.5 py-0.2 rounded border"
                         style={{
-                          backgroundColor: `${LINE_COLORS[l]}15`,
-                          color: LINE_COLORS[l],
-                          borderColor: `${LINE_COLORS[l]}25`
+                          backgroundColor: `${LINE_COLORS[l] || "#cbd5e1"}15`,
+                          color: LINE_COLORS[l] || "#475569",
+                          borderColor: `${LINE_COLORS[l] || "#cbd5e1"}25`
                         }}
                       >
                         {l}
@@ -281,7 +261,7 @@ export default function MapView() {
                   <div className="mt-2 text-[9px] text-slate-500 border-t border-slate-100 pt-1">
                     <div className="font-semibold text-slate-700 mb-0.5">Exits:</div>
                     <ul className="list-disc pl-3.5 space-y-0.5">
-                      {station.exits.map((exit) => (
+                      {station.exits?.map((exit) => (
                         <li key={exit.gate} className="truncate">
                           Gate {exit.gate}: {exit.name}
                         </li>
@@ -295,9 +275,7 @@ export default function MapView() {
         })}
       </MapContainer>
 
-      {/* Apple-style Floating Controls (Glassmorphic Rounded Cards) */}
-      
-      {/* Zoom / Locate widgets (Top-Left) */}
+      {/* Floating Apple-style Zoom controls */}
       <div className="absolute top-4 left-4 z-[1000] flex flex-col space-y-2 select-none">
         <div className="flex flex-col bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-xl shadow-lg overflow-hidden w-9">
           <button
@@ -326,8 +304,8 @@ export default function MapView() {
       </div>
 
       {/* Floating Apple-style Legend (Top-Right) */}
-      <div className="absolute top-4 right-4 z-[1000] bg-white/85 backdrop-blur-md border border-slate-200/60 px-3 py-2.5 rounded-xl shadow-lg text-[10px] space-y-1.5 text-slate-600 pointer-events-none select-none w-28">
-        <div className="font-bold text-slate-800 border-b border-slate-200 pb-1 mb-1 tracking-tight flex items-center gap-1">
+      <div className="absolute top-4 right-4 z-[1000] bg-white/85 backdrop-blur-md border border-slate-200/60 px-3 py-2.5 rounded-xl shadow-lg text-[10px] space-y-1 text-slate-600 pointer-events-none select-none w-28 max-h-[300px] overflow-y-auto">
+        <div className="font-bold text-slate-800 border-b border-slate-200 pb-1 mb-1 tracking-tight flex items-center gap-1 sticky top-0 bg-white/5 bg-opacity-10">
           <Layers className="h-3 w-3 text-cyan-500" /> TRANSIT
         </div>
         <div className="flex items-center space-x-2">
@@ -357,6 +335,22 @@ export default function MapView() {
         <div className="flex items-center space-x-2">
           <span className="w-2.5 h-2.5 rounded-full bg-[#FF8C00] inline-block shadow-sm"></span>
           <span className="font-semibold text-slate-700">Orange</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#00FF00] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Green</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#808080] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Grey</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#A52A2A] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Rapid</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#00FFFF] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Aqua</span>
         </div>
       </div>
 

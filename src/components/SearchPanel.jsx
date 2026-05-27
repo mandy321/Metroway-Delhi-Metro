@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useMetroStore } from "../store/useMetroStore";
-import { STATIONS } from "../data/metroData";
 import { 
   MapPin, 
   ArrowUpDown, 
@@ -19,11 +18,13 @@ import {
   ChevronUp,
   Info,
   Train,
-  Milestone
+  Milestone,
+  Layers
 } from "lucide-react";
 
 export default function SearchPanel() {
   const {
+    stations,
     startStationId,
     endStationId,
     mode,
@@ -54,31 +55,31 @@ export default function SearchPanel() {
   const endRef = useRef(null);
 
   useEffect(() => {
-    const startStation = STATIONS.find(s => s.id === startStationId);
+    const startStation = stations.find(s => s.id === startStationId);
     setStartQuery(startStation ? startStation.name : "");
-  }, [startStationId]);
+  }, [startStationId, stations]);
 
   useEffect(() => {
-    const endStation = STATIONS.find(s => s.id === endStationId);
+    const endStation = stations.find(s => s.id === endStationId);
     setEndQuery(endStation ? endStation.name : "");
-  }, [endStationId]);
+  }, [endStationId, stations]);
 
   useEffect(() => {
     function handleClickOutside(event) {
       if (startRef.current && !startRef.current.contains(event.target)) {
         setStartOpen(false);
-        const station = STATIONS.find(s => s.id === startStationId);
+        const station = stations.find(s => s.id === startStationId);
         setStartQuery(station ? station.name : "");
       }
       if (endRef.current && !endRef.current.contains(event.target)) {
         setEndOpen(false);
-        const station = STATIONS.find(s => s.id === endStationId);
+        const station = stations.find(s => s.id === endStationId);
         setEndQuery(station ? station.name : "");
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [startStationId, endStationId]);
+  }, [startStationId, endStationId, stations]);
 
   useEffect(() => {
     if (startStationId && endStationId) {
@@ -87,8 +88,8 @@ export default function SearchPanel() {
   }, [startStationId, endStationId, mode, timeOfDay, useSmartCard, calculateActiveRoute]);
 
   const filterStations = (query) => {
-    if (!query) return STATIONS;
-    return STATIONS.filter((station) =>
+    if (!query) return stations;
+    return stations.filter((station) =>
       station.name.toLowerCase().includes(query.toLowerCase())
     );
   };
@@ -124,6 +125,10 @@ export default function SearchPanel() {
       case "Pink": return "bg-pink-500/20 text-pink-300 border-pink-500/30";
       case "Magenta": return "bg-fuchsia-600/20 text-fuchsia-300 border-fuchsia-600/30";
       case "Orange": return "bg-orange-500/20 text-orange-400 border-orange-500/30";
+      case "Green": return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+      case "Grey": return "bg-slate-500/20 text-slate-300 border-slate-500/30";
+      case "Rapid": return "bg-rose-900/30 text-rose-300 border-rose-900/40";
+      case "Aqua": return "bg-cyan-500/20 text-cyan-300 border-cyan-500/30";
       default: return "bg-slate-700/20 text-slate-300 border-slate-600/30";
     }
   };
@@ -375,7 +380,7 @@ export default function SearchPanel() {
         </button>
 
         {statsExpanded && (
-          <div className="p-3 border-t border-white/5 grid grid-cols-2 gap-2 bg-slate-950/20">
+          <div className="p-3 border-t border-white/5 grid grid-cols-2 gap-2 bg-slate-950/20 animate-fade-in">
             {/* Stat: Length */}
             <div className="p-2 rounded-lg bg-slate-900/30 border border-white/5">
               <div className="flex items-center text-sky-400 gap-1">

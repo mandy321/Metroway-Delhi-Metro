@@ -7,6 +7,13 @@ export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? '/metroway-delhi/' : '/',
   server: {
     port: 3000,
-    host: true
+    host: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8787',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   }
 })

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useMetroStore } from "../store/useMetroStore";
-import { STATIONS, LINE_COLORS } from "../data/metroData";
+import { LINE_COLORS } from "../data/metroData";
 import {
   Clock,
   Coins,
@@ -21,8 +21,9 @@ import {
 } from "lucide-react";
 
 export default function RouteDetails() {
-  const { activeRoute, infrastructureStatus, accessibilityOnly, useSmartCard, timeOfDay } = useMetroStore();
-  const [activeTab, setActiveTab] = useState("timeline"); // "timeline" | "fare" | "exits" | "status"
+  // Query stations list dynamically from the persisted store
+  const { stations, activeRoute, infrastructureStatus, accessibilityOnly, useSmartCard, timeOfDay } = useMetroStore();
+  const [activeTab, setActiveTab] = useState("timeline");
 
   if (!activeRoute) {
     return (
@@ -38,10 +39,10 @@ export default function RouteDetails() {
     );
   }
 
-  const { metrics, path, edges, transfersList } = activeRoute;
+  const { metrics, path, edges } = activeRoute;
   const destinationStation = path[path.length - 1];
 
-  // Exit Gate Recommendation Engine
+  // Exit recommendation engine
   const getRecommendedExit = () => {
     if (!destinationStation || !destinationStation.exits) return null;
     let candidates = destinationStation.exits;
@@ -59,7 +60,6 @@ export default function RouteDetails() {
 
   const recommendedExit = getRecommendedExit();
 
-  // Metrics colors
   const getCrowdColor = (val) => {
     if (val < 4) return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
     if (val < 7) return "text-amber-400 bg-amber-500/10 border-amber-500/20";
@@ -72,7 +72,6 @@ export default function RouteDetails() {
     return "text-rose-400 bg-rose-500/10 border-rose-500/20";
   };
 
-  // Get leg details (condensed legs of the same line)
   const getCondensedLegs = () => {
     const legs = [];
     if (path.length === 0) return legs;
@@ -110,14 +109,13 @@ export default function RouteDetails() {
 
   const condensedLegs = getCondensedLegs();
 
-  // Dynamic Smart Card Savings Details
-  // Smart Card Discount: 10% on Peak hours, 20% on Off-Peak hours
+  // Smart Card Savings details
   const discountPercentage = timeOfDay === "Off-Peak" ? 20 : 10;
   const regularFare = metrics.fare;
   const smartCardFare = Math.round(regularFare * (1 - discountPercentage / 100));
   const savings = regularFare - smartCardFare;
 
-  // Gather path facility alerts
+  // Outages
   const getPathStatusAlerts = () => {
     const alerts = [];
     path.forEach(station => {
@@ -139,30 +137,26 @@ export default function RouteDetails() {
   return (
     <div className="glass-panel flex-1 p-5 rounded-2xl flex flex-col space-y-5 border border-white/10 shadow-xl overflow-hidden">
       
-      {/* Route Overview Metrics Grid */}
+      {/* Route Overview Metrics */}
       <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
-        {/* Metric: Time */}
         <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
           <Clock className="h-4 w-4 mx-auto mb-1 text-cyan-400" />
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time</span>
           <span className="text-base font-outfit font-extrabold text-white mt-0.5">{metrics.time}m</span>
         </div>
 
-        {/* Metric: Distance */}
         <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
           <Gauge className="h-4 w-4 mx-auto mb-1 text-sky-400" />
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Distance</span>
           <span className="text-base font-outfit font-extrabold text-white mt-0.5">{metrics.distance} km</span>
         </div>
 
-        {/* Metric: Transfers */}
         <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
           <GitCompare className="h-4 w-4 mx-auto mb-1 text-purple-400" />
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Transfers</span>
           <span className="text-base font-outfit font-extrabold text-white mt-0.5">{metrics.transfers}</span>
         </div>
 
-        {/* Metric: Fare */}
         <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
           <Coins className="h-4 w-4 mx-auto mb-1 text-[#FFC72C]" />
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fare</span>
@@ -171,21 +165,18 @@ export default function RouteDetails() {
           </span>
         </div>
 
-        {/* Metric: Crowd */}
         <div className={`border p-3 rounded-xl flex flex-col justify-center text-center ${getCrowdColor(metrics.crowd)}`}>
           <Users className="h-4 w-4 mx-auto mb-1" />
           <span className="text-[10px] font-bold opacity-80 uppercase tracking-wider">Crowd</span>
           <span className="text-base font-outfit font-extrabold mt-0.5">{metrics.crowd}/10</span>
         </div>
 
-        {/* Metric: Comfort */}
         <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
           <Smile className="h-4 w-4 mx-auto mb-1 text-emerald-400" />
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Comfort</span>
           <span className="text-base font-outfit font-extrabold text-white mt-0.5">{metrics.comfort}/10</span>
         </div>
 
-        {/* Metric: Safety */}
         <div className={`border p-3 rounded-xl flex flex-col justify-center text-center ${getSafetyColor(metrics.safety)}`}>
           <Shield className="h-4 w-4 mx-auto mb-1" />
           <span className="text-[10px] font-bold opacity-80 uppercase tracking-wider">Safety</span>
@@ -197,13 +188,11 @@ export default function RouteDetails() {
       <div className="bg-slate-900/40 border border-white/5 p-4 rounded-xl flex items-center overflow-x-auto select-none space-x-3 max-w-full">
         {condensedLegs.map((leg, idx) => {
           const isLast = idx === condensedLegs.length - 1;
-          const lineColor = LINE_COLORS[leg.line] || "#64748b";
+          const lineColor = LINE_COLORS[leg.line] || "#475569";
 
           return (
             <React.Fragment key={idx}>
-              {/* Leg Block */}
               <div className="flex items-center shrink-0 bg-slate-950/60 border border-white/5 px-3 py-2 rounded-xl">
-                {/* Line color indicator node */}
                 <span 
                   className="w-3.5 h-3.5 rounded-full inline-block mr-2 shrink-0 border border-white/10"
                   style={{ backgroundColor: lineColor }}
@@ -214,7 +203,6 @@ export default function RouteDetails() {
                 </div>
               </div>
 
-              {/* Arrow linking to next leg (representing transfer) */}
               {!isLast && (
                 <div className="flex flex-col items-center justify-center shrink-0 px-1 text-slate-500">
                   <ArrowRight className="h-4 w-4 text-purple-400 animate-pulse" />
@@ -225,7 +213,6 @@ export default function RouteDetails() {
           );
         })}
         
-        {/* Terminus Destination Node */}
         <div className="flex items-center shrink-0 bg-rose-950/20 border border-rose-500/20 px-3 py-2 rounded-xl">
           <MapPin className="h-4 w-4 text-rose-400 mr-2 shrink-0" />
           <div className="flex flex-col text-left">
@@ -278,7 +265,7 @@ export default function RouteDetails() {
       {/* Tab Contents */}
       <div className="flex-1 overflow-y-auto max-h-[350px]">
         
-        {/* Timeline Tab */}
+        {/* Timeline */}
         {activeTab === "timeline" && (
           <div className="relative pl-5 border-l border-slate-700/80 space-y-5 py-2">
             {path.map((station, idx) => {
@@ -317,12 +304,12 @@ export default function RouteDetails() {
                           key={l}
                           className="text-[8px] font-bold px-1 rounded-sm border"
                           style={{
-                            borderColor: `${LINE_COLORS[l]}25`,
-                            color: LINE_COLORS[l],
-                            backgroundColor: `${LINE_COLORS[l]}10`
+                            borderColor: `${LINE_COLORS[l] || "#475569"}25`,
+                            color: LINE_COLORS[l] || "#94a3b8",
+                            backgroundColor: `${LINE_COLORS[l] || "#475569"}10`
                           }}
                         >
-                          {l} Line
+                          {l}
                         </span>
                       ))}
                     </div>
@@ -353,35 +340,32 @@ export default function RouteDetails() {
           </div>
         )}
 
-        {/* Fare Details Tab */}
+        {/* Fare */}
         {activeTab === "fare" && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              {/* Token Fare Card */}
               <div className="bg-slate-900/60 border border-white/5 p-4 rounded-xl flex flex-col justify-between">
                 <div>
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Single Journey Token</h4>
-                  <p className="text-[10px] text-slate-500 mt-0.5">Purchased at vending machines</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Vending Machine Purchase</p>
                 </div>
-                <div className="text-2xl font-outfit font-extrabold text-white mt-4">₹{regularFare}</div>
+                <div className="text-2xl font-outfit font-extrabold text-white mt-4 font-outfit">₹{regularFare}</div>
               </div>
 
-              {/* Smart Card Fare Card */}
               <div className={`border p-4 rounded-xl flex flex-col justify-between ${
                 useSmartCard ? "bg-amber-500/10 border-amber-500/30" : "bg-slate-900/30 border-white/5 opacity-60"
               }`}>
                 <div>
-                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1 font-outfit">
                     <Sparkles className="h-3 w-3 text-amber-400 animate-pulse" />
                     Metro Smart Card
                   </h4>
                   <p className="text-[10px] text-slate-400 mt-0.5">Includes {discountPercentage}% discount</p>
                 </div>
-                <div className="text-2xl font-outfit font-extrabold text-amber-300 mt-4">₹{smartCardFare}</div>
+                <div className="text-2xl font-outfit font-extrabold text-amber-300 mt-4 font-outfit">₹{smartCardFare}</div>
               </div>
             </div>
 
-            {/* Smart Card savings announcement */}
             {useSmartCard ? (
               <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/25 p-3 rounded-xl flex items-center justify-between text-xs">
                 <div className="flex items-center space-x-2 text-emerald-300">
@@ -402,23 +386,31 @@ export default function RouteDetails() {
               </div>
             )}
 
-            {/* Detailed fare calculation breakdown */}
             <div className="border border-white/5 rounded-xl p-3 text-xs bg-slate-900/20 space-y-2">
               <h5 className="font-semibold text-slate-200 uppercase tracking-wider text-[10px]">Fare Breakdown Details</h5>
               <div className="space-y-1 text-slate-400">
-                <div className="flex justify-between">
-                  <span>Base Minimum Fare:</span>
-                  <span className="text-slate-200">₹10.00</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Distance Charge ({metrics.distance} km @ ₹2.5/km):</span>
-                  <span className="text-slate-200">₹{Math.round(metrics.distance * 2.5 * 100) / 100}</span>
-                </div>
-                {metrics.transfers > 0 && (
-                  <div className="flex justify-between">
-                    <span>Interchange Transfer surcharge (₹2/transfer):</span>
-                    <span className="text-slate-200">₹{metrics.transfers * 2}.00</span>
+                {edges.some(e => e.line === "Orange") ? (
+                  <div className="flex justify-between text-cyan-400 font-semibold">
+                    <span>Airport Express Premium Flat Fare:</span>
+                    <span>₹60.00</span>
                   </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between">
+                      <span>Base Minimum Fare:</span>
+                      <span className="text-slate-200">₹10.00</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Distance Charge ({metrics.distance} km @ ₹2.5/km):</span>
+                      <span className="text-slate-200">₹{Math.round(metrics.distance * 2.5 * 100) / 100}</span>
+                    </div>
+                    {metrics.transfers > 0 && (
+                      <div className="flex justify-between">
+                        <span>Interchange surcharge (₹2/transfer):</span>
+                        <span className="text-slate-200">₹{metrics.transfers * 2}.00</span>
+                      </div>
+                    )}
+                  </>
                 )}
                 <div className="border-t border-white/5 pt-1.5 flex justify-between font-bold text-slate-200">
                   <span>Subtotal Calculated Fare:</span>
@@ -429,7 +421,7 @@ export default function RouteDetails() {
           </div>
         )}
 
-        {/* Exits Tab */}
+        {/* Exits */}
         {activeTab === "exits" && (
           <div className="space-y-4">
             {recommendedExit ? (
@@ -451,7 +443,7 @@ export default function RouteDetails() {
                   }`}>
                     {recommendedExit.lit}
                   </span>
-                  {recommendedExit.accessibility.map(acc => (
+                  {recommendedExit.accessibility?.map(acc => (
                     <span key={acc} className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-indigo-500/10 text-indigo-300 border-indigo-500/20 flex items-center gap-0.5">
                       <Accessibility className="h-2.5 w-2.5" /> {acc}
                     </span>
@@ -468,7 +460,7 @@ export default function RouteDetails() {
             <div className="space-y-2">
               <h4 className="font-outfit font-bold text-xs text-slate-300 uppercase tracking-wider">All Gates / Exits</h4>
               <div className="space-y-2">
-                {destinationStation.exits.map(exit => (
+                {destinationStation.exits?.map(exit => (
                   <div key={exit.gate} className="p-3 rounded-lg bg-slate-900/50 border border-white/5 flex items-center justify-between text-xs">
                     <div>
                       <div className="flex items-center space-x-2">
@@ -478,7 +470,7 @@ export default function RouteDetails() {
                       <div className="flex space-x-1.5 mt-1 text-[9px] text-slate-400">
                         <span>Lighting: <strong className="text-slate-300">{exit.lit}</strong></span>
                         <span>•</span>
-                        <span>Accessibility: <strong className="text-slate-300">{exit.accessibility.join(", ") || "None"}</strong></span>
+                        <span>Accessibility: <strong className="text-slate-300">{exit.accessibility?.join(", ") || "None"}</strong></span>
                       </div>
                     </div>
                   </div>
@@ -488,7 +480,7 @@ export default function RouteDetails() {
           </div>
         )}
 
-        {/* Status Alerts Tab */}
+        {/* Status Alerts */}
         {activeTab === "status" && (
           <div className="space-y-3">
             {pathAlerts.length > 0 ? (

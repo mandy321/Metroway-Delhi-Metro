@@ -8,6 +8,7 @@ import { useMetroStore } from "./store/useMetroStore";
 export default function App() {
   const {
     initializeInfrastructureStatus,
+    loadDynamicData,
     triggerLiveMockUpdates,
     setOffline
   } = useMetroStore();
@@ -17,12 +18,15 @@ export default function App() {
     // 1. Load initial infrastructure status
     initializeInfrastructureStatus();
 
-    // 2. Setup periodic mock updates representing active web scraping/push streams
+    // 2. Load dynamic metro data from Cloudflare Worker proxy
+    loadDynamicData();
+
+    // 3. Setup periodic mock updates representing active web scraping/push streams
     const mockUpdateInterval = setInterval(() => {
       triggerLiveMockUpdates();
     }, 8000); // update some station every 8 seconds
 
-    // 3. Online/Offline status listeners
+    // 4. Online/Offline status listeners
     const handleOnline = () => setOffline(false);
     const handleOffline = () => setOffline(true);
 
@@ -34,7 +38,7 @@ export default function App() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [initializeInfrastructureStatus, triggerLiveMockUpdates, setOffline]);
+  }, [initializeInfrastructureStatus, loadDynamicData, triggerLiveMockUpdates, setOffline]);
 
   return (
     <div className="relative min-h-screen bg-[#070a13] text-slate-100 flex flex-col font-sans overflow-x-hidden selection:bg-cyan-500 selection:text-slate-950">
