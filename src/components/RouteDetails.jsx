@@ -88,6 +88,61 @@ export default function RouteDetails() {
 
   const recommendedExit = getRecommendedExit();
 
+  const getTerminalStationName = (startId, nextId, line) => {
+    if (!startId || !nextId || !line) return "";
+    const visited = new Set([startId, nextId]);
+    const queue = [nextId];
+    let deadEndId = nextId;
+    
+    while (queue.length > 0) {
+      const curr = queue.shift();
+      deadEndId = curr;
+      
+      const neighbors = edges.filter(e => e.line === line && (e.source === curr || e.target === curr));
+      for (const edge of neighbors) {
+        const neighborId = edge.source === curr ? edge.target : edge.source;
+        if (!visited.has(neighborId)) {
+          visited.add(neighborId);
+          queue.push(neighborId);
+        }
+      }
+    }
+    
+    const termStation = stations.find(s => s.id === deadEndId);
+    return termStation ? termStation.name : "";
+  };
+
+  const getPlatformNumber = (station, line, terminalName) => {
+    if (!station || !line) return 1;
+    
+    const sortedLines = [...station.lines].sort();
+    const lineIndex = sortedLines.indexOf(line);
+    const basePlatform = 2 * (lineIndex >= 0 ? lineIndex : 0);
+    
+    const terminalStation = stations.find(s => s.name === terminalName);
+    if (!terminalStation || !station.coordinates || !terminalStation.coordinates) {
+      return basePlatform + 1;
+    }
+    
+    const currentLon = station.coordinates[1];
+    const terminalLon = terminalStation.coordinates[1];
+    
+    if (terminalLon >= currentLon) {
+      return basePlatform + 1;
+    } else {
+      return basePlatform + 2;
+    }
+  };
+
+  const getLegBoardingInfo = (leg) => {
+    if (!leg || !leg.edges || leg.edges.length === 0) return null;
+    const edge = leg.edges[0];
+    const nextId = edge.source === leg.startStation.id ? edge.target : edge.source;
+    const termName = getTerminalStationName(leg.startStation.id, nextId, leg.line);
+    const platNum = getPlatformNumber(leg.startStation, leg.line, termName);
+    return { termName, platNum };
+  };
+
   const getCrowdColor = (val) => {
     if (val < 4) return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
     if (val < 7) return "text-amber-400 bg-amber-500/10 border-amber-500/20";
@@ -228,6 +283,14 @@ export default function RouteDetails() {
                 <div className="flex flex-col text-left">
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{leg.line} Line</span>
                   <span className="text-[11px] font-semibold text-white max-w-[100px] truncate">{leg.startStation.name}</span>
+                  {(() => {
+                    const boardingInfo = getLegBoardingInfo(leg);
+                    return boardingInfo ? (
+                      <span className="text-[9px] text-cyan-400 font-medium mt-0.5 whitespace-nowrap">
+                        Plat {boardingInfo.platNum} • to {boardingInfo.termName}
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
               </div>
 
@@ -341,6 +404,32 @@ export default function RouteDetails() {
                         </span>
                       ))}
                     </div>
+
+                    {isStart && nextEdge && (() => {
+                      const termName = getTerminalStationName(station.id, path[1]?.id, nextEdge.line);
+                      const platNum = getPlatformNumber(station, nextEdge.line, termName);
+                      return (
+                        <div className="text-[10px] text-cyan-400 font-bold mt-1 bg-cyan-950/20 border border-cyan-500/15 px-2 py-0.5 rounded w-fit">
+                          Board <span className="text-white">{nextEdge.line} Line</span> towards <span className="text-white">{termName}</span> (Platform {platNum})
+                        </div>
+                      );
+                    })()}
+
+                    {!isStart && nextEdge?.isTransfer && (() => {
+                      const termName = getTerminalStationName(station.id, path[idx + 1]?.id, nextEdge.line);
+                      const platNum = getPlatformNumber(station, nextEdge.line, termName);
+                      return (
+                        <div className="text-[10px] text-purple-400 font-bold mt-1 bg-purple-950/25 border border-purple-500/20 px-2 py-0.5 rounded w-fit">
+                          Change to <span className="text-white">{nextEdge.line} Line</span> towards <span className="text-white">{termName}</span> (Platform {platNum})
+                        </div>
+                      );
+                    })()}
+
+                    {isEnd && (
+                      <div className="text-[10px] text-rose-400 font-bold mt-1 bg-rose-950/20 border border-rose-500/15 px-2 py-0.5 rounded w-fit">
+                        Destination reached
+                      </div>
+                    )}
 
                     {nextEdge && !isEnd && (
                       <div className="mt-2 pl-4 py-2 border-l-2 border-dashed border-slate-800 text-[11px] text-slate-400 flex flex-col space-y-1 bg-slate-900/10 rounded-r-lg">
