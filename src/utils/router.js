@@ -15,7 +15,7 @@ export function getWeights(mode) {
   }
 }
 
-// Haversine formula to compute distance in km between coordinates
+// Haversine distance helper
 export function getHaversineDistance(coord1, coord2) {
   const [lat1, lon1] = coord1;
   const [lat2, lon2] = coord2;
@@ -124,13 +124,12 @@ export function calculateRoute(startId, endId, mode, timeOfDay = "Off-Peak") {
       const isTransfer = curr.line !== neighbor.line;
       
       // PEAK HOUR PENALTIES:
-      // - Transfer penalty increases from 5 to 8 minutes due to boarding queues and crowd congestion.
       const transferTimePenalty = isTransfer ? (isPeak ? 8 : 5) : 0;
       const transferComfortPenalty = isTransfer ? 2 : 0;
 
-      // - Highly crowded edges run 25% slower during peak hours due to dwell times.
       let adjustedBaseTime = neighbor.baseTime;
-      if (isPeak && neighbor.crowdFactor >= 7) {
+      // High-speed Airport Express is unaffected by standard traffic boardings
+      if (isPeak && neighbor.crowdFactor >= 7 && neighbor.line !== "Orange") {
         adjustedBaseTime = neighbor.baseTime * 1.25;
       }
 
@@ -224,17 +223,16 @@ export function calculateRoute(startId, endId, mode, timeOfDay = "Off-Peak") {
   let transfersCount = 0;
   let totalDistance = 0;
 
-  pathEdges.forEach((edge, idx) => {
+  pathEdges.forEach((edge) => {
     totalTime += edge.adjustedTime;
     totalCrowd += edge.crowdFactor;
     totalSafety += edge.safetyRating;
     
     if (edge.isTransfer) {
       transfersCount++;
-      totalTime += isPeak ? 8 : 5; // Add transfer time penalty to total time
+      totalTime += isPeak ? 8 : 5;
     }
 
-    // Accumulate actual coordinates distance
     const sCoord = STATIONS.find(s => s.id === edge.source).coordinates;
     const tCoord = STATIONS.find(s => s.id === edge.target).coordinates;
     totalDistance += getHaversineDistance(sCoord, tCoord);
@@ -244,18 +242,20 @@ export function calculateRoute(startId, endId, mode, timeOfDay = "Off-Peak") {
   const avgCrowd = edgeCount > 0 ? totalCrowd / edgeCount : startStation.baseCrowd;
   const avgSafety = edgeCount > 0 ? totalSafety / edgeCount : 10;
 
-  // Dynamic comfort rating based on peak congestion
   let peakPenalty = isPeak ? 1.5 : 0;
   let comfortScore = 10 - (avgCrowd * 0.6 + transfersCount * 1.2 + peakPenalty);
   comfortScore = Math.max(1, Math.min(10, Math.round(comfortScore * 10) / 10));
 
-  // Advanced Fare Calculation:
-  // Base fare: ₹10
-  // Plus distance fare: ₹2.5 per km
-  // Plus transfer charge: ₹2 per transfer
-  // Capped at ₹60 standard DMRC limits
-  let baseFare = 10 + (totalDistance * 2.5) + (transfersCount * 2);
-  const fare = Math.min(60, Math.max(10, Math.round(baseFare)));
+  // Premium Fare logic for Orange Line (Airport Express)
+  // If the path utilizes the Airport Express, DMRC applies a premium flat ₹60 ticket
+  const hasAirportExpress = pathEdges.some(edge => edge.line === "Orange");
+  let fare = 0;
+  if (hasAirportExpress) {
+    fare = 60;
+  } else {
+    let baseFare = 10 + (totalDistance * 2.5) + (transfersCount * 2);
+    fare = Math.min(60, Math.max(10, Math.round(baseFare)));
+  }
 
   return {
     path: pathStations,

@@ -14,7 +14,12 @@ import {
   X,
   Sparkles,
   Clock,
-  CreditCard
+  CreditCard,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  Train,
+  Milestone
 } from "lucide-react";
 
 export default function SearchPanel() {
@@ -41,6 +46,9 @@ export default function SearchPanel() {
   const [endQuery, setEndQuery] = useState("");
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
+  
+  // State for official DMRC statistics collapsible card
+  const [statsExpanded, setStatsExpanded] = useState(false);
 
   const startRef = useRef(null);
   const endRef = useRef(null);
@@ -55,7 +63,6 @@ export default function SearchPanel() {
     setEndQuery(endStation ? endStation.name : "");
   }, [endStationId]);
 
-  // Click outside listener to close dropdowns
   useEffect(() => {
     function handleClickOutside(event) {
       if (startRef.current && !startRef.current.contains(event.target)) {
@@ -73,7 +80,6 @@ export default function SearchPanel() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [startStationId, endStationId]);
 
-  // Recalculate route when inputs, modes, times, or settings update
   useEffect(() => {
     if (startStationId && endStationId) {
       calculateActiveRoute();
@@ -117,6 +123,7 @@ export default function SearchPanel() {
       case "Red": return "bg-red-600/20 text-red-300 border-red-600/30";
       case "Pink": return "bg-pink-500/20 text-pink-300 border-pink-500/30";
       case "Magenta": return "bg-fuchsia-600/20 text-fuchsia-300 border-fuchsia-600/30";
+      case "Orange": return "bg-orange-500/20 text-orange-400 border-orange-500/30";
       default: return "bg-slate-700/20 text-slate-300 border-slate-600/30";
     }
   };
@@ -132,9 +139,11 @@ export default function SearchPanel() {
     <div className="glass-panel w-full lg:w-96 p-5 rounded-2xl flex flex-col space-y-5 border border-white/10 shadow-xl overflow-hidden">
       
       {/* Header */}
-      <div className="flex items-center space-x-2 text-cyan-400">
-        <Sparkles className="h-4 w-4" />
-        <h2 className="font-outfit font-semibold text-sm tracking-wide uppercase">Journey Planner</h2>
+      <div className="flex items-center justify-between text-cyan-400">
+        <div className="flex items-center space-x-2">
+          <Sparkles className="h-4 w-4" />
+          <h2 className="font-outfit font-semibold text-sm tracking-wide uppercase">Journey Planner</h2>
+        </div>
       </div>
 
       {/* From / To Stations */}
@@ -247,7 +256,7 @@ export default function SearchPanel() {
         </div>
       </div>
 
-      {/* Time of Day Modifier (Peak vs. Off-Peak) */}
+      {/* Time of Day Modifier */}
       <div className="flex flex-col space-y-2">
         <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Time of Day (Traffic)</label>
         <div className="grid grid-cols-2 gap-2 bg-slate-900/60 p-1 rounded-xl border border-white/5">
@@ -276,7 +285,7 @@ export default function SearchPanel() {
         </div>
       </div>
 
-      {/* Routing Modes Grid */}
+      {/* Routing Modes */}
       <div className="flex flex-col space-y-2">
         <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Routing Algorithm Mode</label>
         <div className="grid grid-cols-2 gap-2">
@@ -301,9 +310,8 @@ export default function SearchPanel() {
         </div>
       </div>
 
-      {/* Payment and Accessibility Option Switches */}
+      {/* Toggles */}
       <div className="space-y-2.5">
-        {/* Toggle: Use Smart Card */}
         <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/40 border border-white/5">
           <div className="flex items-center space-x-2.5">
             <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
@@ -328,7 +336,6 @@ export default function SearchPanel() {
           </button>
         </div>
 
-        {/* Toggle: Accessibility Access */}
         <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/40 border border-white/5">
           <div className="flex items-center space-x-2.5">
             <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
@@ -352,6 +359,60 @@ export default function SearchPanel() {
             />
           </button>
         </div>
+      </div>
+
+      {/* DMRC Official Network Stats Collapsible Dashboard */}
+      <div className="border border-white/5 bg-slate-900/10 rounded-xl overflow-hidden transition-all duration-300">
+        <button
+          onClick={() => setStatsExpanded(!statsExpanded)}
+          className="w-full flex items-center justify-between p-3 hover:bg-white/5 transition text-left select-none text-slate-300"
+        >
+          <div className="flex items-center space-x-2 text-slate-200">
+            <Info className="h-4 w-4 text-cyan-400" />
+            <span className="text-xs font-bold font-outfit">DMRC Network Overview</span>
+          </div>
+          {statsExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        </button>
+
+        {statsExpanded && (
+          <div className="p-3 border-t border-white/5 grid grid-cols-2 gap-2 bg-slate-950/20">
+            {/* Stat: Length */}
+            <div className="p-2 rounded-lg bg-slate-900/30 border border-white/5">
+              <div className="flex items-center text-sky-400 gap-1">
+                <Milestone className="h-3.5 w-3.5" />
+                <span className="text-[14px] font-extrabold font-outfit">416 km</span>
+              </div>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Network Length</p>
+            </div>
+
+            {/* Stat: Lines */}
+            <div className="p-2 rounded-lg bg-slate-900/30 border border-white/5">
+              <div className="flex items-center text-purple-400 gap-1">
+                <Layers className="h-3.5 w-3.5" />
+                <span className="text-[14px] font-extrabold font-outfit">12 Lines</span>
+              </div>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Operational Lines</p>
+            </div>
+
+            {/* Stat: Stations */}
+            <div className="p-2 rounded-lg bg-slate-900/30 border border-white/5">
+              <div className="flex items-center text-[#FFC72C] gap-1">
+                <MapPin className="h-3.5 w-3.5" />
+                <span className="text-[14px] font-extrabold font-outfit">303 Stations</span>
+              </div>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Total Stations</p>
+            </div>
+
+            {/* Stat: Trains */}
+            <div className="p-2 rounded-lg bg-slate-900/30 border border-white/5">
+              <div className="flex items-center text-emerald-400 gap-1">
+                <Train className="h-3.5 w-3.5" />
+                <span className="text-[14px] font-extrabold font-outfit">350+ Trains</span>
+              </div>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Daily Fleet</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Search History */}

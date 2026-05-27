@@ -1,4 +1,4 @@
-// Expanded Delhi Metro Dataset (40 major stations across 6 lines)
+// Expanded Delhi Metro Dataset (40 major stations across 6 lines + Airport Express)
 export const STATIONS = [
   // Yellow Line (North to South)
   {
@@ -71,7 +71,7 @@ export const STATIONS = [
   {
     id: "ND",
     name: "New Delhi",
-    lines: ["Yellow"],
+    lines: ["Yellow", "Orange"],
     coordinates: [28.6431, 77.2223],
     baseCrowd: 9,
     exits: [
@@ -162,7 +162,7 @@ export const STATIONS = [
   {
     id: "DW",
     name: "Dwarka Sector 21",
-    lines: ["Blue"],
+    lines: ["Blue", "Orange"],
     coordinates: [28.5523, 77.0583],
     baseCrowd: 5,
     exits: [
@@ -365,7 +365,7 @@ export const STATIONS = [
     ]
   },
 
-  // Pink Line (Extra Ring Line additions)
+  // Pink Line
   {
     id: "MV",
     name: "Mayur Vihar-I",
@@ -387,7 +387,7 @@ export const STATIONS = [
     ]
   },
 
-  // Magenta Line (Extra Cross Loop additions)
+  // Magenta Line
   {
     id: "OK",
     name: "Okhla NSIC",
@@ -431,11 +431,11 @@ export const STATIONS = [
   {
     id: "AP",
     name: "Aerocity",
-    lines: ["Magenta"],
+    lines: ["Magenta", "Orange"],
     coordinates: [28.5552, 77.1234],
     baseCrowd: 6,
     exits: [
-      { gate: "1", name: "IGI Airport Terminal 1 Link / Aerocity Hotels", lit: "Well-Lit", accessibility: ["Elevator", "Escalator", "Tactile Paths"] }
+      { gate: "1", name: "IGI Airport T1 Link / Hotels", lit: "Well-Lit", accessibility: ["Elevator", "Escalator", "Tactile Paths"] }
     ]
   }
 ];
@@ -500,7 +500,12 @@ export const EDGES = [
   { source: "HK", target: "GH", line: "Magenta", baseTime: 5, crowdFactor: 6, safetyRating: 8, comfortFactor: 8 },
   { source: "GH", target: "KM", line: "Magenta", baseTime: 4, crowdFactor: 7, safetyRating: 8, comfortFactor: 8 },
   { source: "KM", target: "OK", line: "Magenta", baseTime: 2, crowdFactor: 6, safetyRating: 8, comfortFactor: 8 },
-  { source: "OK", target: "BG", line: "Magenta", baseTime: 10, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 }
+  { source: "OK", target: "BG", line: "Magenta", baseTime: 10, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
+
+  // Orange Line (Airport Express) Connections
+  // Connecting New Delhi (ND) <-> Aerocity (AP) <-> Dwarka Sector 21 (DW)
+  { source: "ND", target: "AP", line: "Orange", baseTime: 15, crowdFactor: 3, safetyRating: 10, comfortFactor: 9 },
+  { source: "AP", target: "DW", line: "Orange", baseTime: 6, crowdFactor: 3, safetyRating: 10, comfortFactor: 9 }
 ];
 
 export const LINE_COLORS = {
@@ -509,5 +514,6 @@ export const LINE_COLORS = {
   Violet: "#8A2BE2",
   Red: "#E31B23",
   Pink: "#FF69B4",
-  Magenta: "#8B008B"
+  Magenta: "#8B008B",
+  Orange: "#FF8C00"
 };

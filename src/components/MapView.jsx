@@ -354,6 +354,10 @@ export default function MapView() {
           <span className="w-2.5 h-2.5 rounded-full bg-[#8B008B] inline-block shadow-sm"></span>
           <span className="font-semibold text-slate-700">Magenta</span>
         </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#FF8C00] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Orange</span>
+        </div>
       </div>
 
     </div>
