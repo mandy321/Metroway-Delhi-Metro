@@ -15,7 +15,7 @@ export default function Navbar() {
           <h1 className="font-outfit text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
             Metroway <span className="text-cyan-400 font-semibold">Delhi Metro</span>
           </h1>
-          <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold flex items-center gap-1">
+          <p className="text-[11px] text-slate-400 uppercase tracking-widest font-semibold flex items-center gap-1">
             <ShieldCheck className="h-3 w-3 text-cyan-500" /> Smart Navigation MVP
           </p>
         </div>

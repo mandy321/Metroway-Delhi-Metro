@@ -323,25 +323,25 @@ export default function RouteDetails() {
       <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
         <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
           <Clock className="h-4 w-4 mx-auto mb-1 text-cyan-400" />
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Time</span>
           <span className="text-base font-outfit font-extrabold text-white mt-0.5">{metrics.time}m</span>
         </div>
 
         <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
           <Gauge className="h-4 w-4 mx-auto mb-1 text-sky-400" />
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Distance</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Distance</span>
           <span className="text-base font-outfit font-extrabold text-white mt-0.5">{metrics.distance} km</span>
         </div>
 
         <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
           <GitCompare className="h-4 w-4 mx-auto mb-1 text-purple-400" />
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Transfers</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Transfers</span>
           <span className="text-base font-outfit font-extrabold text-white mt-0.5">{metrics.transfers}</span>
         </div>
 
         <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
           <Coins className="h-4 w-4 mx-auto mb-1 text-[#FFC72C]" />
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fare</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Fare</span>
           <span className="text-base font-outfit font-extrabold text-white mt-0.5">
             ₹{useSmartCard ? smartCardFare : regularFare}
           </span>
@@ -349,19 +349,19 @@ export default function RouteDetails() {
 
         <div className={`border p-3 rounded-xl flex flex-col justify-center text-center ${getCrowdColor(metrics.crowd)}`}>
           <Users className="h-4 w-4 mx-auto mb-1" />
-          <span className="text-[10px] font-bold opacity-80 uppercase tracking-wider">Crowd</span>
+          <span className="text-xs font-bold opacity-80 uppercase tracking-wider">Crowd</span>
           <span className="text-base font-outfit font-extrabold mt-0.5">{metrics.crowd}/10</span>
         </div>
 
         <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
           <Smile className="h-4 w-4 mx-auto mb-1 text-emerald-400" />
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Comfort</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Comfort</span>
           <span className="text-base font-outfit font-extrabold text-white mt-0.5">{metrics.comfort}/10</span>
         </div>
 
         <div className={`border p-3 rounded-xl flex flex-col justify-center text-center ${getSafetyColor(metrics.safety)}`}>
           <Shield className="h-4 w-4 mx-auto mb-1" />
-          <span className="text-[10px] font-bold opacity-80 uppercase tracking-wider">Safety</span>
+          <span className="text-xs font-bold opacity-80 uppercase tracking-wider">Safety</span>
           <span className="text-base font-outfit font-extrabold mt-0.5">{metrics.safety}/10</span>
         </div>
       </div>
@@ -380,12 +380,12 @@ export default function RouteDetails() {
                   style={{ backgroundColor: lineColor }}
                 />
                 <div className="flex flex-col text-left">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{leg.line} Line</span>
-                  <span className="text-[11px] font-semibold text-white max-w-[100px] truncate">{leg.startStation.name}</span>
+                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">{leg.line} Line</span>
+                  <span className="text-xs font-bold text-white whitespace-nowrap">{leg.startStation.name}</span>
                   {(() => {
                     const boardingInfo = getLegBoardingInfo(leg);
                     return boardingInfo ? (
-                      <span className="text-[9px] text-cyan-400 font-medium mt-0.5 whitespace-nowrap">
+                      <span className="text-[10px] text-cyan-400 font-semibold mt-0.5 whitespace-nowrap">
                         Plat {boardingInfo.platNum} • to {boardingInfo.termName}
                       </span>
                     ) : null;
@@ -396,7 +396,7 @@ export default function RouteDetails() {
               {!isLast && (
                 <div className="flex flex-col items-center justify-center shrink-0 px-1 text-slate-500">
                   <ArrowRight className="h-4 w-4 text-purple-400 animate-pulse" />
-                  <span className="text-[8px] text-purple-400 font-bold uppercase tracking-wider mt-0.5">Transfer</span>
+                  <span className="text-[10px] text-purple-400 font-bold uppercase tracking-wider mt-0.5">Transfer</span>
                 </div>
               )}
             </React.Fragment>
@@ -406,8 +406,8 @@ export default function RouteDetails() {
         <div className="flex items-center shrink-0 bg-rose-950/20 border border-rose-500/20 px-3 py-2 rounded-xl">
           <MapPin className="h-4 w-4 text-rose-400 mr-2 shrink-0" />
           <div className="flex flex-col text-left">
-            <span className="text-[10px] text-rose-400 font-bold uppercase tracking-wider">Destination</span>
-            <span className="text-[11px] font-semibold text-white max-w-[100px] truncate">{destinationStation.name}</span>
+            <span className="text-[11px] text-rose-400 font-bold uppercase tracking-wider">Destination</span>
+            <span className="text-xs font-bold text-white whitespace-nowrap">{destinationStation.name}</span>
           </div>
         </div>
       </div>
@@ -445,7 +445,7 @@ export default function RouteDetails() {
           }`}
         >
           Facility Outages {pathAlerts.length > 0 && (
-            <span className="ml-1 bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[9px] px-1.5 py-0.2 rounded-full font-extrabold">
+            <span className="ml-1 bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] px-1.5 py-0.2 rounded-full font-extrabold">
               {pathAlerts.length}
             </span>
           )}
@@ -481,18 +481,18 @@ export default function RouteDetails() {
                     <div className="flex items-center justify-between">
                       <span className="font-outfit text-sm font-bold text-slate-100">{station.name}</span>
                       {hasAlert && (
-                        <span className="flex items-center space-x-0.5 text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded">
-                          <AlertTriangle className="h-2.5 w-2.5" />
+                        <span className="flex items-center space-x-0.5 text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+                          <AlertTriangle className="h-3 w-3" />
                           <span>Alert</span>
                         </span>
                       )}
                     </div>
 
-                    <div className="flex space-x-1">
+                    <div className="flex space-x-1.5">
                       {station.lines.map(l => (
                         <span
                           key={l}
-                          className="text-[8px] font-bold px-1 rounded-sm border"
+                          className="text-[10px] font-bold px-1.5 py-0.2 rounded border"
                           style={{
                             borderColor: `${LINE_COLORS[l] || "#475569"}25`,
                             color: LINE_COLORS[l] || "#94a3b8",
@@ -508,7 +508,7 @@ export default function RouteDetails() {
                       const termName = getTerminalStationName(station.id, path[1]?.id, nextEdge.line);
                       const platNum = getPlatformNumber(station, nextEdge.line, termName);
                       return (
-                        <div className="text-[10px] text-cyan-400 font-bold mt-1 bg-cyan-950/20 border border-cyan-500/15 px-2 py-0.5 rounded w-fit">
+                        <div className="text-xs text-cyan-400 font-bold mt-1.5 bg-cyan-950/25 border border-cyan-500/20 px-2.5 py-1 rounded w-fit">
                           Board <span className="text-white">{nextEdge.line} Line</span> towards <span className="text-white">{termName}</span> (Platform {platNum})
                         </div>
                       );
@@ -520,31 +520,31 @@ export default function RouteDetails() {
                       const walkInfo = getTransferWalkInfo(station.id, nextEdge.line);
                       const adjustedWalkTime = timeOfDay === "Peak" ? walkInfo.time + 3 : walkInfo.time;
                       return (
-                        <div className="mt-1 space-y-1">
-                          <div className="text-[10px] text-purple-400 font-bold bg-purple-950/25 border border-purple-500/20 px-2 py-0.5 rounded w-fit">
+                        <div className="mt-1.5 space-y-1.5">
+                          <div className="text-xs text-purple-400 font-bold bg-purple-950/25 border border-purple-500/20 px-2.5 py-1 rounded w-fit">
                             Change to <span className="text-white">{nextEdge.line} Line</span> towards <span className="text-white">{termName}</span> (Platform {platNum})
                           </div>
-                          <div className="text-[9px] text-slate-400 pl-2 border-l-2 border-purple-500/30 flex flex-col space-y-0.5 text-left">
+                          <div className="text-xs text-slate-400 pl-2 border-l-2 border-purple-500/30 flex flex-col space-y-1 text-left">
                             <span className="text-purple-300 font-medium">🚶 {walkInfo.type}: ~{adjustedWalkTime} mins walk ({walkInfo.distance})</span>
-                            <span className="text-[8.5px] text-slate-500">{walkInfo.description} {timeOfDay === "Peak" && "(+3 mins peak crowd delay)"}</span>
+                            <span className="text-[11px] text-slate-500">{walkInfo.description} {timeOfDay === "Peak" && "(+3 mins peak crowd delay)"}</span>
                           </div>
                         </div>
                       );
                     })()}
 
                     {isEnd && (
-                      <div className="text-[10px] text-rose-400 font-bold mt-1 bg-rose-950/20 border border-rose-500/15 px-2 py-0.5 rounded w-fit">
+                      <div className="text-xs text-rose-400 font-bold mt-1.5 bg-rose-950/25 border border-rose-500/20 px-2.5 py-1 rounded w-fit">
                         Destination reached
                       </div>
                     )}
 
                     {nextEdge && !isEnd && (
-                      <div className="mt-2 pl-4 py-2 border-l-2 border-dashed border-slate-800 text-[11px] text-slate-400 flex flex-col space-y-1 bg-slate-900/10 rounded-r-lg">
+                      <div className="mt-2.5 pl-4 py-2 border-l-2 border-dashed border-slate-800 text-xs text-slate-400 flex flex-col space-y-1.5 bg-slate-900/10 rounded-r-lg">
                         <div className="flex items-center space-x-1 text-slate-300">
                           <ArrowRight className="h-3 w-3 text-cyan-400" />
                           <span>Ride <span className="font-bold text-white">{nextEdge.line} Line</span></span>
                         </div>
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-4 text-[11px]">
                           <span>Duration: <strong>{Math.round(nextEdge.adjustedTime || nextEdge.baseTime)} mins</strong></span>
                           <span>Crowd: <strong className={getCrowdColor(nextEdge.crowdFactor).split(" ")[0]}>{nextEdge.crowdFactor}/10</strong></span>
                         </div>
@@ -553,12 +553,12 @@ export default function RouteDetails() {
                           const walkInfo = getTransferWalkInfo(station.id, nextEdge.line);
                           const adjustedWalkTime = timeOfDay === "Peak" ? walkInfo.time + 3 : walkInfo.time;
                           return (
-                            <div className="mt-1.5 p-2 rounded bg-purple-950/20 border border-purple-500/15 text-purple-300 flex flex-col space-y-1 text-[10px] text-left">
+                            <div className="mt-1.5 p-2 rounded bg-purple-950/20 border border-purple-500/15 text-purple-300 flex flex-col space-y-1 text-xs text-left">
                               <div className="flex items-center space-x-1.5 font-bold">
                                 <GitCompare className="h-3.5 w-3.5 text-purple-400 shrink-0" />
                                 <span>Transfer via {walkInfo.type} ({walkInfo.distance})</span>
                               </div>
-                              <div className="text-[9.5px] text-slate-400">
+                              <div className="text-[11px] text-slate-400">
                                 Walk time: <strong>~{adjustedWalkTime} mins</strong> • {walkInfo.description}
                               </div>
                             </div>
@@ -580,7 +580,7 @@ export default function RouteDetails() {
               <div className="bg-slate-900/60 border border-white/5 p-4 rounded-xl flex flex-col justify-between">
                 <div>
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Single Journey Token</h4>
-                  <p className="text-[10px] text-slate-500 mt-0.5">Vending Machine Purchase</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Vending Machine Purchase</p>
                 </div>
                 <div className="text-2xl font-outfit font-extrabold text-white mt-4 font-outfit">₹{regularFare}</div>
               </div>
@@ -593,7 +593,7 @@ export default function RouteDetails() {
                     <Sparkles className="h-3 w-3 text-amber-400 animate-pulse" />
                     Metro Smart Card
                   </h4>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Includes {discountPercentage}% discount</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Includes {discountPercentage}% discount</p>
                 </div>
                 <div className="text-2xl font-outfit font-extrabold text-amber-300 mt-4 font-outfit">₹{smartCardFare}</div>
               </div>
@@ -605,22 +605,22 @@ export default function RouteDetails() {
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                   <span><strong>Smart Card Discount Active!</strong> You saved ₹{savings} ({discountPercentage}% off).</span>
                 </div>
-                <span className="text-[10px] bg-emerald-500 text-slate-950 font-bold px-2 py-0.5 rounded shadow uppercase">Saved</span>
+                <span className="text-xs bg-emerald-500 text-slate-950 font-bold px-2 py-0.5 rounded shadow uppercase">Saved</span>
               </div>
             ) : (
-              <div className="bg-slate-900/40 border border-white/5 p-3 rounded-xl text-xs text-slate-400 flex items-start space-x-2.5">
+              <div className="bg-slate-900/40 border border-white/5 p-3.5 rounded-xl text-xs text-slate-400 flex items-start space-x-2.5">
                 <CreditCard className="h-4.5 w-4.5 text-amber-400 shrink-0 mt-0.5" />
                 <div>
                   <h5 className="font-bold text-slate-200">Recommendation: Use a Smart Card</h5>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-400 mt-0.5">
                     Using a metro card gives you a 10% discount during Peak Hours, and a <strong>20% discount</strong> during Off-Peak hours. Enable "Metro Smart Card" in the Planner panel to calculate discounted pricing.
                   </p>
                 </div>
               </div>
             )}
 
-            <div className="border border-white/5 rounded-xl p-3 text-xs bg-slate-900/20 space-y-2">
-              <h5 className="font-semibold text-slate-200 uppercase tracking-wider text-[10px]">Fare Breakdown Details</h5>
+            <div className="border border-white/5 rounded-xl p-3.5 text-xs bg-slate-900/20 space-y-2">
+              <h5 className="font-bold text-slate-200 uppercase tracking-wider text-xs">Fare Breakdown Details</h5>
               <div className="space-y-1 text-slate-400">
                 {routeEdges.some(e => e.line === "Orange") ? (
                   <div className="flex justify-between text-cyan-400 font-semibold">
@@ -671,18 +671,18 @@ export default function RouteDetails() {
                 </div>
                 
                 <div className="flex flex-wrap gap-1.5 mt-2">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
                     recommendedExit.lit === "Well-Lit" ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-amber-500/10 text-amber-300 border-amber-500/20"
                   }`}>
                     {recommendedExit.lit}
                   </span>
                   {recommendedExit.accessibility?.map(acc => (
-                    <span key={acc} className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-indigo-500/10 text-indigo-300 border-indigo-500/20 flex items-center gap-0.5">
+                    <span key={acc} className="text-xs font-bold px-2 py-0.5 rounded-full border bg-indigo-500/10 text-indigo-300 border-indigo-500/20 flex items-center gap-0.5">
                       <Accessibility className="h-2.5 w-2.5" /> {acc}
                     </span>
                   ))}
                 </div>
-                <p className="text-[10px] text-slate-400 italic">
+                <p className="text-xs text-slate-400 italic">
                   * Recommended based on lighting security checks and your {accessibilityOnly ? "accessibility settings" : "safety mode"}.
                 </p>
               </div>
@@ -700,7 +700,7 @@ export default function RouteDetails() {
                         <span className="bg-slate-800 text-slate-300 font-bold px-1.5 py-0.2 rounded border border-white/10">Gate {exit.gate}</span>
                         <span className="font-semibold text-slate-200">{exit.name}</span>
                       </div>
-                      <div className="flex space-x-1.5 mt-1 text-[9px] text-slate-400">
+                      <div className="flex space-x-1.5 mt-1.5 text-xs text-slate-400">
                         <span>Lighting: <strong className="text-slate-300">{exit.lit}</strong></span>
                         <span>•</span>
                         <span>Accessibility: <strong className="text-slate-300">{exit.accessibility?.join(", ") || "None"}</strong></span>
@@ -724,7 +724,7 @@ export default function RouteDetails() {
               </h4>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Select Station</label>
+                  <label className="text-xs text-slate-400 block mb-1">Select Station</label>
                   <select
                     value={reportingStationId}
                     onChange={(e) => setReportingStationId(e.target.value)}
@@ -738,7 +738,7 @@ export default function RouteDetails() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Crowd Level</label>
+                  <label className="text-xs text-slate-400 block mb-1">Crowd Level</label>
                   <select
                     value={reportedLevel}
                     onChange={(e) => setReportedLevel(e.target.value)}
@@ -772,7 +772,7 @@ export default function RouteDetails() {
                     <AlertTriangle className="h-4.5 w-4.5 mt-0.5 text-rose-400" />
                     <div>
                       <h5 className="font-bold text-slate-200">{alert.stationName} Outage</h5>
-                      <p className="text-[10px] text-rose-300/80 mt-0.5">
+                      <p className="text-xs text-rose-300/80 mt-0.5">
                         The station's <strong>{alert.type}</strong> is currently down for maintenance. Access via stairs/alternate gates.
                       </p>
                     </div>
@@ -784,7 +784,7 @@ export default function RouteDetails() {
                 <CheckCircle2 className="h-5 w-5 text-emerald-400" />
                 <div>
                   <h5 className="font-bold text-slate-200">All Infrastructure Clear</h5>
-                  <p className="text-[10px] text-emerald-300/80 mt-0.5">
+                  <p className="text-xs text-emerald-300/80 mt-0.5">
                     All escalators and elevators on your selected path are reported fully operational.
                   </p>
                 </div>
@@ -792,7 +792,7 @@ export default function RouteDetails() {
             )}
 
             <div className="border border-white/5 rounded-xl overflow-hidden mt-3 text-xs bg-slate-900/20">
-              <div className="grid grid-cols-3 bg-slate-900/60 p-2 font-bold text-slate-300 text-[10px] uppercase border-b border-white/5">
+              <div className="grid grid-cols-3 bg-slate-900/60 p-2.5 font-bold text-slate-300 text-xs uppercase border-b border-white/5">
                 <span>Station</span>
                 <span>Escalator</span>
                 <span>Elevator</span>

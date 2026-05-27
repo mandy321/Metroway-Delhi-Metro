@@ -13,10 +13,25 @@ export default function App() {
     initializeInfrastructureStatus,
     loadDynamicData,
     triggerLiveMockUpdates,
-    setOffline
+    setOffline,
+    activeRoute,
+    stations,
+    startStationId,
+    endStationId
   } = useMetroStore();
 
   const [activeTab, setActiveTab] = useState("planner");
+  const [isEditingRoute, setIsEditingRoute] = useState(false);
+
+  // Auto collapse inputs when active route changes
+  useEffect(() => {
+    if (activeRoute) {
+      setIsEditingRoute(false);
+    }
+  }, [activeRoute]);
+
+  const startStationName = stations.find(s => s.id === startStationId)?.name || "";
+  const endStationName = stations.find(s => s.id === endStationId)?.name || "";
 
   // Initialize and listen for network changes + start live updates stream
   useEffect(() => {
@@ -80,8 +95,36 @@ export default function App() {
       <main className="lg:hidden flex-1 w-full p-4 pb-28 z-10 flex flex-col space-y-4">
         {activeTab === "planner" && (
           <div className="flex flex-col space-y-4">
-            <SearchPanel />
-            <RouteDetails />
+            {activeRoute && !isEditingRoute ? (
+              <div className="flex flex-col space-y-4">
+                {/* Premium Native Header Summary */}
+                <div className="glass-panel p-4 rounded-2xl border border-white/10 shadow-xl flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Active Journey</span>
+                    <h3 className="font-outfit font-bold text-sm text-slate-100 truncate flex items-center gap-1.5 mt-0.5">
+                      <span className="text-cyan-400">{startStationName}</span>
+                      <span className="text-slate-500">➔</span>
+                      <span className="text-rose-400">{endStationName}</span>
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setIsEditingRoute(true)}
+                    className="ml-3 px-3.5 py-2 bg-slate-900 border border-white/10 rounded-xl text-xs font-bold text-cyan-400 active:scale-95 transition-all duration-150 shadow-md"
+                  >
+                    Edit
+                  </button>
+                </div>
+                
+                {/* Visual preview map on mobile */}
+                <div className="h-44 w-full rounded-2xl overflow-hidden border border-white/10 shadow-lg">
+                  <MapView />
+                </div>
+                
+                <RouteDetails />
+              </div>
+            ) : (
+              <SearchPanel />
+            )}
           </div>
         )}
 

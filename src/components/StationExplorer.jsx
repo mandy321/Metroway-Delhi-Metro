@@ -34,7 +34,7 @@ export default function StationExplorer() {
           <Activity className="h-5 w-5 text-cyan-400" />
           Station Directory & Gates
         </h3>
-        <p className="text-[11px] text-slate-400">
+        <p className="text-xs text-slate-400">
           Search any station on the Delhi Metro network to verify gates, lighting, and lift operations.
         </p>
       </div>
@@ -65,7 +65,7 @@ export default function StationExplorer() {
                     {s.lines.map(l => (
                       <span
                         key={l}
-                        className="text-[8px] font-bold px-1 rounded-sm border"
+                        className="text-[10px] font-bold px-1.5 py-0.2 rounded border"
                         style={{
                           borderColor: `${LINE_COLORS[l]}25`,
                           color: LINE_COLORS[l]
@@ -94,7 +94,7 @@ export default function StationExplorer() {
                 {activeStation.lines.map(l => (
                   <span
                     key={l}
-                    className="text-[9px] font-bold px-2 py-0.5 rounded border"
+                    className="text-xs font-bold px-2 py-0.5 rounded border"
                     style={{
                       borderColor: `${LINE_COLORS[l]}30`,
                       color: LINE_COLORS[l],
@@ -111,7 +111,7 @@ export default function StationExplorer() {
             <div className={`border px-3 py-1.5 rounded-lg flex items-center space-x-1.5 text-xs ${getCrowdBadgeColor(getStationCrowd(activeStation.id))}`}>
               <Users className="h-3.5 w-3.5" />
               <div className="flex flex-col text-left">
-                <span className="text-[9px] opacity-75 font-semibold uppercase tracking-wider leading-none">Crowd</span>
+                <span className="text-[10px] opacity-75 font-bold uppercase tracking-wider leading-none">Crowd</span>
                 <span className="font-bold leading-tight mt-0.5">{getStationCrowd(activeStation.id)}/10</span>
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function StationExplorer() {
             <div className="bg-slate-900/50 border border-white/5 p-3 rounded-lg flex items-start space-x-2">
               <Activity className={`h-4.5 w-4.5 shrink-0 ${infra.escalator === "Operational" ? "text-emerald-400" : "text-rose-400"}`} />
               <div>
-                <span className="text-[10px] text-slate-500 block font-semibold uppercase tracking-wider">Escalators</span>
+                <span className="text-xs text-slate-500 block font-bold uppercase tracking-wider">Escalators</span>
                 <span className="font-bold text-slate-200 mt-0.5 inline-block">{infra.escalator}</span>
               </div>
             </div>
@@ -130,7 +130,7 @@ export default function StationExplorer() {
             <div className="bg-slate-900/50 border border-white/5 p-3 rounded-lg flex items-start space-x-2">
               <Accessibility className={`h-4.5 w-4.5 shrink-0 ${infra.elevator === "Operational" ? "text-emerald-400" : "text-rose-400"}`} />
               <div>
-                <span className="text-[10px] text-slate-500 block font-semibold uppercase tracking-wider">Elevators / Lifts</span>
+                <span className="text-xs text-slate-500 block font-bold uppercase tracking-wider">Elevators / Lifts</span>
                 <span className="font-bold text-slate-200 mt-0.5 inline-block">{infra.elevator}</span>
               </div>
             </div>
@@ -152,7 +152,7 @@ export default function StationExplorer() {
                         <span className="bg-cyan-500/10 text-cyan-300 font-bold px-1.5 py-0.5 rounded border border-cyan-500/20">Gate {exit.gate}</span>
                         <span className="font-bold text-slate-200">{exit.name}</span>
                       </div>
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded border ${
                         exit.lit === "Well-Lit" ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-amber-500/10 text-amber-300 border-amber-500/20"
                       }`}>
                         {exit.lit}
@@ -162,7 +162,7 @@ export default function StationExplorer() {
                     {exit.accessibility && exit.accessibility.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-1 border-t border-white/5">
                         {exit.accessibility.map(acc => (
-                          <span key={acc} className="text-[9px] text-slate-400 flex items-center gap-0.5 font-medium">
+                          <span key={acc} className="text-xs text-slate-400 flex items-center gap-0.5 font-medium">
                             <ShieldCheck className="h-3 w-3 text-cyan-400" /> {acc}
                           </span>
                         ))}

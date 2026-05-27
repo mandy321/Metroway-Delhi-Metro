@@ -160,7 +160,7 @@ export default function SearchPanel() {
       <div className="relative flex flex-col space-y-3">
         {/* From Station */}
         <div ref={startRef} className="relative">
-          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">From Station</label>
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">From Station</label>
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-cyan-400" />
             <input
@@ -195,7 +195,7 @@ export default function SearchPanel() {
                   <span className="text-sm font-semibold text-slate-200">{station.name}</span>
                   <div className="flex space-x-1">
                     {station.lines.map(line => (
-                      <span key={line} className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${getLineBadgeClass(line)}`}>
+                      <span key={line} className={`text-xs font-bold px-2 py-0.5 rounded border ${getLineBadgeClass(line)}`}>
                         {line === "RRTS" ? "RRTS" : line[0]}
                       </span>
                     ))}
@@ -219,7 +219,7 @@ export default function SearchPanel() {
 
         {/* To Station */}
         <div ref={endRef} className="relative">
-          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">To Station</label>
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">To Station</label>
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-rose-400" />
             <input
@@ -235,7 +235,7 @@ export default function SearchPanel() {
             />
             {endQuery && (
               <button 
-                onClick={() => { setEndQuery(""); setEndEndStationId(""); }} 
+                onClick={() => { setEndQuery(""); setEndStationId(""); }} 
                 className="absolute right-3 top-1/2 -translate-y-1/2 hover:text-white text-slate-400"
               >
                 <X className="h-3.5 w-3.5" />
@@ -254,7 +254,7 @@ export default function SearchPanel() {
                   <span className="text-sm font-semibold text-slate-200">{station.name}</span>
                   <div className="flex space-x-1">
                     {station.lines.map(line => (
-                      <span key={line} className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${getLineBadgeClass(line)}`}>
+                      <span key={line} className={`text-xs font-bold px-2 py-0.5 rounded border ${getLineBadgeClass(line)}`}>
                         {line === "RRTS" ? "RRTS" : line[0]}
                       </span>
                     ))}
@@ -269,7 +269,7 @@ export default function SearchPanel() {
       {/* 24-Hour Departure Time Slider */}
       <div className="flex flex-col space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Departure Time</label>
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Departure Time</label>
           <span className="text-xs font-bold font-outfit text-cyan-400 bg-cyan-950/40 border border-cyan-500/20 px-2 py-0.5 rounded flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {String(selectedHour).padStart(2, '0')}:00 {selectedHour >= 12 ? 'PM' : 'AM'}
@@ -285,13 +285,13 @@ export default function SearchPanel() {
             onChange={(e) => setSelectedHour(parseInt(e.target.value))}
             className="w-full h-1.5 rounded-lg bg-slate-800 appearance-none cursor-pointer accent-cyan-400"
           />
-          <div className="flex justify-between text-[9px] font-bold text-slate-500 px-1">
+          <div className="flex justify-between text-[11px] font-bold text-slate-500 px-1">
             <span>05:00 AM</span>
             <span>12:00 PM</span>
             <span>11:00 PM</span>
           </div>
-          <div className="text-[9px] text-slate-400 text-center font-medium border-t border-white/5 pt-1.5 mt-1 flex justify-center items-center gap-1">
-            <Info className="h-2.5 w-2.5 text-cyan-400 shrink-0" />
+          <div className="text-xs text-slate-400 text-center font-medium border-t border-white/5 pt-2 mt-1 flex justify-center items-center gap-1.5">
+            <Info className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
             <span>
               {timeOfDay === "Peak" 
                 ? "Active Peak Rush: +25% delay, +1.5 comfort penalty" 
@@ -303,7 +303,7 @@ export default function SearchPanel() {
 
       {/* Event Simulation Widget */}
       <div className="flex flex-col space-y-2">
-        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Active Event Simulator</label>
+        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Active Event Simulator</label>
         <div className="relative">
           <select
             value={activeEvent || "None"}
@@ -324,8 +324,8 @@ export default function SearchPanel() {
           </div>
         </div>
         {activeEvent && activeEvent !== "None" && (
-          <div className="text-[9px] bg-cyan-950/30 border border-cyan-500/20 text-cyan-300 px-3 py-2 rounded-xl flex items-start gap-1.5 animate-fade-in">
-            <Sparkles className="h-3 w-3 shrink-0 mt-0.5 text-cyan-400" />
+          <div className="text-xs bg-cyan-950/30 border border-cyan-500/20 text-cyan-300 px-3 py-2.5 rounded-xl flex items-start gap-1.5 animate-fade-in">
+            <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5 text-cyan-400" />
             <div>
               <span className="font-bold">Active Simulation: </span>
               {activeEvent === "IPL Match" && "Heavy crowd surges near Delhi Gate & JLN Stadium. Avoid Violet Line hubs."}
@@ -338,7 +338,7 @@ export default function SearchPanel() {
 
       {/* Routing Modes */}
       <div className="flex flex-col space-y-2">
-        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Routing Algorithm Mode</label>
+        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Routing Algorithm Mode</label>
         <div className="grid grid-cols-2 gap-2">
           {modesConfig.map((item) => {
             const Icon = item.icon;
@@ -354,7 +354,7 @@ export default function SearchPanel() {
                 }`}
               >
                 <Icon className={`h-4.5 w-4.5 mb-1 ${isSelected ? 'text-cyan-400 animate-pulse' : 'text-slate-400'}`} />
-                <span className="text-[11px] font-bold tracking-tight">{item.name}</span>
+                <span className="text-xs font-bold tracking-tight">{item.name}</span>
               </button>
             );
           })}
@@ -370,7 +370,7 @@ export default function SearchPanel() {
             </div>
             <div>
               <h3 className="text-xs font-semibold text-slate-200">Metro Smart Card</h3>
-              <p className="text-[9px] text-slate-400">Apply 10%–20% discount</p>
+              <p className="text-xs text-slate-400">Apply 10%–20% discount</p>
             </div>
           </div>
           <button
@@ -394,7 +394,7 @@ export default function SearchPanel() {
             </div>
             <div>
               <h3 className="text-xs font-semibold text-slate-200">Accessibility Access</h3>
-              <p className="text-[9px] text-slate-400">Require elevator/escalator gates</p>
+              <p className="text-xs text-slate-400">Require elevator/escalator gates</p>
             </div>
           </div>
           <button
@@ -431,36 +431,36 @@ export default function SearchPanel() {
             <div className="p-2 rounded-lg bg-slate-900/30 border border-white/5">
               <div className="flex items-center text-sky-400 gap-1">
                 <Milestone className="h-3.5 w-3.5" />
-                <span className="text-[14px] font-extrabold font-outfit">416 km</span>
+                <span className="text-sm font-extrabold font-outfit">416 km</span>
               </div>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Network Length</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Network Length</p>
             </div>
 
             {/* Stat: Lines */}
             <div className="p-2 rounded-lg bg-slate-900/30 border border-white/5">
               <div className="flex items-center text-purple-400 gap-1">
                 <Layers className="h-3.5 w-3.5" />
-                <span className="text-[14px] font-extrabold font-outfit">12 Lines</span>
+                <span className="text-sm font-extrabold font-outfit">12 Lines</span>
               </div>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Operational Lines</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Operational Lines</p>
             </div>
 
             {/* Stat: Stations */}
             <div className="p-2 rounded-lg bg-slate-900/30 border border-white/5">
               <div className="flex items-center text-[#FFC72C] gap-1">
                 <MapPin className="h-3.5 w-3.5" />
-                <span className="text-[14px] font-extrabold font-outfit">303 Stations</span>
+                <span className="text-sm font-extrabold font-outfit">303 Stations</span>
               </div>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Total Stations</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Total Stations</p>
             </div>
 
             {/* Stat: Trains */}
             <div className="p-2 rounded-lg bg-slate-900/30 border border-white/5">
               <div className="flex items-center text-emerald-400 gap-1">
                 <Train className="h-3.5 w-3.5" />
-                <span className="text-[14px] font-extrabold font-outfit">350+ Trains</span>
+                <span className="text-sm font-extrabold font-outfit">350+ Trains</span>
               </div>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Daily Fleet</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Daily Fleet</p>
             </div>
           </div>
         )}
@@ -472,11 +472,11 @@ export default function SearchPanel() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1.5 text-slate-400">
               <History className="h-3.5 w-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">Recent Searches</span>
+              <span className="text-xs font-bold uppercase tracking-wider">Recent Searches</span>
             </div>
             <button 
               onClick={clearHistory}
-              className="text-[9px] text-rose-400/80 hover:text-rose-400 font-bold uppercase tracking-wider transition"
+              className="text-xs text-rose-400/80 hover:text-rose-400 font-bold uppercase tracking-wider transition"
             >
               Clear
             </button>
@@ -486,17 +486,17 @@ export default function SearchPanel() {
               <div
                 key={item.id}
                 onClick={() => selectHistoryItem(item)}
-                className="group flex items-center justify-between p-2 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5 cursor-pointer text-[11px] transition"
+                className="group flex items-center justify-between p-2.5 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/5 cursor-pointer text-xs transition"
               >
-                <div className="truncate max-w-[180px] text-slate-300 font-medium">
+                <div className="truncate max-w-[180px] text-slate-300 font-semibold">
                   {item.startName} → {item.endName}
                 </div>
-                <div className="flex items-center space-x-1 text-slate-500">
+                <div className="flex items-center space-x-1.5 text-slate-500">
                   {item.timeOfDay === "Peak" && (
-                    <span className="bg-rose-950/40 text-rose-400 border border-rose-500/10 px-1 py-0.2 rounded text-[8px] font-semibold">Peak</span>
+                    <span className="bg-rose-950/40 text-rose-400 border border-rose-500/10 px-1.5 py-0.5 rounded text-[10px] font-bold">Peak</span>
                   )}
-                  <span className="bg-slate-800 text-slate-400 px-1 py-0.2 rounded border border-white/5 text-[9px] font-semibold">{item.mode}</span>
-                  <span className="text-[9px] text-slate-500 group-hover:text-slate-400">{item.timestamp}</span>
+                  <span className="bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-white/5 text-[10px] font-bold">{item.mode}</span>
+                  <span className="text-[10px] text-slate-500 group-hover:text-slate-400">{item.timestamp}</span>
                 </div>
               </div>
             ))}
