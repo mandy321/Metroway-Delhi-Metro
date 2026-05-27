@@ -96,7 +96,7 @@ self.addEventListener("fetch", (event) => {
           .catch(() => {
             // Fallback to offline index.html for page navigation if available
             if (event.request.headers.get("accept")?.includes("text/html")) {
-              return caches.match("/");
+              return caches.match(self.registration.scope || "/");
             }
           });
       })

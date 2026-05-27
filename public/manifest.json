@@ -2,27 +2,45 @@
   "name": "Metroway Delhi Metro",
   "short_name": "Metroway Delhi Metro",
   "description": "Premium Delhi Metro Offline Navigation App featuring multi-routing modes, live infrastructure status, and interactive Leaflet map.",
-  "start_url": "/",
+  "id": "/Metroway-Delhi-Metro/",
+  "start_url": "/Metroway-Delhi-Metro/",
   "display": "standalone",
   "background_color": "#070a13",
   "theme_color": "#070a13",
   "orientation": "portrait",
+  "categories": ["navigation", "travel", "utilities"],
   "icons": [
     {
-      "src": "/pwa-192x192.png",
+      "src": "pwa-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/pwa-512x512.png",
+      "src": "pwa-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "/pwa-512x512.png",
+      "src": "pwa-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-desktop.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop view of Metroway Delhi Metro navigation route planner"
+    },
+    {
+      "src": "screenshot-mobile.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile app view of Metroway Delhi Metro navigation search interface"
     }
   ]
 }
