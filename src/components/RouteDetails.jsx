@@ -143,6 +143,71 @@ export default function RouteDetails() {
     return { termName, platNum };
   };
 
+  const getTransferWalkInfo = (stationId, toLine) => {
+    // Noida Sector 52 (Blue) to Sector 51 (Aqua)
+    if (stationId === "NS52" || stationId === "NS51") {
+      return {
+        type: "Footpath Pathway Walkway",
+        distance: "300m",
+        time: 8,
+        description: "Walk via dedicated pedestrian pathway between Sector 52 & 51 (Free e-rickshaws available)"
+      };
+    }
+    // Dhaula Kuan / DDS interchange walk
+    if (stationId === "DK" || stationId === "DDS") {
+      return {
+        type: "Skywalk with Travelators",
+        distance: "1.2 km",
+        time: 10,
+        description: "Walk via the iconic covered foot overbridge skywalk connecting Orange & Pink platforms (equipped with travelators)"
+      };
+    }
+    // Rajouri Garden
+    if (stationId === "RG") {
+      return {
+        type: "Interchange Bridge Skywalk",
+        distance: "400m",
+        time: 6,
+        description: "Walk via skywalk bridge connecting elevated Blue Line and Pink Line platforms"
+      };
+    }
+    // Hauz Khas
+    if (stationId === "HK") {
+      return {
+        type: "Deep Escalator Walk",
+        distance: "350m",
+        time: 6,
+        description: "Walk via deep underground escalators connecting the Yellow and Magenta platforms"
+      };
+    }
+    // Rajiv Chowk
+    if (stationId === "RC") {
+      return {
+        type: "Concourse Interchange Way",
+        distance: "200m",
+        time: 4,
+        description: "Walk via main central concourse escalators/stairs between Blue and Yellow platforms"
+      };
+    }
+    // Kashmere Gate
+    if (stationId === "KG") {
+      return {
+        type: "Multi-level Interchange Tunnel",
+        distance: "300m",
+        time: 5,
+        description: "Walk via multi-level escalator shafts connecting Red, Yellow, and Violet lines"
+      };
+    }
+    
+    // Default interchange walk
+    return {
+      type: "Interchange Concourse Walk",
+      distance: "150m",
+      time: 4,
+      description: "Standard interchange walk via station concourse walkway"
+    };
+  };
+
   const getCrowdColor = (val) => {
     if (val < 4) return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
     if (val < 7) return "text-amber-400 bg-amber-500/10 border-amber-500/20";
@@ -418,9 +483,17 @@ export default function RouteDetails() {
                     {!isStart && nextEdge?.isTransfer && (() => {
                       const termName = getTerminalStationName(station.id, path[idx + 1]?.id, nextEdge.line);
                       const platNum = getPlatformNumber(station, nextEdge.line, termName);
+                      const walkInfo = getTransferWalkInfo(station.id, nextEdge.line);
+                      const adjustedWalkTime = timeOfDay === "Peak" ? walkInfo.time + 3 : walkInfo.time;
                       return (
-                        <div className="text-[10px] text-purple-400 font-bold mt-1 bg-purple-950/25 border border-purple-500/20 px-2 py-0.5 rounded w-fit">
-                          Change to <span className="text-white">{nextEdge.line} Line</span> towards <span className="text-white">{termName}</span> (Platform {platNum})
+                        <div className="mt-1 space-y-1">
+                          <div className="text-[10px] text-purple-400 font-bold bg-purple-950/25 border border-purple-500/20 px-2 py-0.5 rounded w-fit">
+                            Change to <span className="text-white">{nextEdge.line} Line</span> towards <span className="text-white">{termName}</span> (Platform {platNum})
+                          </div>
+                          <div className="text-[9px] text-slate-400 pl-2 border-l-2 border-purple-500/30 flex flex-col space-y-0.5 text-left">
+                            <span className="text-purple-300 font-medium">🚶 {walkInfo.type}: ~{adjustedWalkTime} mins walk ({walkInfo.distance})</span>
+                            <span className="text-[8.5px] text-slate-500">{walkInfo.description} {timeOfDay === "Peak" && "(+3 mins peak crowd delay)"}</span>
+                          </div>
                         </div>
                       );
                     })()}
@@ -442,12 +515,21 @@ export default function RouteDetails() {
                           <span>Crowd: <strong className={getCrowdColor(nextEdge.crowdFactor).split(" ")[0]}>{nextEdge.crowdFactor}/10</strong></span>
                         </div>
                         
-                        {nextEdge.isTransfer && (
-                          <div className="mt-1 p-2 rounded bg-purple-950/20 border border-purple-500/20 text-purple-300 flex items-center space-x-1.5 font-semibold text-[10px]">
-                            <GitCompare className="h-3 w-3" />
-                            <span>Transfer to {nextEdge.line} Line ({timeOfDay === "Peak" ? "+8 mins peak walk" : "+5 mins walk"})</span>
-                          </div>
-                        )}
+                        {nextEdge.isTransfer && (() => {
+                          const walkInfo = getTransferWalkInfo(station.id, nextEdge.line);
+                          const adjustedWalkTime = timeOfDay === "Peak" ? walkInfo.time + 3 : walkInfo.time;
+                          return (
+                            <div className="mt-1.5 p-2 rounded bg-purple-950/20 border border-purple-500/15 text-purple-300 flex flex-col space-y-1 text-[10px] text-left">
+                              <div className="flex items-center space-x-1.5 font-bold">
+                                <GitCompare className="h-3.5 w-3.5 text-purple-400 shrink-0" />
+                                <span>Transfer via {walkInfo.type} ({walkInfo.distance})</span>
+                              </div>
+                              <div className="text-[9.5px] text-slate-400">
+                                Walk time: <strong>~{adjustedWalkTime} mins</strong> • {walkInfo.description}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
