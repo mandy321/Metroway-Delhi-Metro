@@ -1,4 +1,4 @@
-// Complete Delhi Metro + RRTS Dataset - 267 stations across 10 lines
+// Complete Delhi Metro + RRTS Dataset - 277 stations across 11 lines
 // Auto-generated from DMRC official network data + RRTS Namo Bharat
 // Source: https://github.com/AkshatJMe/DMRC-Dataset-Algorithm
 
@@ -66,7 +66,7 @@ export const STATIONS = [
   { id: "GHI", name: "Ghitorni", lines: ["Yellow"], coordinates: [28.49383, 77.14922], baseCrowd: 6, exits: [{"gate":"1","name":"Main Road / Flyover","lit":"Well-Lit","accessibility":["Escalator"]},{"gate":"2","name":"Residential Colony","lit":"Dimly-Lit","accessibility":["Elevator"]}] },
   { id: "AG", name: "Arjan Garh", lines: ["Yellow"], coordinates: [28.48076, 77.12583], baseCrowd: 6, exits: [{"gate":"1","name":"Commercial Complex Exit","lit":"Moderate","accessibility":["Escalator"]},{"gate":"2","name":"Park/Garden Side","lit":"Moderate","accessibility":["Escalator"]}] },
   { id: "GD", name: "Guru Dronacharya", lines: ["Yellow"], coordinates: [28.48203, 77.10232], baseCrowd: 6, exits: [{"gate":"1","name":"Main Road / Flyover","lit":"Well-Lit","accessibility":["Elevator","Escalator"]},{"gate":"2","name":"Residential Colony","lit":"Well-Lit","accessibility":["Stairs Only"]}] },
-  { id: "SIK", name: "Sikanderpur", lines: ["Yellow"], coordinates: [28.4912, 77.0915], baseCrowd: 6, exits: [{"gate":"1","name":"Residential Area Exit","lit":"Well-Lit","accessibility":["Stairs Only"]},{"gate":"2","name":"Main Road Exit","lit":"Moderate","accessibility":["Elevator","Escalator","Tactile Paths"]},{"gate":"3","name":"Institutional Area Gate / Gate 3","lit":"Moderate","accessibility":[]},{"gate":"4","name":"Civic Centre Exit / Gate 4","lit":"Well-Lit","accessibility":["Escalator"]}] },
+  { id: "SIK", name: "Sikanderpur", lines: ["Yellow","Rapid"], coordinates: [28.4912, 77.0915], baseCrowd: 6, exits: [{"gate":"1","name":"Residential Area Exit","lit":"Well-Lit","accessibility":["Stairs Only"]},{"gate":"2","name":"Main Road Exit","lit":"Moderate","accessibility":["Elevator","Escalator","Tactile Paths"]},{"gate":"3","name":"Institutional Area Gate / Gate 3","lit":"Moderate","accessibility":[]},{"gate":"4","name":"Civic Centre Exit / Gate 4","lit":"Well-Lit","accessibility":["Escalator"]}] },
   { id: "MR", name: "MG Road", lines: ["Yellow"], coordinates: [28.47957, 77.08006], baseCrowd: 6, exits: [{"gate":"1","name":"Commercial Complex Exit","lit":"Well-Lit","accessibility":["Stairs Only"]},{"gate":"2","name":"Park/Garden Side","lit":"Well-Lit","accessibility":["Escalator","Wheelchair Ramp"]},{"gate":"3","name":"Government Offices Link / Gate 3","lit":"Well-Lit","accessibility":["Stairs Only"]}] },
   { id: "IC", name: "IFFCO Chowk", lines: ["Yellow"], coordinates: [28.47209, 77.07175], baseCrowd: 6, exits: [{"gate":"1","name":"Bus Stand Link","lit":"Dimly-Lit","accessibility":[]},{"gate":"2","name":"Colony Gate","lit":"Moderate","accessibility":["Elevator","Escalator"]},{"gate":"3","name":"Residential Complex Link / Gate 3","lit":"Moderate","accessibility":["Stairs Only"]},{"gate":"4","name":"Main Market Gate / Gate 4","lit":"Well-Lit","accessibility":["Elevator","Escalator"]}] },
   { id: "MCC", name: "Millennium City Centre Gurugram", lines: ["Yellow"], coordinates: [28.4593, 77.0724], baseCrowd: 6, exits: [{"gate":"1","name":"Residential Area Exit","lit":"Well-Lit","accessibility":[]},{"gate":"2","name":"Main Road Exit","lit":"Well-Lit","accessibility":["Escalator","Wheelchair Ramp"]},{"gate":"3","name":"City Center Plaza / Gate 3","lit":"Well-Lit","accessibility":["Elevator","Escalator"]}] },
@@ -255,6 +255,18 @@ export const STATIONS = [
   { id: "NAN2", name: "Nangli", lines: ["Grey"], coordinates: [28.6048, 76.9633], baseCrowd: 6, exits: [{"gate":"1","name":"Residential Area Exit","lit":"Well-Lit","accessibility":["Escalator"]},{"gate":"2","name":"Main Road Exit","lit":"Dimly-Lit","accessibility":["Stairs Only"]},{"gate":"3","name":"Sports Complex Gate / Gate 3","lit":"Well-Lit","accessibility":["Stairs Only"]}] },
   { id: "NAJ", name: "Najafgarh", lines: ["Grey"], coordinates: [28.6121, 76.9856], baseCrowd: 6, exits: [{"gate":"1","name":"Residential Area Exit","lit":"Well-Lit","accessibility":["Elevator"]},{"gate":"2","name":"Main Road Exit","lit":"Moderate","accessibility":["Elevator"]},{"gate":"3","name":"Main Market Gate / Gate 3","lit":"Moderate","accessibility":["Escalator"]},{"gate":"4","name":"Main Market Gate / Gate 4","lit":"Dimly-Lit","accessibility":["Elevator","Escalator"]}] },
   { id: "DBS", name: "Dhansa Bus Stand", lines: ["Grey"], coordinates: [28.5992, 76.9412], baseCrowd: 6, exits: [{"gate":"1","name":"Main Road / Flyover","lit":"Well-Lit","accessibility":["Escalator","Wheelchair Ramp"]},{"gate":"2","name":"Residential Colony","lit":"Well-Lit","accessibility":["Elevator"]},{"gate":"3","name":"Metro Parking Exit / Gate 3","lit":"Well-Lit","accessibility":["Elevator","Escalator","Tactile Paths"]}] },
+
+  // Rapid Line
+  { id: "RM_P2", name: "Phase 2 Rapid Metro", lines: ["Rapid"], coordinates: [28.4905, 77.0815], baseCrowd: 5, exits: [{"gate":"1","name":"DLF Phase 2 / Cyber City Link","lit":"Well-Lit","accessibility":["Elevator","Escalator"]}] },
+  { id: "RM_BEL", name: "Belvedere Towers", lines: ["Rapid"], coordinates: [28.495, 77.0805], baseCrowd: 4, exits: [{"gate":"1","name":"Belvedere Towers Complex","lit":"Well-Lit","accessibility":["Elevator"]}] },
+  { id: "RM_CYB", name: "Cyber City", lines: ["Rapid"], coordinates: [28.503, 77.0878], baseCrowd: 7, exits: [{"gate":"1","name":"Cyber Hub Main Entrance","lit":"Well-Lit","accessibility":["Elevator","Escalator","Tactile Paths"]},{"gate":"2","name":"Gateway Tower","lit":"Well-Lit","accessibility":["Elevator","Escalator"]}] },
+  { id: "RM_P3", name: "Phase 3 Rapid Metro", lines: ["Rapid"], coordinates: [28.4985, 77.097], baseCrowd: 5, exits: [{"gate":"1","name":"DLF Phase 3 Residential Area","lit":"Well-Lit","accessibility":["Escalator"]}] },
+  { id: "RM_MOU", name: "Moulsari Avenue", lines: ["Rapid"], coordinates: [28.492, 77.099], baseCrowd: 4, exits: [{"gate":"1","name":"Ambience Mall Connection","lit":"Well-Lit","accessibility":["Elevator","Escalator"]}] },
+  { id: "RM_P1", name: "Phase 1 Rapid Metro", lines: ["Rapid"], coordinates: [28.4815, 77.0965], baseCrowd: 4, exits: [{"gate":"1","name":"DLF Phase 1 / Golf Course Road","lit":"Well-Lit","accessibility":["Elevator"]}] },
+  { id: "RM_S42", name: "Sector 42-43", lines: ["Rapid"], coordinates: [28.469, 77.0995], baseCrowd: 4, exits: [{"gate":"1","name":"Global Foyer Mall / Sector 42","lit":"Well-Lit","accessibility":["Elevator","Escalator"]}] },
+  { id: "RM_S53", name: "Sector 53-54", lines: ["Rapid"], coordinates: [28.459, 77.1025], baseCrowd: 4, exits: [{"gate":"1","name":"South Point Mall / Sector 53","lit":"Well-Lit","accessibility":["Elevator"]}] },
+  { id: "RM_S54", name: "Sector 54 Forest Chauk", lines: ["Rapid"], coordinates: [28.4485, 77.106], baseCrowd: 3, exits: [{"gate":"1","name":"Suncity / Sector 54","lit":"Well-Lit","accessibility":["Escalator"]}] },
+  { id: "RM_S55", name: "Sector 55-56", lines: ["Rapid"], coordinates: [28.437, 77.1105], baseCrowd: 5, exits: [{"gate":"1","name":"Golf Course Road Terminus","lit":"Well-Lit","accessibility":["Elevator","Escalator","Tactile Paths"]}] },
 
   // RRTS Line (Namo Bharat Regional Rapid Transit)
   { id: "RRTS_SRJ", name: "Sarai Kale Khan RRTS", lines: ["RRTS"], coordinates: [28.5861, 77.2543], baseCrowd: 7, exits: [{"gate":"1","name":"Main Concourse","lit":"Well-Lit","accessibility":["Elevator","Escalator","Tactile Paths"]},{"gate":"2","name":"Market Side Exit","lit":"Well-Lit","accessibility":["Stairs Only"]}] },
@@ -545,6 +557,19 @@ export const EDGES = [
   { source: "NAN2", target: "NAJ", line: "Grey", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
   { source: "NAJ", target: "DBS", line: "Grey", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
 
+  // Rapid Line Connections
+  { source: "RM_S55", target: "RM_S54", line: "Rapid", baseTime: 2, crowdFactor: 3, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_S54", target: "RM_S53", line: "Rapid", baseTime: 2, crowdFactor: 3, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_S53", target: "RM_S42", line: "Rapid", baseTime: 2, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_S42", target: "RM_P1", line: "Rapid", baseTime: 2, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_P1", target: "SIK", line: "Rapid", baseTime: 3, crowdFactor: 5, safetyRating: 9, comfortFactor: 8 },
+  { source: "SIK", target: "RM_P2", line: "Rapid", baseTime: 2, crowdFactor: 5, safetyRating: 9, comfortFactor: 8 },
+  { source: "RM_P2", target: "RM_BEL", line: "Rapid", baseTime: 2, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_BEL", target: "RM_CYB", line: "Rapid", baseTime: 2, crowdFactor: 6, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_CYB", target: "RM_P3", line: "Rapid", baseTime: 2, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_P3", target: "RM_MOU", line: "Rapid", baseTime: 2, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_MOU", target: "RM_P2", line: "Rapid", baseTime: 2, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+
   // RRTS Line Connections
   { source: "RRTS_SRJ", target: "RRTS_NCC", line: "RRTS", baseTime: 5, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_NCC", target: "RRTS_AV", line: "RRTS", baseTime: 6, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
@@ -610,6 +635,22 @@ export const EDGES = [
   { source: "RRTS_SRJ", target: "SKK", line: "RRTS", baseTime: 5, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
   { source: "RRTS_AV", target: "AV", line: "RRTS", baseTime: 5, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
   { source: "RRTS_GGN", target: "MCC", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
+  { source: "RRTS_SRJ", target: "RRTS_NCC", line: "RRTS", baseTime: 5, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_NCC", target: "RRTS_AV", line: "RRTS", baseTime: 6, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_AV", target: "RRTS_GZB", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_GZB", target: "RRTS_GGZ", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_GGZ", target: "RRTS_DUR", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_DUR", target: "RRTS_DPT", line: "RRTS", baseTime: 3, crowdFactor: 3, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_DPT", target: "RRTS_MSN", line: "RRTS", baseTime: 6, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_MSN", target: "RRTS_MDP", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_MDP", target: "RRTS_MDN", line: "RRTS", baseTime: 3, crowdFactor: 3, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_MDN", target: "RRTS_MRT", line: "RRTS", baseTime: 8, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_MRT", target: "RRTS_MRC", line: "RRTS", baseTime: 6, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_GGN", target: "RRTS_MDG", line: "RRTS", baseTime: 10, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_GNO", target: "RRTS_NCC", line: "RRTS", baseTime: 12, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_SRJ", target: "SKK", line: "RRTS", baseTime: 5, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
+  { source: "RRTS_AV", target: "AV", line: "RRTS", baseTime: 5, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
+  { source: "RRTS_GGN", target: "MCC", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
 
 ];
 
@@ -623,5 +664,7 @@ export const LINE_COLORS = {
   "Orange": "#FF8C00",
   "Green": "#228B22",
   "Grey": "#808080",
+  "Rapid": "#A52A2A",
+  "Aqua": "#00FFFF",
   "RRTS": "#006A4E"
 };

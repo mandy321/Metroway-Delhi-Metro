@@ -377,9 +377,69 @@ const rrtsInterchangeEdges = [
   { source: "RRTS_GGN", target: "MCC", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
 ];
 
+// ============================
+// Gurgaon Rapid Metro Data
+// ============================
+const rapidStations = [
+  { id: "RM_P2", name: "Phase 2 Rapid Metro", lines: ["Rapid"], coordinates: [28.4905, 77.0815], baseCrowd: 5, exits: [
+    { gate: "1", name: "DLF Phase 2 / Cyber City Link", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
+  ]},
+  { id: "RM_BEL", name: "Belvedere Towers", lines: ["Rapid"], coordinates: [28.4950, 77.0805], baseCrowd: 4, exits: [
+    { gate: "1", name: "Belvedere Towers Complex", lit: "Well-Lit", accessibility: ["Elevator"] }
+  ]},
+  { id: "RM_CYB", name: "Cyber City", lines: ["Rapid"], coordinates: [28.5030, 77.0878], baseCrowd: 7, exits: [
+    { gate: "1", name: "Cyber Hub Main Entrance", lit: "Well-Lit", accessibility: ["Elevator", "Escalator", "Tactile Paths"] },
+    { gate: "2", name: "Gateway Tower", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
+  ]},
+  { id: "RM_P3", name: "Phase 3 Rapid Metro", lines: ["Rapid"], coordinates: [28.4985, 77.0970], baseCrowd: 5, exits: [
+    { gate: "1", name: "DLF Phase 3 Residential Area", lit: "Well-Lit", accessibility: ["Escalator"] }
+  ]},
+  { id: "RM_MOU", name: "Moulsari Avenue", lines: ["Rapid"], coordinates: [28.4920, 77.0990], baseCrowd: 4, exits: [
+    { gate: "1", name: "Ambience Mall Connection", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
+  ]},
+  { id: "RM_P1", name: "Phase 1 Rapid Metro", lines: ["Rapid"], coordinates: [28.4815, 77.0965], baseCrowd: 4, exits: [
+    { gate: "1", name: "DLF Phase 1 / Golf Course Road", lit: "Well-Lit", accessibility: ["Elevator"] }
+  ]},
+  { id: "RM_S42", name: "Sector 42-43", lines: ["Rapid"], coordinates: [28.4690, 77.0995], baseCrowd: 4, exits: [
+    { gate: "1", name: "Global Foyer Mall / Sector 42", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
+  ]},
+  { id: "RM_S53", name: "Sector 53-54", lines: ["Rapid"], coordinates: [28.4590, 77.1025], baseCrowd: 4, exits: [
+    { gate: "1", name: "South Point Mall / Sector 53", lit: "Well-Lit", accessibility: ["Elevator"] }
+  ]},
+  { id: "RM_S54", name: "Sector 54 Forest Chauk", lines: ["Rapid"], coordinates: [28.4485, 77.1060], baseCrowd: 3, exits: [
+    { gate: "1", name: "Suncity / Sector 54", lit: "Well-Lit", accessibility: ["Escalator"] }
+  ]},
+  { id: "RM_S55", name: "Sector 55-56", lines: ["Rapid"], coordinates: [28.4370, 77.1105], baseCrowd: 5, exits: [
+    { gate: "1", name: "Golf Course Road Terminus", lit: "Well-Lit", accessibility: ["Elevator", "Escalator", "Tactile Paths"] }
+  ]}
+];
+
+const rapidEdges = [
+  // Golf Course Road linear line
+  { source: "RM_S55", target: "RM_S54", line: "Rapid", baseTime: 2, crowdFactor: 3, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_S54", target: "RM_S53", line: "Rapid", baseTime: 2, crowdFactor: 3, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_S53", target: "RM_S42", line: "Rapid", baseTime: 2, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_S42", target: "RM_P1", line: "Rapid", baseTime: 2, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_P1", target: "SIK", line: "Rapid", baseTime: 3, crowdFactor: 5, safetyRating: 9, comfortFactor: 8 },
+
+  // Cyber City loop line
+  { source: "SIK", target: "RM_P2", line: "Rapid", baseTime: 2, crowdFactor: 5, safetyRating: 9, comfortFactor: 8 },
+  { source: "RM_P2", target: "RM_BEL", line: "Rapid", baseTime: 2, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_BEL", target: "RM_CYB", line: "Rapid", baseTime: 2, crowdFactor: 6, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_CYB", target: "RM_P3", line: "Rapid", baseTime: 2, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_P3", target: "RM_MOU", line: "Rapid", baseTime: 2, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
+  { source: "RM_MOU", target: "RM_P2", line: "Rapid", baseTime: 2, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 }
+];
+
+// Update Sikanderpur to be an interchange with Rapid Metro
+const sikStation = enrichedStations.find(s => s.id === "SIK");
+if (sikStation && !sikStation.lines.includes("Rapid")) {
+  sikStation.lines.push("Rapid");
+}
+
 // Merge everything
-const allStations = [...enrichedStations, ...rrtsStations];
-const allEdges = [...edges, ...rrtsEdges, ...rrtsInterchangeEdges];
+const allStations = [...enrichedStations, ...rrtsStations, ...rapidStations];
+const allEdges = [...edges, ...rrtsEdges, ...rrtsInterchangeEdges, ...rapidEdges];
 
 console.log(`\nFinal: ${allStations.length} stations, ${allEdges.length} edges`);
 
@@ -404,11 +464,13 @@ const lineColorMap = {
   "Orange": "#FF8C00",
   "Green": "#228B22",
   "Grey": "#808080",
+  "Rapid": "#A52A2A",
+  "Aqua": "#00FFFF",
   "RRTS": "#006A4E"
 };
 
 // Generate metroData.js
-const lineOrder = ["Red", "Yellow", "Blue", "Green", "Violet", "Pink", "Magenta", "Orange", "Grey", "RRTS"];
+const lineOrder = ["Red", "Yellow", "Blue", "Green", "Violet", "Pink", "Magenta", "Orange", "Grey", "Rapid", "RRTS"];
 const stationsByLine = {};
 const assigned = new Set();
 
