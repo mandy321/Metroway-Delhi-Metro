@@ -149,3 +149,65 @@
 .live-pulse-dot {
   animation: live-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* ======================================================= */
+/* PREMIUM MOBILE APP & NATIVE-APP EXPERIENCES RESETS    */
+/* ======================================================= */
+
+/* 1. Prevent vertical rubber-banding/bouncing and pull-to-refresh on mobile device frames */
+html, body {
+  overscroll-behavior-y: contain;
+  overflow-x: hidden;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* 2. Webkit tap-highlight removal (avoids gray flash on buttons click on iOS/Android) */
+* {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none; /* Disable native long-press menu */
+}
+
+/* 3. Disable text-selection for interactive components to simulate native app buttons */
+button, select, input, nav, footer, a, [role="button"], svg {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-select: none;
+}
+
+/* Allow text-selection ONLY inside search input and station detail readouts */
+input[type="text"], textarea {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+/* 4. Support for Device Notches (Safe Area Insets) on premium iOS & Android screens */
+nav {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px)) !important;
+}
+
+footer, .bottom-nav-safe {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* 5. Custom smooth animations for transitions and interactive feel */
+.app-container {
+  transition: opacity 0.3s ease;
+}
+
+/* 6. Active tap micro-feedback for native feel */
+button:active:not(:disabled), 
+[role="button"]:active,
+.clickable-item:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+  transition: transform 0.1s cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Disable zoom on double-tap for iOS browsers */
+a, button, input, select, textarea {
+  touch-action: manipulation;
+}
