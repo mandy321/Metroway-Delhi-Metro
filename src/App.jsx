@@ -73,7 +73,7 @@ export default function App() {
 
       {/* Footer Info */}
       <footer className="text-center py-6 border-t border-white/5 text-[11px] text-slate-500 z-10 select-none">
-        <p>© 2026 Metroway Delhi. High-Fidelity offline navigation mockup using OpenStreetMap & Leaflet.</p>
+        <p>© 2026 Metroway Delhi Metro. High-Fidelity offline navigation mockup using OpenStreetMap & Leaflet.</p>
         <p className="mt-1 text-slate-600">Zero Premium Keys Required. Offline-First PWA Prototype.</p>
       </footer>
     </div>

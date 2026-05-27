@@ -1,8 +1,8 @@
-# Metroway Delhi 🚇 - Offline-First Metro Navigation App
+# Metroway Delhi Metro 🚇 - Offline-First Metro Navigation App
 
-**Live Webapp URL:** [https://mandy321.github.io/metroway-delhi/](https://mandy321.github.io/metroway-delhi/)
+**Live Webapp URL:** [https://mandy321.github.io/Metroway-Delhi-Metro/](https://mandy321.github.io/Metroway-Delhi-Metro/)
 
-Metroway Delhi is a premium, feature-rich Progressive Web App (PWA) designed to calculate optimal paths across the Delhi Metro network. It operates entirely offline after the initial load, utilizing an aggressive caching strategy for application assets and Leaflet map tiles.
+Metroway Delhi Metro is a premium, feature-rich Progressive Web App (PWA) designed to calculate optimal paths across the Delhi Metro network. It operates entirely offline after the initial load, utilizing an aggressive caching strategy for application assets and Leaflet map tiles.
 
 
 ## 🌟 Key Features
