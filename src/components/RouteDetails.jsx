@@ -24,6 +24,7 @@ export default function RouteDetails() {
   // Query stations list dynamically from the persisted store
   const { 
     stations, 
+    edges, // Query full network connections
     activeRoute, 
     infrastructureStatus, 
     accessibilityOnly, 
@@ -67,7 +68,7 @@ export default function RouteDetails() {
     );
   }
 
-  const { metrics, path, edges } = activeRoute;
+  const { metrics, path, edges: routeEdges } = activeRoute;
   const destinationStation = path[path.length - 1];
 
   // Exit recommendation engine
@@ -90,32 +91,61 @@ export default function RouteDetails() {
 
   const getTerminalStationName = (startId, nextId, line) => {
     if (!startId || !nextId || !line) return "";
-    const visited = new Set([startId, nextId]);
-    const queue = [nextId];
-    let deadEndId = nextId;
     
-    while (queue.length > 0) {
-      const curr = queue.shift();
-      deadEndId = curr;
+    // Find all remaining stations on the active route to handle branches correctly
+    const remainingStationIds = new Set();
+    let foundNext = false;
+    for (const station of path) {
+      if (station.id === nextId) {
+        foundNext = true;
+      }
+      if (foundNext) {
+        remainingStationIds.add(station.id);
+      }
+    }
+
+    const visited = new Set([startId, nextId]);
+    let curr = nextId;
+    
+    while (true) {
+      // Find all neighbors on the same line in the full network edges
+      const neighbors = edges
+        .filter(e => e.line === line && (e.source === curr || e.target === curr))
+        .map(e => e.source === curr ? e.target : e.source)
+        .filter(nId => !visited.has(nId));
       
-      const neighbors = edges.filter(e => e.line === line && (e.source === curr || e.target === curr));
-      for (const edge of neighbors) {
-        const neighborId = edge.source === curr ? edge.target : edge.source;
-        if (!visited.has(neighborId)) {
-          visited.add(neighborId);
-          queue.push(neighborId);
+      if (neighbors.length === 0) {
+        break; // Reached a terminal station
+      }
+      
+      if (neighbors.length === 1) {
+        curr = neighbors[0];
+        visited.add(curr);
+      } else {
+        // We have a branch! (e.g. Blue Line splitting at Yamuna Bank)
+        // Pick the branch that is on the user's remaining path if possible
+        const nextOnPath = neighbors.find(nId => remainingStationIds.has(nId));
+        if (nextOnPath) {
+          curr = nextOnPath;
+        } else {
+          curr = neighbors[0];
         }
+        visited.add(curr);
       }
     }
     
-    const termStation = stations.find(s => s.id === deadEndId);
+    const termStation = stations.find(s => s.id === curr);
     return termStation ? termStation.name : "";
   };
 
   const getPlatformNumber = (station, line, terminalName) => {
     if (!station || !line) return 1;
     
-    const sortedLines = [...station.lines].sort();
+    // Canonical order of Delhi Metro lines to reflect real-world layout
+    const LINE_ORDER = ["Red", "Yellow", "Blue", "Green", "Violet", "Pink", "Magenta", "Orange", "Grey", "RRTS"];
+    
+    // Sort lines by canonical order to determine base platform
+    const sortedLines = [...station.lines].sort((a, b) => LINE_ORDER.indexOf(a) - LINE_ORDER.indexOf(b));
     const lineIndex = sortedLines.indexOf(line);
     const basePlatform = 2 * (lineIndex >= 0 ? lineIndex : 0);
     
@@ -124,10 +154,14 @@ export default function RouteDetails() {
       return basePlatform + 1;
     }
     
-    const currentLon = station.coordinates[1];
-    const terminalLon = terminalStation.coordinates[1];
+    // Determine orientation: compare Latitude for North-South lines, Longitude for East-West lines
+    const isNorthSouth = ["Yellow", "Violet", "RRTS"].includes(line);
+    const coordIndex = isNorthSouth ? 0 : 1; // 0 = Latitude, 1 = Longitude
     
-    if (terminalLon >= currentLon) {
+    const currentVal = station.coordinates[coordIndex];
+    const terminalVal = terminalStation.coordinates[coordIndex];
+    
+    if (terminalVal >= currentVal) {
       return basePlatform + 1;
     } else {
       return basePlatform + 2;
@@ -225,7 +259,7 @@ export default function RouteDetails() {
     if (path.length === 0) return legs;
 
     let currentLeg = {
-      line: edges[0]?.line || path[0].lines[0],
+      line: routeEdges[0]?.line || path[0].lines[0],
       startStation: path[0],
       endStation: path[0],
       stopsCount: 0,
@@ -233,7 +267,7 @@ export default function RouteDetails() {
       edges: []
     };
 
-    edges.forEach((edge, idx) => {
+    routeEdges.forEach((edge, idx) => {
       if (edge.isTransfer) {
         legs.push(currentLeg);
         currentLeg = {
@@ -427,7 +461,7 @@ export default function RouteDetails() {
             {path.map((station, idx) => {
               const isStart = idx === 0;
               const isEnd = idx === path.length - 1;
-              const nextEdge = edges[idx];
+              const nextEdge = routeEdges[idx];
               const hasAlert = infrastructureStatus[station.id]?.escalator === "Under Maintenance" || 
                                 infrastructureStatus[station.id]?.elevator === "Under Maintenance";
 
@@ -588,7 +622,7 @@ export default function RouteDetails() {
             <div className="border border-white/5 rounded-xl p-3 text-xs bg-slate-900/20 space-y-2">
               <h5 className="font-semibold text-slate-200 uppercase tracking-wider text-[10px]">Fare Breakdown Details</h5>
               <div className="space-y-1 text-slate-400">
-                {edges.some(e => e.line === "Orange") ? (
+                {routeEdges.some(e => e.line === "Orange") ? (
                   <div className="flex justify-between text-cyan-400 font-semibold">
                     <span>Airport Express Premium Flat Fare:</span>
                     <span>₹60.00</span>

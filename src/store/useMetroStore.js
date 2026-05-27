@@ -196,10 +196,8 @@ export const useMetroStore = create(
       }
     }),
     {
-      name: "delhi-metro-navigation-store",
+      name: "delhi-metro-navigation-store-v2",
       partialize: (state) => ({
-        stations: state.stations,
-        edges: state.edges,
         startStationId: state.startStationId,
         endStationId: state.endStationId,
         mode: state.mode,
