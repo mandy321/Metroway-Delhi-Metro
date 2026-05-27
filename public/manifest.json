@@ -1,6 +1,6 @@
 {
-  "name": "Metroway Delhi - Delhi Metro Offline Navigation",
-  "short_name": "Metroway",
+  "name": "Metroway Delhi Metro",
+  "short_name": "Metroway Delhi Metro",
   "description": "Premium Delhi Metro Offline Navigation App featuring multi-routing modes, live infrastructure status, and interactive Leaflet map.",
   "start_url": "/",
   "display": "standalone",
