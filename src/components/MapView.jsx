@@ -105,7 +105,7 @@ export default function MapView() {
     else if (primaryLine === "Pink") dotColor = "bg-[#FF69B4]";
     else if (primaryLine === "Magenta") dotColor = "bg-[#8B008B]";
     else if (primaryLine === "Orange") dotColor = "bg-[#FF8C00]";
-    else if (primaryLine === "Green") dotColor = "bg-[#00FF00]";
+    else if (primaryLine === "Green") dotColor = "bg-[#228B22]";
     else if (primaryLine === "Grey") dotColor = "bg-[#808080]";
     else if (primaryLine === "Rapid") dotColor = "bg-[#A52A2A]";
     else if (primaryLine === "Aqua") dotColor = "bg-[#00FFFF]";
@@ -337,7 +337,7 @@ export default function MapView() {
           <span className="font-semibold text-slate-700">Orange</span>
         </div>
         <div className="flex items-center space-x-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#00FF00] inline-block shadow-sm"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-[#228B22] inline-block shadow-sm"></span>
           <span className="font-semibold text-slate-700">Green</span>
         </div>
         <div className="flex items-center space-x-2">

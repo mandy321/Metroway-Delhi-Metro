@@ -1,519 +1,545 @@
-// Expanded Delhi Metro Dataset (40 major stations across 6 lines + Airport Express)
-export const STATIONS = [
-  // Yellow Line (North to South)
-  {
-    id: "SB",
-    name: "Samaypur Badli",
-    lines: ["Yellow"],
-    coordinates: [28.7456, 77.1378],
-    baseCrowd: 5,
-    exits: [
-      { gate: "1", name: "Badli Railway Station", lit: "Dimly-Lit", accessibility: ["Escalator"] },
-      { gate: "2", name: "Samaypur Village", lit: "Dimly-Lit", accessibility: ["Wheelchair Ramp"] }
-    ]
-  },
-  {
-    id: "JP",
-    name: "Jahangirpuri",
-    lines: ["Yellow"],
-    coordinates: [28.7259, 77.1614],
-    baseCrowd: 6,
-    exits: [
-      { gate: "1", name: "GT Road / Block A", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Mahendra Park", lit: "Dimly-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "GT",
-    name: "GTB Nagar",
-    lines: ["Yellow"],
-    coordinates: [28.6975, 77.2082],
-    baseCrowd: 8,
-    exits: [
-      { gate: "1", name: "Hudson Lane", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Kingsway Camp", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "VV",
-    name: "Vishwavidyalaya",
-    lines: ["Yellow"],
-    coordinates: [28.6924, 77.2105],
-    baseCrowd: 8,
-    exits: [
-      { gate: "1", name: "Delhi University North Campus", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Chhatra Marg", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "KG",
-    name: "Kashmere Gate",
-    lines: ["Yellow", "Red", "Violet"],
-    coordinates: [28.6675, 77.2282],
-    baseCrowd: 9,
-    exits: [
-      { gate: "1", name: "Lothian Road / ISBT", lit: "Well-Lit", accessibility: ["Elevator", "Escalator", "Tactile Paths"] },
-      { gate: "2", name: "Mori Gate", lit: "Well-Lit", accessibility: ["Escalator", "Wheelchair Ramp"] },
-      { gate: "3", name: "St. James Church", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
-    ]
-  },
-  {
-    id: "CC",
-    name: "Chandni Chowk",
-    lines: ["Yellow"],
-    coordinates: [28.6578, 77.2301],
-    baseCrowd: 9,
-    exits: [
-      { gate: "1", name: "Old Delhi Railway Station", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Chandni Chowk Market", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "ND",
-    name: "New Delhi",
-    lines: ["Yellow", "Orange"],
-    coordinates: [28.6431, 77.2223],
-    baseCrowd: 9,
-    exits: [
-      { gate: "1", name: "New Delhi Railway Station (Paharganj)", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Ajmeri Gate Exit / Airport Line Link", lit: "Well-Lit", accessibility: ["Elevator", "Escalator", "Tactile Paths"] }
-    ]
-  },
-  {
-    id: "RC",
-    name: "Rajiv Chowk",
-    lines: ["Yellow", "Blue"],
-    coordinates: [28.6304, 77.2177],
-    baseCrowd: 10,
-    exits: [
-      { gate: "1", name: "Block A Connaught Place", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Palika Bazar", lit: "Well-Lit", accessibility: ["Escalator"] },
-      { gate: "3", name: "Block D CPC", lit: "Well-Lit", accessibility: ["Elevator"] }
-    ]
-  },
-  {
-    id: "CS",
-    name: "Central Secretariat",
-    lines: ["Yellow", "Violet"],
-    coordinates: [28.6143, 77.2106],
-    baseCrowd: 8,
-    exits: [
-      { gate: "1", name: "Krishi Bhawan", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Parliament / North Block", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "IN",
-    name: "INA",
-    lines: ["Yellow", "Pink"],
-    coordinates: [28.5752, 77.2102],
-    baseCrowd: 7,
-    exits: [
-      { gate: "1", name: "Dilli Haat", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "INA Market", lit: "Well-Lit", accessibility: ["Escalator", "Wheelchair Ramp"] }
-    ]
-  },
-  {
-    id: "AI",
-    name: "AIIMS",
-    lines: ["Yellow"],
-    coordinates: [28.5684, 77.2078],
-    baseCrowd: 8,
-    exits: [
-      { gate: "1", name: "AIIMS Hospital Main Entrance", lit: "Well-Lit", accessibility: ["Elevator", "Escalator", "Tactile Paths"] },
-      { gate: "2", name: "Safdarjung Hospital", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "HK",
-    name: "Hauz Khas",
-    lines: ["Yellow", "Magenta"],
-    coordinates: [28.5434, 77.2064],
-    baseCrowd: 9,
-    exits: [
-      { gate: "1", name: "IIT Delhi / Outer Ring Road", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Hauz Khas Enclave", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "SK",
-    name: "Saket",
-    lines: ["Yellow"],
-    coordinates: [28.5204, 77.2072],
-    baseCrowd: 7,
-    exits: [
-      { gate: "1", name: "Saket District Centre / Malls", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Garden of Five Senses", lit: "Dimly-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "HC",
-    name: "Huda City Centre",
-    lines: ["Yellow"],
-    coordinates: [28.4593, 77.0724],
-    baseCrowd: 7,
-    exits: [
-      { gate: "1", name: "Fortis Hospital", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Sector 29 Market", lit: "Well-Lit", accessibility: ["Elevator"] }
-    ]
-  },
+// Complete Delhi Metro Dataset - All 235 stations across 9 lines
+// Auto-generated from DMRC official network data
+// Source: https://github.com/AkshatJMe/DMRC-Dataset-Algorithm
 
-  // Blue Line (West to East)
-  {
-    id: "DW",
-    name: "Dwarka Sector 21",
-    lines: ["Blue", "Orange"],
-    coordinates: [28.5523, 77.0583],
-    baseCrowd: 5,
-    exits: [
-      { gate: "1", name: "Pacific D21 Mall", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
-    ]
-  },
-  {
-    id: "JW",
-    name: "Janakpuri West",
-    lines: ["Blue", "Magenta"],
-    coordinates: [28.6294, 77.0778],
-    baseCrowd: 8,
-    exits: [
-      { gate: "1", name: "Janakpuri District Centre", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "DDA Flats", lit: "Dimly-Lit", accessibility: ["Wheelchair Ramp"] }
-    ]
-  },
-  {
-    id: "RG",
-    name: "Rajouri Garden",
-    lines: ["Blue", "Pink"],
-    coordinates: [28.6492, 77.1219],
-    baseCrowd: 8,
-    exits: [
-      { gate: "1", name: "TDI Mall / Main Market", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Subhash Nagar", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "KB",
-    name: "Karol Bagh",
-    lines: ["Blue"],
-    coordinates: [28.6442, 77.1873],
-    baseCrowd: 8,
-    exits: [
-      { gate: "1", name: "Pusa Road Market", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Ajmal Khan Road Market", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "MH",
-    name: "Mandi House",
-    lines: ["Blue", "Violet"],
-    coordinates: [28.6256, 77.2338],
-    baseCrowd: 7,
-    exits: [
-      { gate: "1", name: "National School of Drama (NSD)", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Bengali Market", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "YB",
-    name: "Yamuna Bank",
-    lines: ["Blue"],
-    coordinates: [28.6214, 77.2651],
-    baseCrowd: 6,
-    exits: [
-      { gate: "1", name: "Yamuna Metro Depot", lit: "Dimly-Lit", accessibility: ["Escalator"] },
-      { gate: "2", name: "Akshardham Link Road", lit: "Well-Lit", accessibility: ["Elevator"] }
-    ]
-  },
-  {
-    id: "NC",
-    name: "Noida City Centre",
-    lines: ["Blue"],
-    coordinates: [28.5747, 77.3560],
-    baseCrowd: 7,
-    exits: [
-      { gate: "1", name: "Sector 32/34 Link", lit: "Dimly-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "VS",
-    name: "Vaishali",
-    lines: ["Blue"],
-    coordinates: [28.6498, 77.3396],
-    baseCrowd: 7,
-    exits: [
-      { gate: "1", name: "Shipra Mall Link", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
-    ]
-  },
-  {
-    id: "BG",
-    name: "Botanical Garden",
-    lines: ["Blue", "Magenta"],
-    coordinates: [28.5641, 77.3342],
-    baseCrowd: 8,
-    exits: [
-      { gate: "1", name: "Noida Sector 37 Bus Stand", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Captain Vijyant Thapar Marg", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
+export const STATIONS = [
+  // Red Line
+  { id: "SS", name: "Shaheed Sthal", lines: ["Red"], coordinates: [28.6715, 77.4437], baseCrowd: 6, exits: [{ gate: "1", name: "Shaheed Sthal Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "HR", name: "Hindon River", lines: ["Red"], coordinates: [28.671, 77.4264], baseCrowd: 6, exits: [{ gate: "1", name: "Hindon River Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "ART", name: "Arthala", lines: ["Red"], coordinates: [28.6706, 77.4119], baseCrowd: 6, exits: [{ gate: "1", name: "Arthala Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MN1", name: "Mohan Nagar", lines: ["Red"], coordinates: [28.6697, 77.3945], baseCrowd: 6, exits: [{ gate: "1", name: "Mohan Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SP", name: "Shyam Park", lines: ["Red"], coordinates: [28.672, 77.378], baseCrowd: 6, exits: [{ gate: "1", name: "Shyam Park Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MMS", name: "Major Mohit Sharma Rajendra Nagar", lines: ["Red"], coordinates: [28.6732, 77.3644], baseCrowd: 6, exits: [{ gate: "1", name: "Major Mohit Sharma Rajendra Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RB", name: "Raj Bagh", lines: ["Red"], coordinates: [28.6744, 77.352], baseCrowd: 6, exits: [{ gate: "1", name: "Raj Bagh Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SN", name: "Shaheed Nagar", lines: ["Red"], coordinates: [28.6753, 77.3365], baseCrowd: 6, exits: [{ gate: "1", name: "Shaheed Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DG", name: "Dilshad Garden", lines: ["Red"], coordinates: [28.67592, 77.32142], baseCrowd: 6, exits: [{ gate: "1", name: "Dilshad Garden Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JHI", name: "Jhilmil", lines: ["Red"], coordinates: [28.67579, 77.31239], baseCrowd: 6, exits: [{ gate: "1", name: "Jhilmil Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MP", name: "Mansarovar Park", lines: ["Red"], coordinates: [28.67544, 77.30095], baseCrowd: 6, exits: [{ gate: "1", name: "Mansarovar Park Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SHA", name: "Shahdara", lines: ["Red"], coordinates: [28.67345, 77.28962], baseCrowd: 6, exits: [{ gate: "1", name: "Shahdara Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SEE", name: "Seelampur", lines: ["Red"], coordinates: [28.66989, 77.26678], baseCrowd: 6, exits: [{ gate: "1", name: "Seelampur Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SP1", name: "Shastri Park", lines: ["Red"], coordinates: [28.668, 77.24994], baseCrowd: 6, exits: [{ gate: "1", name: "Shastri Park Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KG", name: "Kashmere Gate", lines: ["Violet","Yellow","Red"], coordinates: [28.6675, 77.22817], baseCrowd: 9, exits: [{ gate: "1", name: "Kashmere Gate Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "TH", name: "Tis Hazari", lines: ["Red"], coordinates: [28.66711, 77.21653], baseCrowd: 6, exits: [{ gate: "1", name: "Tis Hazari Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PB", name: "Pul Bangash", lines: ["Magenta","Red"], coordinates: [28.66636, 77.20727], baseCrowd: 9, exits: [{ gate: "1", name: "Pul Bangash Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PN", name: "Pratap Nagar", lines: ["Red"], coordinates: [28.66662, 77.19882], baseCrowd: 6, exits: [{ gate: "1", name: "Pratap Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SN1", name: "Shastri Nagar", lines: ["Red"], coordinates: [28.66999, 77.18169], baseCrowd: 6, exits: [{ gate: "1", name: "Shastri Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "IL", name: "Inderlok", lines: ["Green","Red"], coordinates: [28.67319, 77.16994], baseCrowd: 9, exits: [{ gate: "1", name: "Inderlok Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KN", name: "Kanhaiya Nagar", lines: ["Red"], coordinates: [28.6855, 77.1631], baseCrowd: 6, exits: [{ gate: "1", name: "Kanhaiya Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KP", name: "Keshav Puram", lines: ["Red"], coordinates: [28.68894, 77.1616], baseCrowd: 6, exits: [{ gate: "1", name: "Keshav Puram Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NSP", name: "Netaji Subhash Place", lines: ["Pink","Red"], coordinates: [28.69591, 77.15226], baseCrowd: 9, exits: [{ gate: "1", name: "Netaji Subhash Place Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KE", name: "Kohat Enclave", lines: ["Red"], coordinates: [28.6981, 77.14024], baseCrowd: 6, exits: [{ gate: "1", name: "Kohat Enclave Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PIT", name: "Pitampura", lines: ["Magenta","Red"], coordinates: [28.7006, 77.1312], baseCrowd: 9, exits: [{ gate: "1", name: "Pitampura Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RE", name: "Rohini East", lines: ["Red"], coordinates: [28.7076, 77.12591], baseCrowd: 6, exits: [{ gate: "1", name: "Rohini East Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RW", name: "Rohini West", lines: ["Red"], coordinates: [28.71483, 77.11467], baseCrowd: 6, exits: [{ gate: "1", name: "Rohini West Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RT", name: "Rithala", lines: ["Red"], coordinates: [28.72072, 77.10713], baseCrowd: 6, exits: [{ gate: "1", name: "Rithala Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+
+  // Yellow Line
+  { id: "SB", name: "Samaypur Badli", lines: ["Yellow"], coordinates: [28.7456, 77.1378], baseCrowd: 6, exits: [{ gate: "1", name: "Samaypur Badli Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RS1", name: "Rohini Sector 18, 19", lines: ["Yellow"], coordinates: [28.7393, 77.1389], baseCrowd: 6, exits: [{ gate: "1", name: "Rohini Sector 18, 19 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "HBM", name: "Haiderpur Badli Mor", lines: ["Magenta","Yellow"], coordinates: [28.7267, 77.1534], baseCrowd: 9, exits: [{ gate: "1", name: "Haiderpur Badli Mor Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JP", name: "Jahangirpuri", lines: ["Yellow"], coordinates: [28.72592, 77.16267], baseCrowd: 6, exits: [{ gate: "1", name: "Jahangirpuri Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "AN", name: "Adarsh Nagar", lines: ["Yellow"], coordinates: [28.71642, 77.17046], baseCrowd: 6, exits: [{ gate: "1", name: "Adarsh Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "AZA", name: "Azadpur", lines: ["Pink","Yellow","Magenta"], coordinates: [28.70696, 77.18053], baseCrowd: 9, exits: [{ gate: "1", name: "Azadpur Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MT", name: "Model Town", lines: ["Yellow"], coordinates: [28.70278, 77.19363], baseCrowd: 6, exits: [{ gate: "1", name: "Model Town Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "GT", name: "GTB Nagar", lines: ["Yellow"], coordinates: [28.69785, 77.20722], baseCrowd: 6, exits: [{ gate: "1", name: "GTB Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "VV", name: "Vishwavidyalaya", lines: ["Yellow"], coordinates: [28.6924, 77.2105], baseCrowd: 6, exits: [{ gate: "1", name: "Vishwavidyalaya Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "VS1", name: "Vidhan Sabha", lines: ["Yellow"], coordinates: [28.68802, 77.2214], baseCrowd: 6, exits: [{ gate: "1", name: "Vidhan Sabha Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "CL", name: "Civil Lines", lines: ["Yellow"], coordinates: [28.67726, 77.2241], baseCrowd: 6, exits: [{ gate: "1", name: "Civil Lines Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "CC", name: "Chandni Chowk", lines: ["Yellow"], coordinates: [28.65785, 77.23014], baseCrowd: 6, exits: [{ gate: "1", name: "Chandni Chowk Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "CB", name: "Chawri Bazar", lines: ["Yellow"], coordinates: [28.64931, 77.22637], baseCrowd: 6, exits: [{ gate: "1", name: "Chawri Bazar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "ND", name: "New Delhi", lines: ["Yellow","Orange"], coordinates: [28.64307, 77.22144], baseCrowd: 9, exits: [{ gate: "1", name: "New Delhi Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RC", name: "Rajiv Chowk", lines: ["Yellow","Blue"], coordinates: [28.63282, 77.21826], baseCrowd: 9, exits: [{ gate: "1", name: "Rajiv Chowk Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PC", name: "Patel Chowk", lines: ["Yellow"], coordinates: [28.62295, 77.21389], baseCrowd: 6, exits: [{ gate: "1", name: "Patel Chowk Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "CS", name: "Central Secretariat", lines: ["Violet","Yellow"], coordinates: [28.61474, 77.21191], baseCrowd: 9, exits: [{ gate: "1", name: "Central Secretariat Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "UB", name: "Udyog Bhawan", lines: ["Yellow"], coordinates: [28.61166, 77.21198], baseCrowd: 6, exits: [{ gate: "1", name: "Udyog Bhawan Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "LKM", name: "Lok Kalyan Marg", lines: ["Yellow"], coordinates: [28.6147, 77.2065], baseCrowd: 6, exits: [{ gate: "1", name: "Lok Kalyan Marg Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JB", name: "Jor Bagh", lines: ["Yellow"], coordinates: [28.58708, 77.21209], baseCrowd: 6, exits: [{ gate: "1", name: "Jor Bagh Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DHI", name: "Dilli Haat - INA", lines: ["Pink","Yellow"], coordinates: [28.57526, 77.20935], baseCrowd: 9, exits: [{ gate: "1", name: "Dilli Haat - INA Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "AI", name: "AIIMS", lines: ["Yellow"], coordinates: [28.56892, 77.20771], baseCrowd: 6, exits: [{ gate: "1", name: "AIIMS Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "GP", name: "Green Park", lines: ["Yellow"], coordinates: [28.55979, 77.20682], baseCrowd: 6, exits: [{ gate: "1", name: "Green Park Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "HK", name: "Hauz Khas", lines: ["Yellow","Magenta"], coordinates: [28.54335, 77.20667], baseCrowd: 9, exits: [{ gate: "1", name: "Hauz Khas Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MN2", name: "Malviya Nagar", lines: ["Yellow"], coordinates: [28.52798, 77.20565], baseCrowd: 6, exits: [{ gate: "1", name: "Malviya Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SK", name: "Saket", lines: ["Yellow"], coordinates: [28.5206, 77.20138], baseCrowd: 6, exits: [{ gate: "1", name: "Saket Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "QM", name: "Qutab Minar", lines: ["Yellow"], coordinates: [28.51302, 77.18648], baseCrowd: 6, exits: [{ gate: "1", name: "Qutab Minar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "CHH", name: "Chhatarpur", lines: ["Yellow"], coordinates: [28.50671, 77.17484], baseCrowd: 6, exits: [{ gate: "1", name: "Chhatarpur Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SUL", name: "Sultanpur", lines: ["Yellow"], coordinates: [28.49927, 77.16153], baseCrowd: 6, exits: [{ gate: "1", name: "Sultanpur Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "GHI", name: "Ghitorni", lines: ["Yellow"], coordinates: [28.49383, 77.14922], baseCrowd: 6, exits: [{ gate: "1", name: "Ghitorni Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "AG", name: "Arjan Garh", lines: ["Yellow"], coordinates: [28.48076, 77.12583], baseCrowd: 6, exits: [{ gate: "1", name: "Arjan Garh Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "GD", name: "Guru Dronacharya", lines: ["Yellow"], coordinates: [28.48203, 77.10232], baseCrowd: 6, exits: [{ gate: "1", name: "Guru Dronacharya Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SIK", name: "Sikanderpur", lines: ["Yellow"], coordinates: [28.4912, 77.0915], baseCrowd: 6, exits: [{ gate: "1", name: "Sikanderpur Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MR", name: "MG Road", lines: ["Yellow"], coordinates: [28.47957, 77.08006], baseCrowd: 6, exits: [{ gate: "1", name: "MG Road Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "IC", name: "IFFCO Chowk", lines: ["Yellow"], coordinates: [28.47209, 77.07175], baseCrowd: 6, exits: [{ gate: "1", name: "IFFCO Chowk Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MCC", name: "Millennium City Centre Gurugram", lines: ["Yellow"], coordinates: [28.4593, 77.0724], baseCrowd: 6, exits: [{ gate: "1", name: "Millennium City Centre Gurugram Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+
+  // Blue Line
+  { id: "KN1", name: "Kirti Nagar", lines: ["Blue","Green"], coordinates: [28.65575, 77.15057], baseCrowd: 9, exits: [{ gate: "1", name: "Kirti Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MH", name: "Mandi House", lines: ["Blue","Violet"], coordinates: [28.62588, 77.2341], baseCrowd: 9, exits: [{ gate: "1", name: "Mandi House Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RG", name: "Rajouri Garden", lines: ["Pink","Blue"], coordinates: [28.64902, 77.1227], baseCrowd: 9, exits: [{ gate: "1", name: "Rajouri Garden Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MV", name: "Mayur Vihar-I", lines: ["Pink","Blue"], coordinates: [28.6041, 77.2911], baseCrowd: 9, exits: [{ gate: "1", name: "Mayur Vihar-I Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "AV", name: "Anand Vihar", lines: ["Pink","Blue"], coordinates: [28.64695, 77.31603], baseCrowd: 9, exits: [{ gate: "1", name: "Anand Vihar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KK", name: "Karkarduma", lines: ["Pink","Blue"], coordinates: [28.64849, 77.30558], baseCrowd: 9, exits: [{ gate: "1", name: "Karkarduma Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RAM", name: "Ramakrishna Ashram Marg", lines: ["Blue","Magenta"], coordinates: [28.63923, 77.2084], baseCrowd: 9, exits: [{ gate: "1", name: "Ramakrishna Ashram Marg Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JW", name: "Janakpuri West", lines: ["Blue","Magenta"], coordinates: [28.62943, 77.07767], baseCrowd: 9, exits: [{ gate: "1", name: "Janakpuri West Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "BG", name: "Botanical Garden", lines: ["Blue","Magenta"], coordinates: [28.56409, 77.3342], baseCrowd: 9, exits: [{ gate: "1", name: "Botanical Garden Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DWA", name: "Dwarka", lines: ["Grey","Blue"], coordinates: [28.61564, 77.02197], baseCrowd: 9, exits: [{ gate: "1", name: "Dwarka Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DM", name: "Dwarka Mor", lines: ["Blue"], coordinates: [28.61564, 77.02197], baseCrowd: 6, exits: [{ gate: "1", name: "Dwarka Mor Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NAW", name: "Nawada", lines: ["Blue"], coordinates: [28.62025, 77.04514], baseCrowd: 6, exits: [{ gate: "1", name: "Nawada Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "UNW", name: "Uttam Nagar West", lines: ["Blue"], coordinates: [28.62177, 77.05585], baseCrowd: 6, exits: [{ gate: "1", name: "Uttam Nagar West Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "UNE", name: "Uttam Nagar East", lines: ["Blue"], coordinates: [28.62481, 77.0653], baseCrowd: 6, exits: [{ gate: "1", name: "Uttam Nagar East Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JE1", name: "Janakpuri East", lines: ["Blue"], coordinates: [28.63305, 77.08669], baseCrowd: 6, exits: [{ gate: "1", name: "Janakpuri East Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "TN", name: "Tilak Nagar", lines: ["Blue"], coordinates: [28.63657, 77.09648], baseCrowd: 6, exits: [{ gate: "1", name: "Tilak Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SN3", name: "Subhash Nagar", lines: ["Blue"], coordinates: [28.64039, 77.10495], baseCrowd: 6, exits: [{ gate: "1", name: "Subhash Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "TG", name: "Tagore Garden", lines: ["Blue"], coordinates: [28.64379, 77.11284], baseCrowd: 6, exits: [{ gate: "1", name: "Tagore Garden Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MN3", name: "Moti Nagar", lines: ["Blue"], coordinates: [28.65784, 77.14248], baseCrowd: 6, exits: [{ gate: "1", name: "Moti Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RN", name: "Ramesh Nagar", lines: ["Blue"], coordinates: [28.65274, 77.13164], baseCrowd: 6, exits: [{ gate: "1", name: "Ramesh Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PN1", name: "Patel Nagar", lines: ["Blue"], coordinates: [28.64498, 77.16929], baseCrowd: 6, exits: [{ gate: "1", name: "Patel Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RP1", name: "Rajendra Place", lines: ["Blue"], coordinates: [28.6425, 77.17815], baseCrowd: 6, exits: [{ gate: "1", name: "Rajendra Place Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KB", name: "Karol Bagh", lines: ["Blue"], coordinates: [28.644, 77.18855], baseCrowd: 6, exits: [{ gate: "1", name: "Karol Bagh Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JHA", name: "Jhandewalan", lines: ["Blue"], coordinates: [28.64427, 77.19988], baseCrowd: 6, exits: [{ gate: "1", name: "Jhandewalan Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "BR", name: "Barakhamba Road", lines: ["Blue"], coordinates: [28.634, 77.2278], baseCrowd: 6, exits: [{ gate: "1", name: "Barakhamba Road Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SC", name: "Supreme Court", lines: ["Blue"], coordinates: [28.6224, 77.2428], baseCrowd: 6, exits: [{ gate: "1", name: "Supreme Court Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "IND", name: "Indraprastha", lines: ["Blue"], coordinates: [28.62051, 77.24993], baseCrowd: 6, exits: [{ gate: "1", name: "Indraprastha Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "YB", name: "Yamuna Bank", lines: ["Blue"], coordinates: [28.62331, 77.26792], baseCrowd: 6, exits: [{ gate: "1", name: "Yamuna Bank Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MVI", name: "Mayur Vihar I", lines: ["Blue","Pink"], coordinates: [28.6041, 77.2911], baseCrowd: 9, exits: [{ gate: "1", name: "Mayur Vihar I Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MVE", name: "Mayur Vihar Extension", lines: ["Blue"], coordinates: [28.59428, 77.29455], baseCrowd: 6, exits: [{ gate: "1", name: "Mayur Vihar Extension Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NAN1", name: "New Ashok Nagar", lines: ["Blue"], coordinates: [28.58916, 77.30204], baseCrowd: 6, exits: [{ gate: "1", name: "New Ashok Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NS1", name: "Noida Sector 15", lines: ["Blue"], coordinates: [28.58512, 77.31139], baseCrowd: 6, exits: [{ gate: "1", name: "Noida Sector 15 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NS11", name: "Noida Sector 16", lines: ["Blue"], coordinates: [28.57819, 77.31757], baseCrowd: 6, exits: [{ gate: "1", name: "Noida Sector 16 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NS12", name: "Noida Sector 18", lines: ["Blue"], coordinates: [28.57081, 77.32612], baseCrowd: 6, exits: [{ gate: "1", name: "Noida Sector 18 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NS3", name: "Noida Sector 34", lines: ["Blue"], coordinates: [28.5695, 77.3446], baseCrowd: 6, exits: [{ gate: "1", name: "Noida Sector 34 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NC", name: "Noida City Centre", lines: ["Blue"], coordinates: [28.57466, 77.35608], baseCrowd: 6, exits: [{ gate: "1", name: "Noida City Centre Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "GC", name: "Golf Course", lines: ["Blue"], coordinates: [28.56714, 77.34598], baseCrowd: 6, exits: [{ gate: "1", name: "Golf Course Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DS1", name: "Dwarka Sector 14", lines: ["Blue"], coordinates: [28.60223, 77.02588], baseCrowd: 6, exits: [{ gate: "1", name: "Dwarka Sector 14 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DS11", name: "Dwarka Sector 13", lines: ["Blue"], coordinates: [28.59722, 77.03326], baseCrowd: 6, exits: [{ gate: "1", name: "Dwarka Sector 13 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DS12", name: "Dwarka Sector 12", lines: ["Blue"], coordinates: [28.59232, 77.04051], baseCrowd: 6, exits: [{ gate: "1", name: "Dwarka Sector 12 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DS13", name: "Dwarka Sector 11", lines: ["Blue"], coordinates: [28.58657, 77.04929], baseCrowd: 6, exits: [{ gate: "1", name: "Dwarka Sector 11 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DS14", name: "Dwarka Sector 10", lines: ["Blue"], coordinates: [28.58068, 77.05682], baseCrowd: 6, exits: [{ gate: "1", name: "Dwarka Sector 10 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DS9", name: "Dwarka Sector 9", lines: ["Blue"], coordinates: [28.57487, 77.06454], baseCrowd: 6, exits: [{ gate: "1", name: "Dwarka Sector 9 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DS8", name: "Dwarka Sector 8", lines: ["Blue"], coordinates: [28.56583, 77.06706], baseCrowd: 6, exits: [{ gate: "1", name: "Dwarka Sector 8 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DW", name: "Dwarka Sector 21", lines: ["Blue","Orange"], coordinates: [28.55226, 77.05828], baseCrowd: 9, exits: [{ gate: "1", name: "Dwarka Sector 21 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+
+  // Green Line
+  { id: "APM", name: "Ashok Park Main", lines: ["Green"], coordinates: [28.67153, 77.15527], baseCrowd: 6, exits: [{ gate: "1", name: "Ashok Park Main Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SRS", name: "Satguru Ram Singh Marg", lines: ["Green"], coordinates: [28.6612, 77.1543], baseCrowd: 6, exits: [{ gate: "1", name: "Satguru Ram Singh Marg Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PBE", name: "Punjabi Bagh East", lines: ["Green"], coordinates: [28.67289, 77.14614], baseCrowd: 6, exits: [{ gate: "1", name: "Punjabi Bagh East Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PBW", name: "Punjabi Bagh West", lines: ["Pink","Green"], coordinates: [28.6694, 77.1269], baseCrowd: 9, exits: [{ gate: "1", name: "Punjabi Bagh West Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SP2", name: "Shivaji Park", lines: ["Green","Orange"], coordinates: [28.6277, 77.078], baseCrowd: 9, exits: [{ gate: "1", name: "Shivaji Park Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MAD", name: "Madipur", lines: ["Green"], coordinates: [28.67734, 77.11965], baseCrowd: 6, exits: [{ gate: "1", name: "Madipur Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PVE", name: "Paschim Vihar East", lines: ["Green"], coordinates: [28.6773, 77.11228], baseCrowd: 6, exits: [{ gate: "1", name: "Paschim Vihar East Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PVW", name: "Paschim Vihar West", lines: ["Green"], coordinates: [28.67855, 77.10227], baseCrowd: 6, exits: [{ gate: "1", name: "Paschim Vihar West Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PEE", name: "Peeragarhi", lines: ["Magenta","Green"], coordinates: [28.6762, 77.1059], baseCrowd: 9, exits: [{ gate: "1", name: "Peeragarhi Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "UN", name: "Udyog Nagar", lines: ["Green"], coordinates: [28.6809, 77.08077], baseCrowd: 6, exits: [{ gate: "1", name: "Udyog Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MSS", name: "Maharaja Surajmal Stadium", lines: ["Green"], coordinates: [28.6818, 77.07385], baseCrowd: 6, exits: [{ gate: "1", name: "Maharaja Surajmal Stadium Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NAN", name: "Nangloi", lines: ["Green"], coordinates: [28.68231, 77.06471], baseCrowd: 6, exits: [{ gate: "1", name: "Nangloi Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NRS", name: "Nangloi Railway Station", lines: ["Green"], coordinates: [28.68208, 77.05596], baseCrowd: 6, exits: [{ gate: "1", name: "Nangloi Railway Station Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RP", name: "Rajdhani Park", lines: ["Green"], coordinates: [28.68221, 77.04381], baseCrowd: 6, exits: [{ gate: "1", name: "Rajdhani Park Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MUN", name: "Mundka", lines: ["Green"], coordinates: [28.68321, 77.03133], baseCrowd: 6, exits: [{ gate: "1", name: "Mundka Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MIA", name: "Mundka Industrial Area (MIA)", lines: ["Green"], coordinates: [28.68321, 77.03133], baseCrowd: 6, exits: [{ gate: "1", name: "Mundka Industrial Area (MIA) Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "GHE", name: "Ghevra", lines: ["Green"], coordinates: [28.6866, 77.0382], baseCrowd: 6, exits: [{ gate: "1", name: "Ghevra Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "TK", name: "Tikri Kalan", lines: ["Green"], coordinates: [28.6888, 77.0244], baseCrowd: 6, exits: [{ gate: "1", name: "Tikri Kalan Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "TB", name: "Tikri Border", lines: ["Green"], coordinates: [28.6912, 77.0091], baseCrowd: 6, exits: [{ gate: "1", name: "Tikri Border Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PSR", name: "Pandit Shree Ram Sharma", lines: ["Green"], coordinates: [28.6935, 76.9948], baseCrowd: 6, exits: [{ gate: "1", name: "Pandit Shree Ram Sharma Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "BC", name: "Bahadurgarh City", lines: ["Green"], coordinates: [28.6914, 76.9241], baseCrowd: 6, exits: [{ gate: "1", name: "Bahadurgarh City Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "BHS", name: "Brigadier Hoshiyar Singh", lines: ["Green"], coordinates: [28.6922, 76.9345], baseCrowd: 6, exits: [{ gate: "1", name: "Brigadier Hoshiyar Singh Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
 
   // Violet Line
-  {
-    id: "LQ",
-    name: "Lal Quila",
-    lines: ["Violet"],
-    coordinates: [28.6568, 77.2410],
-    baseCrowd: 6,
-    exits: [
-      { gate: "1", name: "Red Fort (Lal Quila)", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Lajpat Rai Market", lit: "Dimly-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "LN",
-    name: "Lajpat Nagar",
-    lines: ["Violet", "Pink"],
-    coordinates: [28.5694, 77.2405],
-    baseCrowd: 9,
-    exits: [
-      { gate: "1", name: "Central Market", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Defence Colony", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "NP",
-    name: "Nehru Place",
-    lines: ["Violet"],
-    coordinates: [28.5492, 77.2523],
-    baseCrowd: 8,
-    exits: [
-      { gate: "1", name: "Nehru Place IT Market", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Eros Corporate Tower", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "KM",
-    name: "Kalkaji Mandir",
-    lines: ["Violet", "Magenta"],
-    coordinates: [28.5495, 77.2585],
-    baseCrowd: 8,
-    exits: [
-      { gate: "1", name: "Kalkaji Temple", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "Lotus Temple Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator", "Tactile Paths"] }
-    ]
-  },
-  {
-    id: "BB",
-    name: "Badarpur Border",
-    lines: ["Violet"],
-    coordinates: [28.4984, 77.3023],
-    baseCrowd: 7,
-    exits: [
-      { gate: "1", name: "Mathura Road Link", lit: "Dimly-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-
-  // Red Line
-  {
-    id: "RT",
-    name: "Rithala",
-    lines: ["Red"],
-    coordinates: [28.7208, 77.1072],
-    baseCrowd: 6,
-    exits: [
-      { gate: "1", name: "Metro Walk Mall", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
-    ]
-  },
-  {
-    id: "NP_RED",
-    name: "Netaji Subhash Place",
-    lines: ["Red", "Pink"],
-    coordinates: [28.6946, 77.1517],
-    baseCrowd: 8,
-    exits: [
-      { gate: "1", name: "D-Mall NSP", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
-      { gate: "2", name: "PP Towers", lit: "Well-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "IL",
-    name: "Inderlok",
-    lines: ["Red"],
-    coordinates: [28.6731, 77.1704],
-    baseCrowd: 7,
-    exits: [
-      { gate: "1", name: "Inderlok Market", lit: "Dimly-Lit", accessibility: ["Escalator"] }
-    ]
-  },
-  {
-    id: "WL",
-    name: "Welcome",
-    lines: ["Red", "Pink"],
-    coordinates: [28.6719, 77.2778],
-    baseCrowd: 7,
-    exits: [
-      { gate: "1", name: "Shyam Lal College", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
-    ]
-  },
-  {
-    id: "DG",
-    name: "Dilshad Garden",
-    lines: ["Red"],
-    coordinates: [28.6759, 77.3218],
-    baseCrowd: 7,
-    exits: [
-      { gate: "1", name: "GT Road Link", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
-    ]
-  },
+  { id: "LQ", name: "Lal Qila", lines: ["Violet"], coordinates: [28.6568, 77.241], baseCrowd: 6, exits: [{ gate: "1", name: "Lal Qila Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JM", name: "Jama Masjid", lines: ["Violet"], coordinates: [28.6518, 77.2374], baseCrowd: 6, exits: [{ gate: "1", name: "Jama Masjid Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DG1", name: "Delhi Gate", lines: ["Violet"], coordinates: [28.6445, 77.2393], baseCrowd: 6, exits: [{ gate: "1", name: "Delhi Gate Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "ITO", name: "ITO", lines: ["Violet"], coordinates: [28.49383, 77.14922], baseCrowd: 6, exits: [{ gate: "1", name: "ITO Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JAN", name: "Janpath", lines: ["Violet"], coordinates: [28.6264, 77.2181], baseCrowd: 6, exits: [{ gate: "1", name: "Janpath Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KM1", name: "Khan Market", lines: ["Violet"], coordinates: [28.60276, 77.22829], baseCrowd: 6, exits: [{ gate: "1", name: "Khan Market Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JNS", name: "Jawaharlal Nehru Stadium", lines: ["Violet"], coordinates: [28.5904, 77.23326], baseCrowd: 6, exits: [{ gate: "1", name: "Jawaharlal Nehru Stadium Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JAN1", name: "Jangpura", lines: ["Violet"], coordinates: [28.5843, 77.23766], baseCrowd: 6, exits: [{ gate: "1", name: "Jangpura Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "LN", name: "Lajpat Nagar", lines: ["Pink","Violet"], coordinates: [28.57079, 77.23653], baseCrowd: 9, exits: [{ gate: "1", name: "Lajpat Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MOO", name: "Moolchand", lines: ["Violet"], coordinates: [28.56417, 77.23423], baseCrowd: 6, exits: [{ gate: "1", name: "Moolchand Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KC", name: "Kailash Colony", lines: ["Violet"], coordinates: [28.55527, 77.24205], baseCrowd: 6, exits: [{ gate: "1", name: "Kailash Colony Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NP", name: "Nehru Place", lines: ["Violet"], coordinates: [28.55148, 77.25154], baseCrowd: 6, exits: [{ gate: "1", name: "Nehru Place Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KM", name: "Kalkaji Mandir", lines: ["Magenta","Violet"], coordinates: [28.55007, 77.25835], baseCrowd: 9, exits: [{ gate: "1", name: "Kalkaji Mandir Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "GOV", name: "Govindpuri", lines: ["Violet"], coordinates: [28.5417, 77.2636], baseCrowd: 6, exits: [{ gate: "1", name: "Govindpuri Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "HNO", name: "Harkesh Nagar Okhla", lines: ["Violet"], coordinates: [28.54292, 77.27504], baseCrowd: 6, exits: [{ gate: "1", name: "Harkesh Nagar Okhla Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JA", name: "Jasola Apollo", lines: ["Violet"], coordinates: [28.53824, 77.28319], baseCrowd: 6, exits: [{ gate: "1", name: "Jasola Apollo Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SV", name: "Sarita Vihar", lines: ["Violet"], coordinates: [28.52878, 77.28826], baseCrowd: 6, exits: [{ gate: "1", name: "Sarita Vihar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "ME", name: "Mohan Estate", lines: ["Violet"], coordinates: [28.51938, 77.29388], baseCrowd: 6, exits: [{ gate: "1", name: "Mohan Estate Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "TUG", name: "Tughlakabad", lines: ["Violet"], coordinates: [28.50254, 77.2993], baseCrowd: 6, exits: [{ gate: "1", name: "Tughlakabad Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "BB", name: "Badarpur Border", lines: ["Violet"], coordinates: [28.49334, 77.30307], baseCrowd: 6, exits: [{ gate: "1", name: "Badarpur Border Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SAR", name: "Sarai", lines: ["Violet"], coordinates: [28.5113, 77.2873], baseCrowd: 6, exits: [{ gate: "1", name: "Sarai Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NC1", name: "NHPC Chowk", lines: ["Violet"], coordinates: [28.5013, 77.297], baseCrowd: 6, exits: [{ gate: "1", name: "NHPC Chowk Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MM", name: "Mewla Maharajpur", lines: ["Violet"], coordinates: [28.4867, 77.3085], baseCrowd: 6, exits: [{ gate: "1", name: "Mewla Maharajpur Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "S2", name: "Sector 28", lines: ["Violet"], coordinates: [28.4707, 77.3154], baseCrowd: 6, exits: [{ gate: "1", name: "Sector 28 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "BM", name: "Badkhal Mor", lines: ["Violet"], coordinates: [28.4488, 77.3125], baseCrowd: 6, exits: [{ gate: "1", name: "Badkhal Mor Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "OF", name: "Old Faridabad", lines: ["Violet"], coordinates: [28.4325, 77.3105], baseCrowd: 6, exits: [{ gate: "1", name: "Old Faridabad Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NCA", name: "Neelam Chowk Ajronda", lines: ["Violet"], coordinates: [28.4196, 77.3105], baseCrowd: 6, exits: [{ gate: "1", name: "Neelam Chowk Ajronda Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "BC1", name: "Bata Chowk", lines: ["Violet"], coordinates: [28.4086, 77.3105], baseCrowd: 6, exits: [{ gate: "1", name: "Bata Chowk Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "EM", name: "Escorts Mujesar", lines: ["Violet"], coordinates: [28.3933, 77.3074], baseCrowd: 6, exits: [{ gate: "1", name: "Escorts Mujesar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SSS", name: "Sant Surdas - Sihi", lines: ["Violet"], coordinates: [28.3715, 77.2955], baseCrowd: 6, exits: [{ gate: "1", name: "Sant Surdas - Sihi Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RNS", name: "Raja Nahar Singh", lines: ["Violet"], coordinates: [28.3567, 77.3193], baseCrowd: 6, exits: [{ gate: "1", name: "Raja Nahar Singh Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
 
   // Pink Line
-  {
-    id: "MV",
-    name: "Mayur Vihar-I",
-    lines: ["Blue", "Pink"],
-    coordinates: [28.6041, 77.2911],
-    baseCrowd: 7,
-    exits: [
-      { gate: "1", name: "Mayur Vihar Pocket 1", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
-    ]
-  },
-  {
-    id: "KK",
-    name: "Karkarduma",
-    lines: ["Blue", "Pink"],
-    coordinates: [28.6483, 77.3005],
-    baseCrowd: 6,
-    exits: [
-      { gate: "1", name: "Karkarduma Court", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
-    ]
-  },
+  { id: "WL", name: "Welcome", lines: ["Pink"], coordinates: [28.6718, 77.27756], baseCrowd: 6, exits: [{ gate: "1", name: "Welcome Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MP1", name: "Majlis Park", lines: ["Pink","Magenta"], coordinates: [28.7125, 77.1585], baseCrowd: 9, exits: [{ gate: "1", name: "Majlis Park Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SB1", name: "Shalimar Bagh", lines: ["Pink"], coordinates: [28.7143, 77.1727], baseCrowd: 6, exits: [{ gate: "1", name: "Shalimar Bagh Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SHA1", name: "Shakurpur", lines: ["Pink"], coordinates: [28.6944, 77.1346], baseCrowd: 6, exits: [{ gate: "1", name: "Shakurpur Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "EB", name: "ESI - Basaidarapur", lines: ["Pink"], coordinates: [28.6439, 77.1469], baseCrowd: 6, exits: [{ gate: "1", name: "ESI - Basaidarapur Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MAY", name: "Mayapuri", lines: ["Pink"], coordinates: [28.6366, 77.1167], baseCrowd: 6, exits: [{ gate: "1", name: "Mayapuri Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NV", name: "Naraina Vihar", lines: ["Pink"], coordinates: [28.6281, 77.1378], baseCrowd: 6, exits: [{ gate: "1", name: "Naraina Vihar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DC", name: "Delhi Cantonment", lines: ["Pink"], coordinates: [28.6138, 77.1353], baseCrowd: 6, exits: [{ gate: "1", name: "Delhi Cantonment Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DDS", name: "Durgabai Deshmukh South Campus", lines: ["Pink"], coordinates: [28.5927, 77.169], baseCrowd: 6, exits: [{ gate: "1", name: "Durgabai Deshmukh South Campus Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SMV", name: "Sir M. Vishweshwaraiah Moti Bagh", lines: ["Pink"], coordinates: [28.5857, 77.1734], baseCrowd: 6, exits: [{ gate: "1", name: "Sir M. Vishweshwaraiah Moti Bagh Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "BCP", name: "Bhikaji Cama Place", lines: ["Pink"], coordinates: [28.5734, 77.1829], baseCrowd: 6, exits: [{ gate: "1", name: "Bhikaji Cama Place Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SN2", name: "Sarojini Nagar", lines: ["Pink"], coordinates: [28.5742, 77.1969], baseCrowd: 6, exits: [{ gate: "1", name: "Sarojini Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SE", name: "South Extension", lines: ["Pink"], coordinates: [28.5728, 77.2229], baseCrowd: 6, exits: [{ gate: "1", name: "South Extension Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "VIN", name: "Vinobapuri", lines: ["Pink"], coordinates: [28.5671, 77.2474], baseCrowd: 6, exits: [{ gate: "1", name: "Vinobapuri Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "ASH", name: "Ashram", lines: ["Pink"], coordinates: [28.63923, 77.2084], baseCrowd: 6, exits: [{ gate: "1", name: "Ashram Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SKK", name: "Sarai Kale Khan Nizamuddin", lines: ["Pink"], coordinates: [28.5861, 77.2543], baseCrowd: 6, exits: [{ gate: "1", name: "Sarai Kale Khan Nizamuddin Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MVP", name: "Mayur Vihar Pocket I", lines: ["Pink"], coordinates: [28.5953, 77.2955], baseCrowd: 6, exits: [{ gate: "1", name: "Mayur Vihar Pocket I Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "TSL", name: "Trilokpuri Sanjay Lake", lines: ["Pink"], coordinates: [28.6043, 77.3055], baseCrowd: 6, exits: [{ gate: "1", name: "Trilokpuri Sanjay Lake Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "EVN", name: "East Vinod Nagar - Mayur Vihar-II", lines: ["Pink"], coordinates: [28.6117, 77.307], baseCrowd: 6, exits: [{ gate: "1", name: "East Vinod Nagar - Mayur Vihar-II Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MWV", name: "Mandawali - West Vinod Nagar", lines: ["Pink"], coordinates: [28.6195, 77.2987], baseCrowd: 6, exits: [{ gate: "1", name: "Mandawali - West Vinod Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "IE", name: "IP Extension", lines: ["Pink"], coordinates: [28.6326, 77.2906], baseCrowd: 6, exits: [{ gate: "1", name: "IP Extension Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KC1", name: "Karkarduma Court", lines: ["Pink"], coordinates: [28.64849, 77.30558], baseCrowd: 6, exits: [{ gate: "1", name: "Karkarduma Court Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KN2", name: "Krishna Nagar", lines: ["Pink"], coordinates: [28.6447, 77.2799], baseCrowd: 6, exits: [{ gate: "1", name: "Krishna Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "EAN", name: "East Azad Nagar", lines: ["Pink"], coordinates: [28.6578, 77.2808], baseCrowd: 6, exits: [{ gate: "1", name: "East Azad Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JAF", name: "Jaffrabad", lines: ["Pink"], coordinates: [28.6706, 77.288], baseCrowd: 6, exits: [{ gate: "1", name: "Jaffrabad Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MB", name: "Maujpur - Babarpur", lines: ["Pink"], coordinates: [28.6794, 77.2886], baseCrowd: 6, exits: [{ gate: "1", name: "Maujpur - Babarpur Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "GOK", name: "Gokulpuri", lines: ["Pink"], coordinates: [28.6915, 77.2877], baseCrowd: 6, exits: [{ gate: "1", name: "Gokulpuri Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JE", name: "Johri Enclave", lines: ["Pink"], coordinates: [28.6981, 77.2921], baseCrowd: 6, exits: [{ gate: "1", name: "Johri Enclave Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SV1", name: "Shiv Vihar", lines: ["Pink"], coordinates: [28.7081, 77.2887], baseCrowd: 6, exits: [{ gate: "1", name: "Shiv Vihar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
 
   // Magenta Line
-  {
-    id: "OK",
-    name: "Okhla NSIC",
-    lines: ["Magenta"],
-    coordinates: [28.5422, 77.2721],
-    baseCrowd: 5,
-    exits: [
-      { gate: "1", name: "NSIC Exhibition Ground", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
-    ]
-  },
-  {
-    id: "GH",
-    name: "Greater Kailash",
-    lines: ["Magenta"],
-    coordinates: [28.5414, 77.2341],
-    baseCrowd: 6,
-    exits: [
-      { gate: "1", name: "GK 2 M-Block Market", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
-    ]
-  },
-  {
-    id: "VS_RED",
-    name: "Vasant Vihar",
-    lines: ["Magenta"],
-    coordinates: [28.5611, 77.1624],
-    baseCrowd: 6,
-    exits: [
-      { gate: "1", name: "Vasant Vihar Market", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
-    ]
-  },
-  {
-    id: "MN",
-    name: "Munirka",
-    lines: ["Magenta"],
-    coordinates: [28.5583, 77.1714],
-    baseCrowd: 6,
-    exits: [
-      { gate: "1", name: "Munirka Village / DDA Flats", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
-    ]
-  },
-  {
-    id: "AP",
-    name: "Aerocity",
-    lines: ["Magenta", "Orange"],
-    coordinates: [28.5552, 77.1234],
-    baseCrowd: 6,
-    exits: [
-      { gate: "1", name: "IGI Airport T1 Link / Hotels", lit: "Well-Lit", accessibility: ["Elevator", "Escalator", "Tactile Paths"] }
-    ]
-  }
+  { id: "NK", name: "Nabi Karim", lines: ["Magenta"], coordinates: [28.6412, 77.2125], baseCrowd: 6, exits: [{ gate: "1", name: "Nabi Karim Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SB2", name: "Sadar Bazar", lines: ["Magenta"], coordinates: [28.652, 77.2103], baseCrowd: 6, exits: [{ gate: "1", name: "Sadar Bazar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "GG", name: "Ghanta Ghar", lines: ["Magenta"], coordinates: [28.6621, 77.2074], baseCrowd: 6, exits: [{ gate: "1", name: "Ghanta Ghar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DN", name: "Derawal Nagar", lines: ["Magenta"], coordinates: [28.6816, 77.1973], baseCrowd: 6, exits: [{ gate: "1", name: "Derawal Nagar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "AV1", name: "Ashok Vihar", lines: ["Magenta"], coordinates: [28.6922, 77.1769], baseCrowd: 6, exits: [{ gate: "1", name: "Ashok Vihar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "BHA", name: "Bhalaswa", lines: ["Magenta"], coordinates: [28.7095, 77.1652], baseCrowd: 6, exits: [{ gate: "1", name: "Bhalaswa Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NP1", name: "North Pitampura", lines: ["Magenta"], coordinates: [28.7125, 77.148], baseCrowd: 6, exits: [{ gate: "1", name: "North Pitampura Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PV", name: "Prashant Vihar", lines: ["Magenta"], coordinates: [28.7089, 77.1357], baseCrowd: 6, exits: [{ gate: "1", name: "Prashant Vihar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DC1", name: "Deepali Chowk", lines: ["Magenta"], coordinates: [28.6975, 77.1224], baseCrowd: 6, exits: [{ gate: "1", name: "Deepali Chowk Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PUS", name: "Pushpanjali", lines: ["Magenta"], coordinates: [28.6885, 77.1167], baseCrowd: 6, exits: [{ gate: "1", name: "Pushpanjali Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "WE", name: "West Enclave", lines: ["Magenta"], coordinates: [28.6835, 77.1102], baseCrowd: 6, exits: [{ gate: "1", name: "West Enclave Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MAN", name: "Mangolpuri", lines: ["Magenta"], coordinates: [28.6777, 77.0945], baseCrowd: 6, exits: [{ gate: "1", name: "Mangolpuri Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PV1", name: "Paschim Vihar", lines: ["Magenta"], coordinates: [28.6773, 77.11228], baseCrowd: 6, exits: [{ gate: "1", name: "Paschim Vihar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KES", name: "Keshopur", lines: ["Magenta"], coordinates: [28.6551, 77.1024], baseCrowd: 6, exits: [{ gate: "1", name: "Keshopur Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KPE", name: "Krishna Park Extension", lines: ["Magenta"], coordinates: [28.6398, 77.0987], baseCrowd: 6, exits: [{ gate: "1", name: "Krishna Park Extension Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DMJ", name: "Dabri Mor - Janakpuri South", lines: ["Magenta"], coordinates: [28.6165, 77.081], baseCrowd: 6, exits: [{ gate: "1", name: "Dabri Mor - Janakpuri South Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DP", name: "Dashrath Puri", lines: ["Magenta"], coordinates: [28.6044, 77.0713], baseCrowd: 6, exits: [{ gate: "1", name: "Dashrath Puri Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PAL", name: "Palam", lines: ["Magenta"], coordinates: [28.5869, 77.0886], baseCrowd: 6, exits: [{ gate: "1", name: "Palam Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SBC", name: "Sadar Bazaar Cantonment", lines: ["Magenta"], coordinates: [28.5757, 77.1031], baseCrowd: 6, exits: [{ gate: "1", name: "Sadar Bazaar Cantonment Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "T1I", name: "Terminal 1-IGI Airport", lines: ["Magenta"], coordinates: [28.57526, 77.20935], baseCrowd: 6, exits: [{ gate: "1", name: "Terminal 1-IGI Airport Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SV2", name: "Shankar Vihar", lines: ["Magenta"], coordinates: [28.5673, 77.1182], baseCrowd: 6, exits: [{ gate: "1", name: "Shankar Vihar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "VVH", name: "Vasant Vihar", lines: ["Magenta"], coordinates: [28.5611, 77.1624], baseCrowd: 6, exits: [{ gate: "1", name: "Vasant Vihar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "MN", name: "Munirka", lines: ["Magenta"], coordinates: [28.5583, 77.1714], baseCrowd: 6, exits: [{ gate: "1", name: "Munirka Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "RKP", name: "R. K. Puram", lines: ["Magenta"], coordinates: [28.5621, 77.1823], baseCrowd: 6, exits: [{ gate: "1", name: "R. K. Puram Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "ID", name: "IIT Delhi", lines: ["Magenta"], coordinates: [28.5475, 77.1919], baseCrowd: 6, exits: [{ gate: "1", name: "IIT Delhi Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "PP", name: "Panchsheel Park", lines: ["Magenta"], coordinates: [28.5414, 77.2082], baseCrowd: 6, exits: [{ gate: "1", name: "Panchsheel Park Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "CD", name: "Chirag Delhi", lines: ["Magenta"], coordinates: [28.5388, 77.2168], baseCrowd: 6, exits: [{ gate: "1", name: "Chirag Delhi Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "GK", name: "Greater Kailash", lines: ["Magenta"], coordinates: [28.5414, 77.2341], baseCrowd: 6, exits: [{ gate: "1", name: "Greater Kailash Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NE", name: "Nehru Enclave", lines: ["Magenta"], coordinates: [28.5433, 77.2468], baseCrowd: 6, exits: [{ gate: "1", name: "Nehru Enclave Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "OK", name: "Okhla NSIC", lines: ["Magenta"], coordinates: [28.54292, 77.27504], baseCrowd: 6, exits: [{ gate: "1", name: "Okhla NSIC Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "SV3", name: "Sukhdev Vihar", lines: ["Magenta"], coordinates: [28.5389, 77.2598], baseCrowd: 6, exits: [{ gate: "1", name: "Sukhdev Vihar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JMI", name: "Jamia Millia Islamia", lines: ["Magenta"], coordinates: [28.5604, 77.2804], baseCrowd: 6, exits: [{ gate: "1", name: "Jamia Millia Islamia Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "OV", name: "Okhla Vihar", lines: ["Magenta"], coordinates: [28.55, 77.2755], baseCrowd: 6, exits: [{ gate: "1", name: "Okhla Vihar Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "JVS", name: "Jasola Vihar Shaheen Bagh", lines: ["Magenta"], coordinates: [28.5466, 77.2912], baseCrowd: 6, exits: [{ gate: "1", name: "Jasola Vihar Shaheen Bagh Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "KK1", name: "Kalindi Kunj", lines: ["Magenta"], coordinates: [28.5413, 77.3099], baseCrowd: 6, exits: [{ gate: "1", name: "Kalindi Kunj Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "OBS", name: "Okhla Bird Sanctuary", lines: ["Magenta"], coordinates: [28.5555, 77.3182], baseCrowd: 6, exits: [{ gate: "1", name: "Okhla Bird Sanctuary Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+
+  // Orange Line
+  { id: "SS1", name: "Shivaji Stadium", lines: ["Orange"], coordinates: [28.6225, 77.213], baseCrowd: 6, exits: [{ gate: "1", name: "Shivaji Stadium Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DK", name: "Dhaula Kuan", lines: ["Orange"], coordinates: [28.5908, 77.164], baseCrowd: 6, exits: [{ gate: "1", name: "Dhaula Kuan Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DA", name: "Delhi Aerocity", lines: ["Orange"], coordinates: [28.54881, 77.12092], baseCrowd: 6, exits: [{ gate: "1", name: "Delhi Aerocity Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "IA", name: "IGI Airport", lines: ["Orange"], coordinates: [28.5562, 77.0869], baseCrowd: 6, exits: [{ gate: "1", name: "IGI Airport Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "YDS", name: "Yashobhoomi Dwarka Sector - 25", lines: ["Orange"], coordinates: [28.5712, 77.0505], baseCrowd: 6, exits: [{ gate: "1", name: "Yashobhoomi Dwarka Sector - 25 Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+
+  // Grey Line
+  { id: "NAN2", name: "Nangli", lines: ["Grey"], coordinates: [28.6048, 76.9633], baseCrowd: 6, exits: [{ gate: "1", name: "Nangli Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "NAJ", name: "Najafgarh", lines: ["Grey"], coordinates: [28.6121, 76.9856], baseCrowd: 6, exits: [{ gate: "1", name: "Najafgarh Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+  { id: "DBS", name: "Dhansa Bus Stand", lines: ["Grey"], coordinates: [28.5992, 76.9412], baseCrowd: 6, exits: [{ gate: "1", name: "Dhansa Bus Stand Main Exit", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }] },
+
 ];
 
 export const EDGES = [
+  // Red Line Connections
+  { source: "SS", target: "HR", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "HR", target: "ART", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "ART", target: "MN1", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MN1", target: "SP", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SP", target: "MMS", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MMS", target: "RB", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RB", target: "SN", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SN", target: "DG", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DG", target: "JHI", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JHI", target: "MP", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MP", target: "SHA", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SHA", target: "WL", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SEE", target: "SP1", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SP1", target: "KG", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KG", target: "TH", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "TH", target: "PB", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PB", target: "PN", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PN", target: "SN1", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SN1", target: "IL", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "IL", target: "KN", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KN", target: "KP", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KP", target: "NSP", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NSP", target: "KE", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KE", target: "PIT", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PIT", target: "RE", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RE", target: "RW", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RW", target: "RT", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+
   // Yellow Line Connections
-  { source: "SB", target: "JP", line: "Yellow", baseTime: 4, crowdFactor: 3, safetyRating: 8, comfortFactor: 8 },
-  { source: "JP", target: "GT", line: "Yellow", baseTime: 6, crowdFactor: 4, safetyRating: 8, comfortFactor: 8 },
-  { source: "GT", target: "VV", line: "Yellow", baseTime: 2, crowdFactor: 7, safetyRating: 7, comfortFactor: 7 },
-  { source: "VV", target: "KG", line: "Yellow", baseTime: 3, crowdFactor: 8, safetyRating: 7, comfortFactor: 6 },
-  { source: "KG", target: "CC", line: "Yellow", baseTime: 2, crowdFactor: 9, safetyRating: 6, comfortFactor: 4 },
-  { source: "CC", target: "ND", line: "Yellow", baseTime: 3, crowdFactor: 9, safetyRating: 7, comfortFactor: 5 },
-  { source: "ND", target: "RC", line: "Yellow", baseTime: 2, crowdFactor: 10, safetyRating: 8, comfortFactor: 4 },
-  { source: "RC", target: "CS", line: "Yellow", baseTime: 4, crowdFactor: 8, safetyRating: 9, comfortFactor: 7 },
-  { source: "CS", target: "IN", line: "Yellow", baseTime: 7, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
-  { source: "IN", target: "AI", line: "Yellow", baseTime: 2, crowdFactor: 8, safetyRating: 8, comfortFactor: 7 },
-  { source: "AI", target: "HK", line: "Yellow", baseTime: 5, crowdFactor: 8, safetyRating: 8, comfortFactor: 6 },
-  { source: "HK", target: "SK", line: "Yellow", baseTime: 3, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
-  { source: "SK", target: "HC", line: "Yellow", baseTime: 16, crowdFactor: 6, safetyRating: 8, comfortFactor: 8 },
+  { source: "KG", target: "CC", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SB", target: "RS1", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RS1", target: "HBM", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "HBM", target: "JP", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JP", target: "AN", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "AN", target: "AZA", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "AZA", target: "MT", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MT", target: "GT", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "GT", target: "VV", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "VV", target: "VS1", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "VS1", target: "CL", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "CL", target: "KG", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "CC", target: "CB", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "CB", target: "ND", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "ND", target: "RC", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RC", target: "PC", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PC", target: "CS", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "CS", target: "UB", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "UB", target: "LKM", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "LKM", target: "JB", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JB", target: "DHI", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DHI", target: "AI", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "AI", target: "GP", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "GP", target: "HK", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "HK", target: "MN2", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MN2", target: "SK", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SK", target: "QM", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "QM", target: "CHH", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "CHH", target: "SUL", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SUL", target: "GHI", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "GHI", target: "AG", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "AG", target: "GD", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "GD", target: "SIK", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SIK", target: "MR", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MR", target: "IC", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "IC", target: "MCC", line: "Yellow", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
 
   // Blue Line Connections
-  { source: "DW", target: "JW", line: "Blue", baseTime: 18, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
-  { source: "JW", target: "RG", line: "Blue", baseTime: 6, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
-  { source: "RG", target: "KB", line: "Blue", baseTime: 11, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
-  { source: "KB", target: "RC", line: "Blue", baseTime: 5, crowdFactor: 8, safetyRating: 8, comfortFactor: 6 },
-  { source: "RC", target: "MH", line: "Blue", baseTime: 3, crowdFactor: 7, safetyRating: 9, comfortFactor: 8 },
-  { source: "MH", target: "YB", line: "Blue", baseTime: 5, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
-  { source: "YB", target: "MV", line: "Blue", baseTime: 3, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
-  { source: "MV", target: "KK", line: "Blue", baseTime: 5, crowdFactor: 6, safetyRating: 8, comfortFactor: 8 },
-  { source: "KK", target: "NC", line: "Blue", baseTime: 9, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
-  { source: "KK", target: "VS", line: "Blue", baseTime: 7, crowdFactor: 6, safetyRating: 8, comfortFactor: 8 },
-  { source: "NC", target: "BG", line: "Blue", baseTime: 4, crowdFactor: 8, safetyRating: 8, comfortFactor: 7 },
+  { source: "RC", target: "PC", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KN1", target: "MN3", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MH", target: "BR", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RG", target: "TG", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KK", target: "AV", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RAM", target: "JHA", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JW", target: "UNE", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "BG", target: "NS12", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DWA", target: "DS1", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DM", target: "DWA", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NAW", target: "DM", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "UNW", target: "NAW", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "UNE", target: "UNW", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JE1", target: "JW", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "TN", target: "JE1", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SN3", target: "TN", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "TG", target: "SN3", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MN3", target: "RN", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RN", target: "RG", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RP1", target: "PN1", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KB", target: "RP1", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JHA", target: "KB", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "BR", target: "RC", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SC", target: "MH", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "IND", target: "SC", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MVE", target: "MVI", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NAN1", target: "MVE", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NS1", target: "NAN1", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NS11", target: "NS1", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NS12", target: "NS11", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NS3", target: "NS12", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NC", target: "NS3", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "GC", target: "NC", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DS1", target: "DS11", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DS11", target: "DS12", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DS12", target: "DS13", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DS13", target: "DS14", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DS14", target: "DS9", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DS9", target: "DS8", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DS8", target: "DW", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+
+  // Green Line Connections
+  { source: "IL", target: "APM", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SRS", target: "KN1", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PBE", target: "PBW", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PBW", target: "SP2", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SP2", target: "MAD", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MAD", target: "PVE", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PVE", target: "PVW", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PVW", target: "PEE", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PEE", target: "UN", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "UN", target: "MSS", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MSS", target: "NAN", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NAN", target: "NRS", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NRS", target: "RP", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RP", target: "MUN", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MUN", target: "MIA", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MIA", target: "GHE", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "GHE", target: "TK", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "TK", target: "TB", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "TB", target: "PSR", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PSR", target: "BC", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "BC", target: "BHS", line: "Green", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
 
   // Violet Line Connections
-  { source: "KG", target: "LQ", line: "Violet", baseTime: 3, crowdFactor: 5, safetyRating: 9, comfortFactor: 8 },
-  { source: "LQ", target: "MH", line: "Violet", baseTime: 6, crowdFactor: 6, safetyRating: 9, comfortFactor: 8 },
-  { source: "MH", target: "CS", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 9, comfortFactor: 8 },
-  { source: "CS", target: "LN", line: "Violet", baseTime: 9, crowdFactor: 8, safetyRating: 8, comfortFactor: 7 },
-  { source: "LN", target: "NP", line: "Violet", baseTime: 4, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
-  { source: "NP", target: "KM", line: "Violet", baseTime: 2, crowdFactor: 8, safetyRating: 8, comfortFactor: 7 },
-  { source: "KM", target: "BB", line: "Violet", baseTime: 12, crowdFactor: 6, safetyRating: 8, comfortFactor: 8 },
-
-  // Red Line Connections
-  { source: "RT", target: "NP_RED", line: "Red", baseTime: 5, crowdFactor: 6, safetyRating: 7, comfortFactor: 7 },
-  { source: "NP_RED", target: "IL", line: "Red", baseTime: 4, crowdFactor: 7, safetyRating: 7, comfortFactor: 7 },
-  { source: "IL", target: "KG", line: "Red", baseTime: 8, crowdFactor: 8, safetyRating: 7, comfortFactor: 6 },
-  { source: "KG", target: "WL", line: "Red", baseTime: 7, crowdFactor: 7, safetyRating: 7, comfortFactor: 7 },
-  { source: "WL", target: "DG", line: "Red", baseTime: 8, crowdFactor: 7, safetyRating: 7, comfortFactor: 7 },
+  { source: "KG", target: "LQ", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "CS", target: "KM1", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "LQ", target: "JM", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JM", target: "DG1", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DG1", target: "ITO", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "ITO", target: "MH", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MH", target: "JAN", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JAN", target: "CS", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KM1", target: "JNS", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JNS", target: "JAN1", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JAN1", target: "LN", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "LN", target: "MOO", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MOO", target: "KC", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KC", target: "NP", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NP", target: "KM", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KM", target: "GOV", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "GOV", target: "HNO", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "HNO", target: "JA", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JA", target: "SV", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SV", target: "ME", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "ME", target: "TUG", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "TUG", target: "BB", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "BB", target: "SAR", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SAR", target: "NC1", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NC1", target: "MM", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MM", target: "S2", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "S2", target: "BM", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "BM", target: "OF", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "OF", target: "NCA", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NCA", target: "BC1", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "BC1", target: "EM", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "EM", target: "SSS", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SSS", target: "RNS", line: "Violet", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
 
   // Pink Line Connections
-  { source: "NP_RED", target: "RG", line: "Pink", baseTime: 8, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
-  { source: "RG", target: "IN", line: "Pink", baseTime: 15, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
-  { source: "IN", target: "LN", line: "Pink", baseTime: 6, crowdFactor: 8, safetyRating: 9, comfortFactor: 7 },
-  { source: "LN", target: "MV", line: "Pink", baseTime: 9, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
-  { source: "MV", target: "WL", line: "Pink", baseTime: 11, crowdFactor: 6, safetyRating: 8, comfortFactor: 8 },
+  { source: "WL", target: "JAF", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NSP", target: "SHA1", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "AZA", target: "SB1", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DHI", target: "SE", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PBW", target: "EB", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "LN", target: "VIN", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MP1", target: "AZA", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SB1", target: "NSP", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SHA1", target: "PBW", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "EB", target: "RG", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RG", target: "MAY", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MAY", target: "NV", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NV", target: "DC", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DC", target: "DDS", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DDS", target: "SMV", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SMV", target: "BCP", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "BCP", target: "SN2", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SN2", target: "DHI", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SE", target: "LN", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "VIN", target: "ASH", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "ASH", target: "SKK", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SKK", target: "MV", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MV", target: "MVP", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MVP", target: "TSL", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "TSL", target: "EVN", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "EVN", target: "MWV", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MWV", target: "IE", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "IE", target: "AV", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "AV", target: "KK", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KK", target: "KC1", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KC1", target: "KN2", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KN2", target: "EAN", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "EAN", target: "WL", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JAF", target: "MB", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MB", target: "GOK", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "GOK", target: "JE", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JE", target: "SV1", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MVI", target: "MVP", line: "Pink", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
 
   // Magenta Line Connections
-  { source: "JW", target: "AP", line: "Magenta", baseTime: 12, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
-  { source: "AP", target: "VS_RED", line: "Magenta", baseTime: 6, crowdFactor: 6, safetyRating: 8, comfortFactor: 8 },
-  { source: "VS_RED", target: "MN", line: "Magenta", baseTime: 2, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
-  { source: "MN", target: "HK", line: "Magenta", baseTime: 4, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
-  { source: "HK", target: "GH", line: "Magenta", baseTime: 5, crowdFactor: 6, safetyRating: 8, comfortFactor: 8 },
-  { source: "GH", target: "KM", line: "Magenta", baseTime: 4, crowdFactor: 7, safetyRating: 8, comfortFactor: 8 },
-  { source: "KM", target: "OK", line: "Magenta", baseTime: 2, crowdFactor: 6, safetyRating: 8, comfortFactor: 8 },
-  { source: "OK", target: "BG", line: "Magenta", baseTime: 10, crowdFactor: 7, safetyRating: 8, comfortFactor: 7 },
+  { source: "PB", target: "GG", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PIT", target: "DC1", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "HBM", target: "NP1", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "AZA", target: "MP1", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "HK", target: "PP", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PEE", target: "PV1", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KM", target: "OK", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RAM", target: "NK", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NK", target: "SB2", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SB2", target: "PB", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "GG", target: "DN", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DN", target: "AV1", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "AV1", target: "AZA", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "BHA", target: "HBM", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NP1", target: "PV", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PV", target: "PIT", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DC1", target: "PUS", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PUS", target: "WE", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "WE", target: "MAN", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MAN", target: "PEE", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PV1", target: "KES", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KES", target: "KPE", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KPE", target: "JW", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JW", target: "DMJ", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DMJ", target: "DP", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "DP", target: "PAL", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PAL", target: "SBC", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SBC", target: "T1I", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "T1I", target: "SV2", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SV2", target: "VVH", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "VVH", target: "MN", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "MN", target: "RKP", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "RKP", target: "ID", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "ID", target: "HK", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PP", target: "CD", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "CD", target: "GK", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "GK", target: "NE", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NE", target: "KM", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "OK", target: "SV3", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "SV3", target: "JMI", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JMI", target: "OV", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "OV", target: "JVS", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "JVS", target: "KK1", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KK1", target: "OBS", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "OBS", target: "BG", line: "Magenta", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
 
-  // Orange Line (Airport Express) Connections
-  // Connecting New Delhi (ND) <-> Aerocity (AP) <-> Dwarka Sector 21 (DW)
-  { source: "ND", target: "AP", line: "Orange", baseTime: 15, crowdFactor: 3, safetyRating: 10, comfortFactor: 9 },
-  { source: "AP", target: "DW", line: "Orange", baseTime: 6, crowdFactor: 3, safetyRating: 10, comfortFactor: 9 }
+  // Orange Line Connections
+  { source: "ND", target: "SS1", line: "Orange", baseTime: 8, crowdFactor: 3, safetyRating: 10, comfortFactor: 9 },
+  { source: "SP2", target: "DK", line: "Orange", baseTime: 8, crowdFactor: 3, safetyRating: 10, comfortFactor: 9 },
+  { source: "DW", target: "YDS", line: "Orange", baseTime: 8, crowdFactor: 3, safetyRating: 10, comfortFactor: 9 },
+  { source: "SS1", target: "DK", line: "Orange", baseTime: 8, crowdFactor: 3, safetyRating: 10, comfortFactor: 9 },
+  { source: "DK", target: "DA", line: "Orange", baseTime: 8, crowdFactor: 3, safetyRating: 10, comfortFactor: 9 },
+  { source: "DA", target: "IA", line: "Orange", baseTime: 8, crowdFactor: 3, safetyRating: 10, comfortFactor: 9 },
+  { source: "IA", target: "DW", line: "Orange", baseTime: 8, crowdFactor: 3, safetyRating: 10, comfortFactor: 9 },
+
+  // Grey Line Connections
+  { source: "DWA", target: "NAN2", line: "Grey", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NAN2", target: "NAJ", line: "Grey", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NAJ", target: "DBS", line: "Grey", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+
 ];
 
 export const LINE_COLORS = {
-  Yellow: "#FFC72C",
-  Blue: "#0055A5",
-  Violet: "#8A2BE2",
-  Red: "#E31B23",
-  Pink: "#FF69B4",
-  Magenta: "#8B008B",
-  Orange: "#FF8C00"
+  "Red": "#E31B23",
+  "Yellow": "#FFC72C",
+  "Blue": "#0055A5",
+  "Violet": "#8A2BE2",
+  "Pink": "#FF69B4",
+  "Magenta": "#8B008B",
+  "Orange": "#FF8C00",
+  "Airport Express": "#FF8C00",
+  "Green": "#228B22",
+  "Grey": "#808080",
+  "Rapid": "#00CED1",
+  "Aqua": "#00CED1"
 };
