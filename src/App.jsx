@@ -6,6 +6,7 @@ import RouteDetails from "./components/RouteDetails";
 import StationExplorer from "./components/StationExplorer";
 import { useMetroStore } from "./store/useMetroStore";
 import { Navigation, Map, Info, AlertTriangle } from "lucide-react";
+import { triggerHaptic } from "./utils/device";
 
 export default function App() {
   const {
@@ -85,7 +86,7 @@ export default function App() {
         )}
 
         {activeTab === "map" && (
-          <div className="h-[calc(100vh-170px)] min-h-[400px] w-full">
+          <div className="h-[calc(100dvh-150px)] min-h-[400px] w-full">
             <MapView />
           </div>
         )}
@@ -127,7 +128,10 @@ export default function App() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[2000] bg-slate-950/80 backdrop-blur-lg border-t border-white/10 px-4 py-2 bottom-nav-safe">
         <div className="flex items-center justify-around max-w-md mx-auto">
           <button
-            onClick={() => setActiveTab("planner")}
+            onClick={() => {
+              setActiveTab("planner");
+              triggerHaptic(10);
+            }}
             className={`flex flex-col items-center space-y-1 py-1 px-3 rounded-xl transition-all duration-200 ${
               activeTab === "planner" ? "text-cyan-400 scale-105" : "text-slate-400 hover:text-slate-200"
             }`}
@@ -137,7 +141,10 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => setActiveTab("map")}
+            onClick={() => {
+              setActiveTab("map");
+              triggerHaptic(10);
+            }}
             className={`flex flex-col items-center space-y-1 py-1 px-3 rounded-xl transition-all duration-200 ${
               activeTab === "map" ? "text-cyan-400 scale-105" : "text-slate-400 hover:text-slate-200"
             }`}
@@ -147,7 +154,10 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => setActiveTab("stations")}
+            onClick={() => {
+              setActiveTab("stations");
+              triggerHaptic(10);
+            }}
             className={`flex flex-col items-center space-y-1 py-1 px-3 rounded-xl transition-all duration-200 ${
               activeTab === "stations" ? "text-cyan-400 scale-105" : "text-slate-400 hover:text-slate-200"
             }`}
@@ -157,7 +167,10 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => setActiveTab("status")}
+            onClick={() => {
+              setActiveTab("status");
+              triggerHaptic(10);
+            }}
             className={`flex flex-col items-center space-y-1 py-1 px-3 rounded-xl transition-all duration-200 ${
               activeTab === "status" ? "text-cyan-400 scale-105" : "text-slate-400 hover:text-slate-200"
             }`}
