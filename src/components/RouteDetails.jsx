@@ -14,19 +14,21 @@ import {
   CheckCircle2,
   Accessibility,
   ArrowRight,
-  TrendingDown,
-  Info
+  Sparkles,
+  CreditCard,
+  Gauge,
+  Navigation
 } from "lucide-react";
 
 export default function RouteDetails() {
-  const { activeRoute, infrastructureStatus, accessibilityOnly } = useMetroStore();
-  const [activeTab, setActiveTab] = useState("timeline"); // "timeline" | "exits" | "status"
+  const { activeRoute, infrastructureStatus, accessibilityOnly, useSmartCard, timeOfDay } = useMetroStore();
+  const [activeTab, setActiveTab] = useState("timeline"); // "timeline" | "fare" | "exits" | "status"
 
   if (!activeRoute) {
     return (
       <div className="glass-panel flex-1 p-8 rounded-2xl flex flex-col items-center justify-center text-center border border-white/10 shadow-xl min-h-[300px]">
         <div className="bg-slate-900 p-4 rounded-full border border-white/5 mb-4 text-cyan-400 animate-pulse">
-          <MapPin className="h-8 w-8" />
+          <Navigation className="h-8 w-8" />
         </div>
         <h3 className="font-outfit font-bold text-lg text-slate-200">No Journey Selected</h3>
         <p className="text-sm text-slate-400 max-w-sm mt-1">
@@ -39,13 +41,9 @@ export default function RouteDetails() {
   const { metrics, path, edges, transfersList } = activeRoute;
   const destinationStation = path[path.length - 1];
 
-  // Logic to recommend the best exit gate:
-  // - If accessibilityOnly is on, prefer exits with "Elevator"
-  // - If women's safety mode or general safety, prefer "Well-Lit" exits
-  // - Return first matching exit, or gate 1 fallback
+  // Exit Gate Recommendation Engine
   const getRecommendedExit = () => {
     if (!destinationStation || !destinationStation.exits) return null;
-    
     let candidates = destinationStation.exits;
 
     if (accessibilityOnly) {
@@ -61,21 +59,65 @@ export default function RouteDetails() {
 
   const recommendedExit = getRecommendedExit();
 
-  // Helper to color crowd badge
+  // Metrics colors
   const getCrowdColor = (val) => {
     if (val < 4) return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
     if (val < 7) return "text-amber-400 bg-amber-500/10 border-amber-500/20";
     return "text-rose-400 bg-rose-500/10 border-rose-500/20";
   };
 
-  // Helper to color safety badge
   const getSafetyColor = (val) => {
     if (val >= 8) return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
     if (val >= 6) return "text-amber-400 bg-amber-500/10 border-amber-500/20";
     return "text-rose-400 bg-rose-500/10 border-rose-500/20";
   };
 
-  // Check if any station in path has a broken elevator/escalator
+  // Get leg details (condensed legs of the same line)
+  const getCondensedLegs = () => {
+    const legs = [];
+    if (path.length === 0) return legs;
+
+    let currentLeg = {
+      line: edges[0]?.line || path[0].lines[0],
+      startStation: path[0],
+      endStation: path[0],
+      stopsCount: 0,
+      duration: 0,
+      edges: []
+    };
+
+    edges.forEach((edge, idx) => {
+      if (edge.isTransfer) {
+        legs.push(currentLeg);
+        currentLeg = {
+          line: edge.line,
+          startStation: path[idx],
+          endStation: path[idx + 1],
+          stopsCount: 1,
+          duration: edge.adjustedTime || edge.baseTime,
+          edges: [edge]
+        };
+      } else {
+        currentLeg.endStation = path[idx + 1];
+        currentLeg.stopsCount++;
+        currentLeg.duration += edge.adjustedTime || edge.baseTime;
+        currentLeg.edges.push(edge);
+      }
+    });
+    legs.push(currentLeg);
+    return legs;
+  };
+
+  const condensedLegs = getCondensedLegs();
+
+  // Dynamic Smart Card Savings Details
+  // Smart Card Discount: 10% on Peak hours, 20% on Off-Peak hours
+  const discountPercentage = timeOfDay === "Off-Peak" ? 20 : 10;
+  const regularFare = metrics.fare;
+  const smartCardFare = Math.round(regularFare * (1 - discountPercentage / 100));
+  const savings = regularFare - smartCardFare;
+
+  // Gather path facility alerts
   const getPathStatusAlerts = () => {
     const alerts = [];
     path.forEach(station => {
@@ -98,12 +140,19 @@ export default function RouteDetails() {
     <div className="glass-panel flex-1 p-5 rounded-2xl flex flex-col space-y-5 border border-white/10 shadow-xl overflow-hidden">
       
       {/* Route Overview Metrics Grid */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+      <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
         {/* Metric: Time */}
         <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
           <Clock className="h-4 w-4 mx-auto mb-1 text-cyan-400" />
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time</span>
           <span className="text-base font-outfit font-extrabold text-white mt-0.5">{metrics.time}m</span>
+        </div>
+
+        {/* Metric: Distance */}
+        <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
+          <Gauge className="h-4 w-4 mx-auto mb-1 text-sky-400" />
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Distance</span>
+          <span className="text-base font-outfit font-extrabold text-white mt-0.5">{metrics.distance} km</span>
         </div>
 
         {/* Metric: Transfers */}
@@ -117,7 +166,9 @@ export default function RouteDetails() {
         <div className="bg-slate-900/50 border border-white/5 p-3 rounded-xl flex flex-col justify-center text-center">
           <Coins className="h-4 w-4 mx-auto mb-1 text-[#FFC72C]" />
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fare</span>
-          <span className="text-base font-outfit font-extrabold text-white mt-0.5">₹{metrics.fare}</span>
+          <span className="text-base font-outfit font-extrabold text-white mt-0.5">
+            ₹{useSmartCard ? smartCardFare : regularFare}
+          </span>
         </div>
 
         {/* Metric: Crowd */}
@@ -142,7 +193,49 @@ export default function RouteDetails() {
         </div>
       </div>
 
-      {/* Tabs Toggles */}
+      {/* Visual Subway Node Flow Map */}
+      <div className="bg-slate-900/40 border border-white/5 p-4 rounded-xl flex items-center overflow-x-auto select-none space-x-3 max-w-full">
+        {condensedLegs.map((leg, idx) => {
+          const isLast = idx === condensedLegs.length - 1;
+          const lineColor = LINE_COLORS[leg.line] || "#64748b";
+
+          return (
+            <React.Fragment key={idx}>
+              {/* Leg Block */}
+              <div className="flex items-center shrink-0 bg-slate-950/60 border border-white/5 px-3 py-2 rounded-xl">
+                {/* Line color indicator node */}
+                <span 
+                  className="w-3.5 h-3.5 rounded-full inline-block mr-2 shrink-0 border border-white/10"
+                  style={{ backgroundColor: lineColor }}
+                />
+                <div className="flex flex-col text-left">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{leg.line} Line</span>
+                  <span className="text-[11px] font-semibold text-white max-w-[100px] truncate">{leg.startStation.name}</span>
+                </div>
+              </div>
+
+              {/* Arrow linking to next leg (representing transfer) */}
+              {!isLast && (
+                <div className="flex flex-col items-center justify-center shrink-0 px-1 text-slate-500">
+                  <ArrowRight className="h-4 w-4 text-purple-400 animate-pulse" />
+                  <span className="text-[8px] text-purple-400 font-bold uppercase tracking-wider mt-0.5">Transfer</span>
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
+        
+        {/* Terminus Destination Node */}
+        <div className="flex items-center shrink-0 bg-rose-950/20 border border-rose-500/20 px-3 py-2 rounded-xl">
+          <MapPin className="h-4 w-4 text-rose-400 mr-2 shrink-0" />
+          <div className="flex flex-col text-left">
+            <span className="text-[10px] text-rose-400 font-bold uppercase tracking-wider">Destination</span>
+            <span className="text-[11px] font-semibold text-white max-w-[100px] truncate">{destinationStation.name}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
       <div className="flex border-b border-white/5 pb-2 space-x-4">
         <button
           onClick={() => setActiveTab("timeline")}
@@ -150,7 +243,15 @@ export default function RouteDetails() {
             activeTab === "timeline" ? "text-cyan-400 border-cyan-400" : "text-slate-400 border-transparent hover:text-slate-200"
           }`}
         >
-          Route Steps
+          Timeline
+        </button>
+        <button
+          onClick={() => setActiveTab("fare")}
+          className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-all ${
+            activeTab === "fare" ? "text-cyan-400 border-cyan-400" : "text-slate-400 border-transparent hover:text-slate-200"
+          }`}
+        >
+          Fare Breakdowns
         </button>
         <button
           onClick={() => setActiveTab("exits")}
@@ -166,7 +267,7 @@ export default function RouteDetails() {
             activeTab === "status" ? "text-cyan-400 border-cyan-400" : "text-slate-400 border-transparent hover:text-slate-200"
           }`}
         >
-          Infrastructure Alerts {pathAlerts.length > 0 && (
+          Facility Outages {pathAlerts.length > 0 && (
             <span className="ml-1 bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[9px] px-1.5 py-0.2 rounded-full font-extrabold">
               {pathAlerts.length}
             </span>
@@ -176,21 +277,19 @@ export default function RouteDetails() {
 
       {/* Tab Contents */}
       <div className="flex-1 overflow-y-auto max-h-[350px]">
+        
+        {/* Timeline Tab */}
         {activeTab === "timeline" && (
           <div className="relative pl-5 border-l border-slate-700/80 space-y-5 py-2">
             {path.map((station, idx) => {
               const isStart = idx === 0;
               const isEnd = idx === path.length - 1;
               const nextEdge = edges[idx];
-              const prevEdge = edges[idx - 1];
-              
-              // Find if this station has active alerts
               const hasAlert = infrastructureStatus[station.id]?.escalator === "Under Maintenance" || 
                                 infrastructureStatus[station.id]?.elevator === "Under Maintenance";
 
               return (
                 <div key={station.id} className="relative group">
-                  {/* Timeline bullet dot */}
                   <span
                     className={`absolute -left-[27px] top-[5px] w-[14px] h-[14px] rounded-full border-3 border-slate-950 transition-all ${
                       isStart 
@@ -201,21 +300,17 @@ export default function RouteDetails() {
                     }`}
                   />
 
-                  {/* Step Contents */}
                   <div className="flex flex-col space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="font-outfit text-sm font-bold text-slate-100">{station.name}</span>
-                      
-                      {/* Alert Tag on Station */}
                       {hasAlert && (
                         <span className="flex items-center space-x-0.5 text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded">
                           <AlertTriangle className="h-2.5 w-2.5" />
-                          <span>Outage</span>
+                          <span>Alert</span>
                         </span>
                       )}
                     </div>
 
-                    {/* Show station lines */}
                     <div className="flex space-x-1">
                       {station.lines.map(l => (
                         <span
@@ -232,23 +327,21 @@ export default function RouteDetails() {
                       ))}
                     </div>
 
-                    {/* Edge Connection Details */}
                     {nextEdge && !isEnd && (
                       <div className="mt-2 pl-4 py-2 border-l-2 border-dashed border-slate-800 text-[11px] text-slate-400 flex flex-col space-y-1 bg-slate-900/10 rounded-r-lg">
                         <div className="flex items-center space-x-1 text-slate-300">
                           <ArrowRight className="h-3 w-3 text-cyan-400" />
-                          <span>Ride <span className="font-bold text-white">{nextEdge.line} Line</span> to next station</span>
+                          <span>Ride <span className="font-bold text-white">{nextEdge.line} Line</span></span>
                         </div>
                         <div className="flex items-center space-x-4">
-                          <span>Duration: <strong>{nextEdge.baseTime} mins</strong></span>
+                          <span>Duration: <strong>{Math.round(nextEdge.adjustedTime || nextEdge.baseTime)} mins</strong></span>
                           <span>Crowd: <strong className={getCrowdColor(nextEdge.crowdFactor).split(" ")[0]}>{nextEdge.crowdFactor}/10</strong></span>
                         </div>
                         
-                        {/* Highlight Transfer next */}
                         {nextEdge.isTransfer && (
                           <div className="mt-1 p-2 rounded bg-purple-950/20 border border-purple-500/20 text-purple-300 flex items-center space-x-1.5 font-semibold text-[10px]">
                             <GitCompare className="h-3 w-3" />
-                            <span>Transfer at {station.name} to {nextEdge.line} Line (+5 mins transfer walk)</span>
+                            <span>Transfer to {nextEdge.line} Line ({timeOfDay === "Peak" ? "+8 mins peak walk" : "+5 mins walk"})</span>
                           </div>
                         )}
                       </div>
@@ -260,9 +353,85 @@ export default function RouteDetails() {
           </div>
         )}
 
+        {/* Fare Details Tab */}
+        {activeTab === "fare" && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              {/* Token Fare Card */}
+              <div className="bg-slate-900/60 border border-white/5 p-4 rounded-xl flex flex-col justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Single Journey Token</h4>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Purchased at vending machines</p>
+                </div>
+                <div className="text-2xl font-outfit font-extrabold text-white mt-4">₹{regularFare}</div>
+              </div>
+
+              {/* Smart Card Fare Card */}
+              <div className={`border p-4 rounded-xl flex flex-col justify-between ${
+                useSmartCard ? "bg-amber-500/10 border-amber-500/30" : "bg-slate-900/30 border-white/5 opacity-60"
+              }`}>
+                <div>
+                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                    <Sparkles className="h-3 w-3 text-amber-400 animate-pulse" />
+                    Metro Smart Card
+                  </h4>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Includes {discountPercentage}% discount</p>
+                </div>
+                <div className="text-2xl font-outfit font-extrabold text-amber-300 mt-4">₹{smartCardFare}</div>
+              </div>
+            </div>
+
+            {/* Smart Card savings announcement */}
+            {useSmartCard ? (
+              <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/25 p-3 rounded-xl flex items-center justify-between text-xs">
+                <div className="flex items-center space-x-2 text-emerald-300">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span><strong>Smart Card Discount Active!</strong> You saved ₹{savings} ({discountPercentage}% off).</span>
+                </div>
+                <span className="text-[10px] bg-emerald-500 text-slate-950 font-bold px-2 py-0.5 rounded shadow uppercase">Saved</span>
+              </div>
+            ) : (
+              <div className="bg-slate-900/40 border border-white/5 p-3 rounded-xl text-xs text-slate-400 flex items-start space-x-2.5">
+                <CreditCard className="h-4.5 w-4.5 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <h5 className="font-bold text-slate-200">Recommendation: Use a Smart Card</h5>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Using a metro card gives you a 10% discount during Peak Hours, and a <strong>20% discount</strong> during Off-Peak hours. Enable "Metro Smart Card" in the Planner panel to calculate discounted pricing.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Detailed fare calculation breakdown */}
+            <div className="border border-white/5 rounded-xl p-3 text-xs bg-slate-900/20 space-y-2">
+              <h5 className="font-semibold text-slate-200 uppercase tracking-wider text-[10px]">Fare Breakdown Details</h5>
+              <div className="space-y-1 text-slate-400">
+                <div className="flex justify-between">
+                  <span>Base Minimum Fare:</span>
+                  <span className="text-slate-200">₹10.00</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Distance Charge ({metrics.distance} km @ ₹2.5/km):</span>
+                  <span className="text-slate-200">₹{Math.round(metrics.distance * 2.5 * 100) / 100}</span>
+                </div>
+                {metrics.transfers > 0 && (
+                  <div className="flex justify-between">
+                    <span>Interchange Transfer surcharge (₹2/transfer):</span>
+                    <span className="text-slate-200">₹{metrics.transfers * 2}.00</span>
+                  </div>
+                )}
+                <div className="border-t border-white/5 pt-1.5 flex justify-between font-bold text-slate-200">
+                  <span>Subtotal Calculated Fare:</span>
+                  <span>₹{regularFare}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Exits Tab */}
         {activeTab === "exits" && (
           <div className="space-y-4">
-            {/* Recommended Gate Card */}
             {recommendedExit ? (
               <div className="bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 border border-cyan-500/25 p-4 rounded-xl space-y-2">
                 <div className="flex items-center space-x-2 text-cyan-300">
@@ -289,16 +458,15 @@ export default function RouteDetails() {
                   ))}
                 </div>
                 <p className="text-[10px] text-slate-400 italic">
-                  * Recommended based on lighting security checks and your {accessibilityOnly ? "accessibility needs" : "route parameters"}.
+                  * Recommended based on lighting security checks and your {accessibilityOnly ? "accessibility settings" : "safety mode"}.
                 </p>
               </div>
             ) : (
               <p className="text-slate-400 text-xs italic">No exit data available for destination.</p>
             )}
 
-            {/* List of All Exits */}
             <div className="space-y-2">
-              <h4 className="font-outfit font-bold text-xs text-slate-300 uppercase tracking-wider">All Available Exits at Destination</h4>
+              <h4 className="font-outfit font-bold text-xs text-slate-300 uppercase tracking-wider">All Gates / Exits</h4>
               <div className="space-y-2">
                 {destinationStation.exits.map(exit => (
                   <div key={exit.gate} className="p-3 rounded-lg bg-slate-900/50 border border-white/5 flex items-center justify-between text-xs">
@@ -310,7 +478,7 @@ export default function RouteDetails() {
                       <div className="flex space-x-1.5 mt-1 text-[9px] text-slate-400">
                         <span>Lighting: <strong className="text-slate-300">{exit.lit}</strong></span>
                         <span>•</span>
-                        <span>Access: <strong className="text-slate-300">{exit.accessibility.join(", ") || "None"}</strong></span>
+                        <span>Accessibility: <strong className="text-slate-300">{exit.accessibility.join(", ") || "None"}</strong></span>
                       </div>
                     </div>
                   </div>
@@ -320,14 +488,9 @@ export default function RouteDetails() {
           </div>
         )}
 
+        {/* Status Alerts Tab */}
         {activeTab === "status" && (
           <div className="space-y-3">
-            <div className="flex items-center space-x-1 text-slate-400 text-[10px] uppercase font-bold tracking-wider">
-              <Info className="h-3.5 w-3.5" />
-              <span>Real-Time Facility Stream</span>
-            </div>
-
-            {/* Alerts summary */}
             {pathAlerts.length > 0 ? (
               <div className="space-y-2.5">
                 {pathAlerts.map((alert, idx) => (
@@ -336,7 +499,7 @@ export default function RouteDetails() {
                     <div>
                       <h5 className="font-bold text-slate-200">{alert.stationName} Outage</h5>
                       <p className="text-[10px] text-rose-300/80 mt-0.5">
-                        The station's <strong>{alert.type}</strong> is currently down for maintenance. Use elevator/stairs if needed.
+                        The station's <strong>{alert.type}</strong> is currently down for maintenance. Access via stairs/alternate gates.
                       </p>
                     </div>
                   </div>
@@ -354,7 +517,6 @@ export default function RouteDetails() {
               </div>
             )}
 
-            {/* All stations in path facility table */}
             <div className="border border-white/5 rounded-xl overflow-hidden mt-3 text-xs bg-slate-900/20">
               <div className="grid grid-cols-3 bg-slate-900/60 p-2 font-bold text-slate-300 text-[10px] uppercase border-b border-white/5">
                 <span>Station</span>
@@ -378,7 +540,6 @@ export default function RouteDetails() {
                 })}
               </div>
             </div>
-
           </div>
         )}
       </div>

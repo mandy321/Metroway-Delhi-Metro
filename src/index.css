@@ -56,52 +56,55 @@
   background: rgba(6, 182, 212, 0.5);
 }
 
-/* Leaflet Dark Mode Adjustments */
+/* Leaflet Apple-style Light Theme Customization */
 .leaflet-container {
-  background: #0b0f19 !important;
+  background: #f1f5f9 !important;
   font-family: 'Inter', sans-serif !important;
 }
 
 .leaflet-bar {
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 12px !important;
 }
 
 .leaflet-bar a {
-  background-color: rgba(15, 23, 42, 0.85) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: #94a3b8 !important;
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  color: #334155 !important;
   transition: all 0.2s ease;
 }
 
 .leaflet-bar a:hover {
-  background-color: rgba(30, 41, 59, 0.9) !important;
-  color: #22d3ee !important;
+  background-color: #ffffff !important;
+  color: #06b6d4 !important;
 }
 
 .leaflet-popup-content-wrapper {
-  background: rgba(15, 23, 42, 0.95) !important;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f1f5f9 !important;
-  border-radius: 12px !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: #1e293b !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.15) !important;
 }
 
 .leaflet-popup-tip {
-  background: rgba(15, 23, 42, 0.95) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
 .leaflet-tooltip {
-  background: rgba(15, 23, 42, 0.9) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: #e2e8f0 !important;
-  font-size: 0.75rem !important;
-  font-weight: 500 !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
   border-radius: 6px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
 }
+
 
 /* Pulsing Custom Marker */
 @keyframes marker-pulse {

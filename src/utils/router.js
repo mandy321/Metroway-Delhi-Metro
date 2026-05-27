@@ -15,8 +15,27 @@ export function getWeights(mode) {
   }
 }
 
+// Haversine formula to compute distance in km between coordinates
+export function getHaversineDistance(coord1, coord2) {
+  const [lat1, lon1] = coord1;
+  const [lat2, lon2] = coord2;
+  const R = 6371; // Earth's radius in km
+
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 // Build adjacency graph from metro edges
-// Since connections are bidirectional, we add both ways
 function buildGraph() {
   const graph = {};
   
@@ -51,9 +70,8 @@ function buildGraph() {
 
 /**
  * Calculates the optimal route from start to end station using Modified Dijkstra
- * Nodes in Dijkstra are pairs of (stationId, line) to handle transfer penalties correctly
  */
-export function calculateRoute(startId, endId, mode) {
+export function calculateRoute(startId, endId, mode, timeOfDay = "Off-Peak") {
   if (!startId || !endId) return null;
   if (startId === endId) {
     const station = STATIONS.find(s => s.id === startId);
@@ -66,7 +84,8 @@ export function calculateRoute(startId, endId, mode) {
         fare: 0,
         crowd: station.baseCrowd,
         comfort: 10,
-        safety: 10
+        safety: 10,
+        distance: 0
       },
       transfersList: []
     };
@@ -74,9 +93,9 @@ export function calculateRoute(startId, endId, mode) {
 
   const graph = buildGraph();
   const weights = getWeights(mode);
+  const isPeak = timeOfDay === "Peak";
 
-  // Dijkstra data structures
-  // key: "stationId:line"
+  // Dijkstra variables
   const dist = {};
   const prev = {};
   const queue = [];
@@ -87,7 +106,6 @@ export function calculateRoute(startId, endId, mode) {
   if (!startStation || !endStation) return null;
 
   // Initialize start states
-  // User can start on any line passing through the start station
   startStation.lines.forEach(line => {
     const key = `${startId}:${line}`;
     dist[key] = 0;
@@ -95,26 +113,30 @@ export function calculateRoute(startId, endId, mode) {
   });
 
   while (queue.length > 0) {
-    // Sort queue to get the node with the minimum cost (simple priority queue)
     queue.sort((a, b) => a.cost - b.cost);
     const curr = queue.shift();
     const currKey = curr.key;
 
-    // If we reached the end station, we don't stop immediately to ensure we find the absolute shortest path,
-    // but standard Dijkstra guarantees it once it is popped if weights are non-negative.
     if (dist[currKey] < curr.cost) continue;
 
     const neighbors = graph[curr.stationId] || [];
     neighbors.forEach(neighbor => {
-      // Transition from curr.line to neighbor.line
-      // If lines differ, there is a transfer penalty
       const isTransfer = curr.line !== neighbor.line;
-      const transferTimePenalty = isTransfer ? 5 : 0; // 5 mins penalty
-      const transferComfortPenalty = isTransfer ? 2 : 0; // comfort penalty
+      
+      // PEAK HOUR PENALTIES:
+      // - Transfer penalty increases from 5 to 8 minutes due to boarding queues and crowd congestion.
+      const transferTimePenalty = isTransfer ? (isPeak ? 8 : 5) : 0;
+      const transferComfortPenalty = isTransfer ? 2 : 0;
 
-      // Cost calculation
+      // - Highly crowded edges run 25% slower during peak hours due to dwell times.
+      let adjustedBaseTime = neighbor.baseTime;
+      if (isPeak && neighbor.crowdFactor >= 7) {
+        adjustedBaseTime = neighbor.baseTime * 1.25;
+      }
+
+      // Edge cost function
       const edgeCost = 
-        (weights.time * neighbor.baseTime) + 
+        (weights.time * adjustedBaseTime) + 
         (weights.crowd * neighbor.crowdFactor) + 
         (weights.comfort * neighbor.comfortFactor) + 
         (weights.safety * (10 - neighbor.safetyRating));
@@ -138,6 +160,7 @@ export function calculateRoute(startId, endId, mode) {
             target: neighbor.to,
             line: neighbor.line,
             baseTime: neighbor.baseTime,
+            adjustedTime: adjustedBaseTime,
             crowdFactor: neighbor.crowdFactor,
             safetyRating: neighbor.safetyRating,
             comfortFactor: neighbor.comfortFactor,
@@ -149,7 +172,7 @@ export function calculateRoute(startId, endId, mode) {
     });
   }
 
-  // Find the end state with the lowest cost
+  // Find optimal end state
   let bestEndKey = null;
   let minEndCost = Infinity;
 
@@ -172,7 +195,6 @@ export function calculateRoute(startId, endId, mode) {
     currKey = prev[currKey] ? prev[currKey].key : null;
   }
 
-  // Build the list of stations, edges, and transfers
   const pathStations = [];
   const pathEdges = [];
   const transfersList = [];
@@ -200,27 +222,40 @@ export function calculateRoute(startId, endId, mode) {
   let totalCrowd = 0;
   let totalSafety = 0;
   let transfersCount = 0;
+  let totalDistance = 0;
 
-  pathEdges.forEach(edge => {
-    totalTime += edge.baseTime;
+  pathEdges.forEach((edge, idx) => {
+    totalTime += edge.adjustedTime;
     totalCrowd += edge.crowdFactor;
     totalSafety += edge.safetyRating;
+    
     if (edge.isTransfer) {
       transfersCount++;
-      totalTime += 5; // Add transfer time penalty to total time metric
+      totalTime += isPeak ? 8 : 5; // Add transfer time penalty to total time
     }
+
+    // Accumulate actual coordinates distance
+    const sCoord = STATIONS.find(s => s.id === edge.source).coordinates;
+    const tCoord = STATIONS.find(s => s.id === edge.target).coordinates;
+    totalDistance += getHaversineDistance(sCoord, tCoord);
   });
 
   const edgeCount = pathEdges.length;
   const avgCrowd = edgeCount > 0 ? totalCrowd / edgeCount : startStation.baseCrowd;
   const avgSafety = edgeCount > 0 ? totalSafety / edgeCount : 10;
 
-  // Comfort Score: starts at 10, penalizes for crowd and transfers
-  let comfortScore = 10 - (avgCrowd * 0.6 + transfersCount * 1.2);
+  // Dynamic comfort rating based on peak congestion
+  let peakPenalty = isPeak ? 1.5 : 0;
+  let comfortScore = 10 - (avgCrowd * 0.6 + transfersCount * 1.2 + peakPenalty);
   comfortScore = Math.max(1, Math.min(10, Math.round(comfortScore * 10) / 10));
 
-  // Fare: INR 10 base + INR 3 per station connection, max 60
-  const fare = Math.min(60, 10 + edgeCount * 3);
+  // Advanced Fare Calculation:
+  // Base fare: ₹10
+  // Plus distance fare: ₹2.5 per km
+  // Plus transfer charge: ₹2 per transfer
+  // Capped at ₹60 standard DMRC limits
+  let baseFare = 10 + (totalDistance * 2.5) + (transfersCount * 2);
+  const fare = Math.min(60, Math.max(10, Math.round(baseFare)));
 
   return {
     path: pathStations,
@@ -231,7 +266,8 @@ export function calculateRoute(startId, endId, mode) {
       fare,
       crowd: Math.round(avgCrowd * 10) / 10,
       comfort: comfortScore,
-      safety: Math.round(avgSafety * 10) / 10
+      safety: Math.round(avgSafety * 10) / 10,
+      distance: Math.round(totalDistance * 10) / 10 // km
     },
     transfersList
   };

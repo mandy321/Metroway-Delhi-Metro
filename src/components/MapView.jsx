@@ -1,100 +1,141 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Polyline, Marker, Popup, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
 import { useMetroStore } from "../store/useMetroStore";
 import { STATIONS, EDGES, LINE_COLORS } from "../data/metroData";
-import { Zap, ShieldCheck, Heart, Users, Construction } from "lucide-react";
+import { Plus, Minus, Navigation, Layers, HelpCircle, Construction } from "lucide-react";
 
-// Hook to auto-fit map view to the current active route
-function RouteBoundsFitter({ activeRoute }) {
+// Hook to control map zoom & centering dynamically
+function MapController({ activeRoute, zoomLevel, centerCoords }) {
   const map = useMap();
 
+  // Handle active route bounding box centering
   useEffect(() => {
     if (activeRoute && activeRoute.path && activeRoute.path.length > 0) {
       const coordinates = activeRoute.path.map((s) => s.coordinates);
-      // Fit to bounds with comfortable padding
       map.fitBounds(coordinates, {
-        padding: [50, 50],
-        maxZoom: 14,
+        padding: [60, 60],
+        maxZoom: 13,
         animate: true,
-        duration: 1.0
+        duration: 1.2
       });
     }
   }, [activeRoute, map]);
+
+  // Handle custom zoom controls
+  useEffect(() => {
+    if (zoomLevel !== null) {
+      map.setZoom(zoomLevel);
+    }
+  }, [zoomLevel, map]);
+
+  // Handle locating/re-centering
+  useEffect(() => {
+    if (centerCoords) {
+      map.setView(centerCoords, map.getZoom(), { animate: true, duration: 0.8 });
+    }
+  }, [centerCoords, map]);
 
   return null;
 }
 
 export default function MapView() {
-  const { activeRoute, startStationId, endStationId, infrastructureStatus, isOffline } = useMetroStore();
+  const { activeRoute, startStationId, endStationId, infrastructureStatus } = useMetroStore();
+  
+  // Custom states for our Apple-style map controls
+  const [customZoom, setCustomZoom] = useState(null);
+  const [centerCoords, setCenterCoords] = useState(null);
+  const [mapRef, setMapRef] = useState(null);
 
-  // Create custom marker icons based on station lines and selection state
+  const delhiCenter = [28.6143, 77.2106];
+
+  // Helper to re-center map to original view
+  const handleRecenter = () => {
+    setCenterCoords([...delhiCenter]);
+  };
+
+  const handleZoomIn = () => {
+    if (mapRef) {
+      setCustomZoom(mapRef.getZoom() + 1);
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (mapRef) {
+      setCustomZoom(mapRef.getZoom() - 1);
+    }
+  };
+
+  // Apple-transit styled marker icons (clean, vector-style dot nodes)
   const getStationIcon = (station) => {
     const isOrigin = station.id === startStationId;
     const isDest = station.id === endStationId;
     const isInRoute = activeRoute?.path.some((s) => s.id === station.id) || false;
 
-    let iconColor = "bg-slate-400";
-    let pulseClass = "";
-    let borderClass = "border-2 border-slate-950";
-    let glowShadow = "";
+    // Default dimensions
+    let size = isInRoute ? 12 : 8;
+    let iconClass = "bg-white border-2 border-slate-900 shadow-md";
+    let pulseDiv = "";
 
-    if (station.lines.length > 1) {
-      // Interchange station
-      iconColor = "bg-white";
-      borderClass = "border-[3px] border-slate-900";
-      glowShadow = isInRoute 
-        ? "ring-4 ring-cyan-400 ring-offset-2 ring-offset-slate-950 shadow-glow-cyan" 
-        : "ring-2 ring-slate-600/60 ring-offset-1 ring-offset-slate-950";
-      
+    // Origin Pin (Apple Maps style: glowing cyan pin)
+    if (isOrigin) {
       return L.divIcon({
-        className: "custom-station-interchange-icon",
-        html: `<div class="flex items-center justify-center rounded-full w-5.5 h-5.5 ${iconColor} ${borderClass} ${glowShadow} transition-all duration-300">
-                 <div class="w-1.5 h-1.5 rounded-full bg-slate-950"></div>
+        className: "custom-pin-origin",
+        html: `<div class="relative flex items-center justify-center">
+                 <div class="absolute w-7 h-7 rounded-full bg-cyan-400/20 animate-ping"></div>
+                 <div class="w-4 h-4 rounded-full bg-cyan-400 border-[3px] border-white shadow-[0_2px_8px_rgba(6,182,212,0.5)] z-10"></div>
                </div>`,
-        iconSize: [22, 22],
-        iconAnchor: [11, 11]
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
       });
     }
 
-    // Single line station
-    const primaryLine = station.lines[0];
-    if (primaryLine === "Yellow") {
-      iconColor = "bg-[#FFC72C]";
-      glowShadow = isInRoute ? "ring-4 ring-[#FFC72C]/50 shadow-glow-yellow" : "";
-    } else if (primaryLine === "Blue") {
-      iconColor = "bg-[#0055A5]";
-      glowShadow = isInRoute ? "ring-4 ring-[#0055A5]/50 shadow-glow-blue" : "";
-    } else if (primaryLine === "Violet") {
-      iconColor = "bg-[#8A2BE2]";
-      glowShadow = isInRoute ? "ring-4 ring-[#8A2BE2]/50 shadow-glow-violet" : "";
-    } else if (primaryLine === "Red") {
-      iconColor = "bg-[#E31B23]";
-      glowShadow = isInRoute ? "ring-4 ring-[#E31B23]/50 shadow-glow-red" : "";
+    // Destination Pin (Apple Maps style: glowing rose pin)
+    if (isDest) {
+      return L.divIcon({
+        className: "custom-pin-dest",
+        html: `<div class="relative flex items-center justify-center">
+                 <div class="absolute w-7 h-7 rounded-full bg-rose-500/20 animate-ping"></div>
+                 <div class="w-4 h-4 rounded-full bg-rose-500 border-[3px] border-white shadow-[0_2px_8px_rgba(244,63,94,0.5)] z-10"></div>
+               </div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
     }
 
-    if (isOrigin) {
-      pulseClass = "station-pulse-marker ring-4 ring-cyan-400 border-white scale-110";
-      iconColor = "bg-cyan-400";
-    } else if (isDest) {
-      pulseClass = "station-pulse-marker ring-4 ring-rose-500 border-white scale-110";
-      iconColor = "bg-rose-500";
-    } else if (isInRoute) {
-      pulseClass = "station-pulse-marker ring-2 border-slate-900 scale-105";
+    // Interchange Node
+    if (station.lines.length > 1) {
+      const activeBorder = isInRoute ? "border-cyan-400 scale-110 shadow-lg" : "border-slate-400";
+      return L.divIcon({
+        className: "custom-station-interchange-icon",
+        html: `<div class="w-4 h-4 rounded-full bg-slate-950 border-[3px] ${activeBorder} flex items-center justify-center transition-all duration-300">
+                 <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+               </div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      });
     }
+
+    // Regular Station Nodes
+    const primaryLine = station.lines[0];
+    let dotColor = "bg-slate-400";
+    if (primaryLine === "Yellow") dotColor = "bg-[#FFC72C]";
+    else if (primaryLine === "Blue") dotColor = "bg-[#0055A5]";
+    else if (primaryLine === "Violet") dotColor = "bg-[#8A2BE2]";
+    else if (primaryLine === "Red") dotColor = "bg-[#E31B23]";
+    else if (primaryLine === "Pink") dotColor = "bg-[#FF69B4]";
+    else if (primaryLine === "Magenta") dotColor = "bg-[#8B008B]";
+
+    const activeScale = isInRoute ? "scale-110 border-white border" : "opacity-45 border-slate-950/20 border-[1px] scale-90";
 
     return L.divIcon({
-      className: "custom-station-marker-icon",
-      html: `<div class="rounded-full w-4.5 h-4.5 ${iconColor} ${borderClass} ${pulseClass} ${glowShadow} transition-all duration-300"></div>`,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9]
+      className: "custom-station-dot",
+      html: `<div class="w-3.5 h-3.5 rounded-full ${dotColor} ${activeScale} shadow-sm transition-all duration-300"></div>`,
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
     });
   };
 
-  // Delhi center coordinates to cover the entire grid of our 20 stations
-  const delhiCenter = [28.6143, 77.2106];
-
-  // Helper to structure polylines for the full network map
   const renderNetworkEdges = () => {
     return EDGES.map((edge, idx) => {
       const sourceStation = STATIONS.find((s) => s.id === edge.source);
@@ -103,8 +144,6 @@ export default function MapView() {
       if (!sourceStation || !targetStation) return null;
 
       const color = LINE_COLORS[edge.line] || "#64748b";
-
-      // If active route exists, we draw base lines dimmer, and high-contrast glowing routes over them
       const isEdgeInRoute = activeRoute?.edges.some(
         (e) => (e.source === edge.source && e.target === edge.target) || 
                (e.source === edge.target && e.target === edge.source)
@@ -116,8 +155,8 @@ export default function MapView() {
           positions={[sourceStation.coordinates, targetStation.coordinates]}
           pathOptions={{
             color: color,
-            weight: 3.5,
-            opacity: activeRoute ? (isEdgeInRoute ? 0 : 0.15) : 0.7,
+            weight: 2.5,
+            opacity: activeRoute ? (isEdgeInRoute ? 0 : 0.08) : 0.45,
             lineCap: "round"
           }}
         />
@@ -125,7 +164,6 @@ export default function MapView() {
     });
   };
 
-  // Render the selected active path with glowing aesthetics
   const renderActiveRoute = () => {
     if (!activeRoute || !activeRoute.edges) return null;
 
@@ -135,19 +173,19 @@ export default function MapView() {
 
       if (!sourceStation || !targetStation) return null;
 
-      // Glow effect via double layer drawing:
-      // Layer 1: Thick glowing translucent background line
-      // Layer 2: Core solid bright line
-      const routeColor = edge.isTransfer ? "#a5f3fc" : (LINE_COLORS[edge.line] || "#22d3ee");
+      const routeColor = edge.isTransfer ? "#a855f7" : (LINE_COLORS[edge.line] || "#06b6d4");
 
+      // Draw two polylines for the clean Apple Maps transit path layout:
+      // 1. Core solid bright color line
+      // 2. Underlying soft-glowing path to give it a neat overlay depth
       return (
         <React.Fragment key={`active-edge-${idx}`}>
           <Polyline
             positions={[sourceStation.coordinates, targetStation.coordinates]}
             pathOptions={{
               color: routeColor,
-              weight: 8,
-              opacity: 0.45,
+              weight: 6,
+              opacity: 0.8,
               lineCap: "round",
               className: "active-route-polyline"
             }}
@@ -156,10 +194,10 @@ export default function MapView() {
             positions={[sourceStation.coordinates, targetStation.coordinates]}
             pathOptions={{
               color: "#ffffff",
-              weight: 3.5,
-              opacity: 0.9,
+              weight: 2,
+              opacity: 0.95,
               lineCap: "round",
-              dashArray: edge.isTransfer ? "5, 5" : undefined
+              dashArray: edge.isTransfer ? "4, 4" : undefined
             }}
           />
         </React.Fragment>
@@ -168,31 +206,26 @@ export default function MapView() {
   };
 
   return (
-    <div className="relative w-full h-[350px] lg:h-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-10">
+    <div className="relative w-full h-[350px] lg:h-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-10 bg-slate-950">
       
-      {/* Map Element */}
+      {/* Interactive Map */}
       <MapContainer
         center={delhiCenter}
         zoom={11}
-        zoomControl={true}
+        zoomControl={false} // Disable standard bulky Leaflet controls
         className="w-full h-full"
+        ref={setMapRef}
       >
-        {/* CartoDB Dark Matter map tile layer */}
+        {/* CartoDB Positron: Sleek desaturated light-grey tiles that mimic premium engineering views */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
         />
 
-        {/* View Bounds Fitter */}
-        <RouteBoundsFitter activeRoute={activeRoute} />
-
-        {/* Static Base Network Edges */}
+        <MapController activeRoute={activeRoute} zoomLevel={customZoom} centerCoords={centerCoords} />
         {renderNetworkEdges()}
-
-        {/* Active Route Edges */}
         {renderActiveRoute()}
 
-        {/* Station Markers */}
         {STATIONS.map((station) => {
           const infra = infrastructureStatus[station.id] || { escalator: "Operational", elevator: "Operational" };
           const isEscalatorBroken = infra.escalator === "Under Maintenance";
@@ -204,64 +237,55 @@ export default function MapView() {
               position={station.coordinates}
               icon={getStationIcon(station)}
             >
-              <Tooltip direction="top" offset={[0, -10]} opacity={0.9} permanent={false}>
-                <span className="font-semibold text-slate-100">{station.name}</span>
+              <Tooltip direction="top" offset={[0, -8]} opacity={0.95} permanent={false}>
+                <span className="font-semibold text-slate-800 text-[10px] px-1 py-0.5">{station.name}</span>
               </Tooltip>
               
               <Popup>
-                <div className="p-1 max-w-[220px]">
-                  {/* Station Name */}
-                  <h4 className="font-outfit font-bold text-sm text-white mb-1 border-b border-white/10 pb-1">
-                    {station.name} Station
+                <div className="p-1 max-w-[220px] text-slate-800">
+                  <h4 className="font-outfit font-bold text-sm text-slate-900 mb-1 border-b border-slate-100 pb-1">
+                    {station.name}
                   </h4>
 
-                  {/* Lines Badge */}
                   <div className="flex flex-wrap gap-1 mb-2">
                     {station.lines.map((l) => (
                       <span
                         key={l}
                         className="text-[9px] font-bold px-1.5 py-0.2 rounded border"
                         style={{
-                          backgroundColor: `${LINE_COLORS[l]}20`,
+                          backgroundColor: `${LINE_COLORS[l]}15`,
                           color: LINE_COLORS[l],
-                          borderColor: `${LINE_COLORS[l]}40`
+                          borderColor: `${LINE_COLORS[l]}25`
                         }}
                       >
-                        {l} Line
+                        {l}
                       </span>
                     ))}
                   </div>
 
-                  {/* Operational Status */}
-                  <div className="space-y-1 text-slate-300 text-[10px] mb-2">
+                  <div className="space-y-1 text-slate-600 text-[10px] mb-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold">Escalator:</span>
-                      <span className={`font-bold flex items-center ${isEscalatorBroken ? 'text-rose-400' : 'text-emerald-400'}`}>
-                        {isEscalatorBroken && <Construction className="h-2.5 w-2.5 mr-0.5 animate-pulse" />}
+                      <span>Escalator:</span>
+                      <span className={`font-bold flex items-center ${isEscalatorBroken ? 'text-rose-500' : 'text-emerald-600'}`}>
                         {infra.escalator}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold">Elevator:</span>
-                      <span className={`font-bold flex items-center ${isElevatorBroken ? 'text-rose-400' : 'text-emerald-400'}`}>
-                        {isElevatorBroken && <Construction className="h-2.5 w-2.5 mr-0.5 animate-pulse" />}
+                      <span>Elevator:</span>
+                      <span className={`font-bold flex items-center ${isElevatorBroken ? 'text-rose-500' : 'text-emerald-600'}`}>
                         {infra.elevator}
                       </span>
                     </div>
                   </div>
 
-                  {/* Exits */}
-                  <div className="mt-2 text-[9px] text-slate-400">
-                    <div className="font-semibold text-slate-300 mb-0.5">Exits / Gates:</div>
+                  <div className="mt-2 text-[9px] text-slate-500 border-t border-slate-100 pt-1">
+                    <div className="font-semibold text-slate-700 mb-0.5">Exits:</div>
                     <ul className="list-disc pl-3.5 space-y-0.5">
-                      {station.exits.slice(0, 2).map((exit) => (
+                      {station.exits.map((exit) => (
                         <li key={exit.gate} className="truncate">
                           Gate {exit.gate}: {exit.name}
                         </li>
                       ))}
-                      {station.exits.length > 2 && (
-                        <li className="list-none text-cyan-400 italic">+{station.exits.length - 2} more gates</li>
-                      )}
                     </ul>
                   </div>
                 </div>
@@ -271,24 +295,64 @@ export default function MapView() {
         })}
       </MapContainer>
 
-      {/* Map Legend */}
-      <div className="absolute bottom-3 left-3 bg-slate-950/85 backdrop-filter backdrop-blur-md border border-white/10 px-3 py-2 rounded-xl text-[10px] space-y-1 text-slate-300 pointer-events-none select-none z-[1000]">
-        <div className="font-bold text-slate-100 border-b border-white/5 pb-0.5 mb-1">LINES</div>
-        <div className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#FFC72C]"></span>
-          <span>Yellow Line</span>
+      {/* Apple-style Floating Controls (Glassmorphic Rounded Cards) */}
+      
+      {/* Zoom / Locate widgets (Top-Left) */}
+      <div className="absolute top-4 left-4 z-[1000] flex flex-col space-y-2 select-none">
+        <div className="flex flex-col bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-xl shadow-lg overflow-hidden w-9">
+          <button
+            onClick={handleZoomIn}
+            className="p-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900 border-b border-slate-200/50 flex items-center justify-center transition"
+            title="Zoom In"
+          >
+            <Plus className="h-4.5 w-4.5" />
+          </button>
+          <button
+            onClick={handleZoomOut}
+            className="p-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center transition"
+            title="Zoom Out"
+          >
+            <Minus className="h-4.5 w-4.5" />
+          </button>
         </div>
-        <div className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#0055A5]"></span>
-          <span>Blue Line</span>
+        
+        <button
+          onClick={handleRecenter}
+          className="p-2 text-slate-700 bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-xl shadow-lg flex items-center justify-center hover:bg-slate-100 w-9 h-9 transition"
+          title="Recenter Map"
+        >
+          <Navigation className="h-4.5 w-4.5" />
+        </button>
+      </div>
+
+      {/* Floating Apple-style Legend (Top-Right) */}
+      <div className="absolute top-4 right-4 z-[1000] bg-white/85 backdrop-blur-md border border-slate-200/60 px-3 py-2.5 rounded-xl shadow-lg text-[10px] space-y-1.5 text-slate-600 pointer-events-none select-none w-28">
+        <div className="font-bold text-slate-800 border-b border-slate-200 pb-1 mb-1 tracking-tight flex items-center gap-1">
+          <Layers className="h-3 w-3 text-cyan-500" /> TRANSIT
         </div>
-        <div className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#8A2BE2]"></span>
-          <span>Violet Line</span>
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#FFC72C] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Yellow</span>
         </div>
-        <div className="flex items-center space-x-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#E31B23]"></span>
-          <span>Red Line</span>
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#0055A5] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Blue</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#8A2BE2] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Violet</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#E31B23] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Red</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#FF69B4] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Pink</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#8B008B] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Magenta</span>
         </div>
       </div>
 

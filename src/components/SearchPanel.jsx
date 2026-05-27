@@ -12,7 +12,9 @@ import {
   History, 
   Accessibility, 
   X,
-  Sparkles
+  Sparkles,
+  Clock,
+  CreditCard
 } from "lucide-react";
 
 export default function SearchPanel() {
@@ -20,18 +22,21 @@ export default function SearchPanel() {
     startStationId,
     endStationId,
     mode,
+    timeOfDay,
+    useSmartCard,
     searchHistory,
     accessibilityOnly,
     setStartStationId,
     setEndStationId,
     setMode,
+    setTimeOfDay,
+    setUseSmartCard,
     swapStations,
     calculateActiveRoute,
     toggleAccessibilityOnly,
     clearHistory
   } = useMetroStore();
 
-  // Search input state
   const [startQuery, setStartQuery] = useState("");
   const [endQuery, setEndQuery] = useState("");
   const [startOpen, setStartOpen] = useState(false);
@@ -40,7 +45,6 @@ export default function SearchPanel() {
   const startRef = useRef(null);
   const endRef = useRef(null);
 
-  // Sync inputs with state when updated via swap or click
   useEffect(() => {
     const startStation = STATIONS.find(s => s.id === startStationId);
     setStartQuery(startStation ? startStation.name : "");
@@ -51,12 +55,11 @@ export default function SearchPanel() {
     setEndQuery(endStation ? endStation.name : "");
   }, [endStationId]);
 
-  // Click outside to close dropdowns
+  // Click outside listener to close dropdowns
   useEffect(() => {
     function handleClickOutside(event) {
       if (startRef.current && !startRef.current.contains(event.target)) {
         setStartOpen(false);
-        // Reset query to station name if valid ID selected
         const station = STATIONS.find(s => s.id === startStationId);
         setStartQuery(station ? station.name : "");
       }
@@ -70,14 +73,13 @@ export default function SearchPanel() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [startStationId, endStationId]);
 
-  // Auto calculate when inputs and mode change
+  // Recalculate route when inputs, modes, times, or settings update
   useEffect(() => {
     if (startStationId && endStationId) {
       calculateActiveRoute();
     }
-  }, [startStationId, endStationId, mode, calculateActiveRoute]);
+  }, [startStationId, endStationId, mode, timeOfDay, useSmartCard, calculateActiveRoute]);
 
-  // Fuzzy filter stations
   const filterStations = (query) => {
     if (!query) return STATIONS;
     return STATIONS.filter((station) =>
@@ -100,46 +102,44 @@ export default function SearchPanel() {
     setEndOpen(false);
   };
 
-  const handleSwap = () => {
-    swapStations();
-  };
-
   const selectHistoryItem = (item) => {
     setStartStationId(item.startStationId);
     setEndStationId(item.endStationId);
     setMode(item.mode);
+    if (item.timeOfDay) setTimeOfDay(item.timeOfDay);
   };
 
-  // Helper to color-code line badges
   const getLineBadgeClass = (lineName) => {
     switch (lineName) {
       case "Yellow": return "bg-amber-500/20 text-amber-300 border-amber-500/30";
       case "Blue": return "bg-blue-600/20 text-blue-300 border-blue-600/30";
       case "Violet": return "bg-purple-600/20 text-purple-300 border-purple-600/30";
       case "Red": return "bg-red-600/20 text-red-300 border-red-600/30";
+      case "Pink": return "bg-pink-500/20 text-pink-300 border-pink-500/30";
+      case "Magenta": return "bg-fuchsia-600/20 text-fuchsia-300 border-fuchsia-600/30";
       default: return "bg-slate-700/20 text-slate-300 border-slate-600/30";
     }
   };
 
   const modesConfig = [
-    { name: "Balanced", icon: Scale, desc: "Default Dijkstra mix" },
-    { name: "Fastest", icon: Zap, desc: "Prioritizes speed (80%)" },
-    { name: "Least Crowd", icon: Users, desc: "Avoids high crowd factor" },
-    { name: "Women's Safety", icon: ShieldCheck, desc: "Prefers well-lit, safe paths" }
+    { name: "Balanced", icon: Scale },
+    { name: "Fastest", icon: Zap },
+    { name: "Least Crowd", icon: Users },
+    { name: "Women's Safety", icon: ShieldCheck }
   ];
 
   return (
     <div className="glass-panel w-full lg:w-96 p-5 rounded-2xl flex flex-col space-y-5 border border-white/10 shadow-xl overflow-hidden">
       
-      {/* Header Info */}
+      {/* Header */}
       <div className="flex items-center space-x-2 text-cyan-400">
         <Sparkles className="h-4 w-4" />
         <h2 className="font-outfit font-semibold text-sm tracking-wide uppercase">Journey Planner</h2>
       </div>
 
-      {/* Inputs Section */}
+      {/* From / To Stations */}
       <div className="relative flex flex-col space-y-3">
-        {/* Start Station Auto-Complete */}
+        {/* From Station */}
         <div ref={startRef} className="relative">
           <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">From Station</label>
           <div className="relative">
@@ -190,7 +190,7 @@ export default function SearchPanel() {
         {/* Swap Button */}
         <div className="absolute right-6 top-[54px] z-10">
           <button
-            onClick={handleSwap}
+            onClick={swapStations}
             className="p-1.5 rounded-lg border border-slate-700 bg-slate-900/90 text-cyan-400 hover:text-cyan-300 hover:border-cyan-500/50 hover:shadow-glow-cyan/20 transition-all duration-200 active:scale-95"
             title="Swap Stations"
           >
@@ -198,7 +198,7 @@ export default function SearchPanel() {
           </button>
         </div>
 
-        {/* End Station Auto-Complete */}
+        {/* To Station */}
         <div ref={endRef} className="relative">
           <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">To Station</label>
           <div className="relative">
@@ -247,7 +247,36 @@ export default function SearchPanel() {
         </div>
       </div>
 
-      {/* Routing Modes */}
+      {/* Time of Day Modifier (Peak vs. Off-Peak) */}
+      <div className="flex flex-col space-y-2">
+        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Time of Day (Traffic)</label>
+        <div className="grid grid-cols-2 gap-2 bg-slate-900/60 p-1 rounded-xl border border-white/5">
+          <button
+            onClick={() => setTimeOfDay("Off-Peak")}
+            className={`py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
+              timeOfDay === "Off-Peak" 
+                ? "bg-cyan-500/10 border border-cyan-500/30 text-cyan-300" 
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Clock className="h-3.5 w-3.5" />
+            <span>Off-Peak</span>
+          </button>
+          <button
+            onClick={() => setTimeOfDay("Peak")}
+            className={`py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
+              timeOfDay === "Peak" 
+                ? "bg-rose-500/10 border border-rose-500/30 text-rose-300" 
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Clock className="h-3.5 w-3.5 animate-pulse text-rose-400" />
+            <span>Peak Hours</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Routing Modes Grid */}
       <div className="flex flex-col space-y-2">
         <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Routing Algorithm Mode</label>
         <div className="grid grid-cols-2 gap-2">
@@ -261,44 +290,71 @@ export default function SearchPanel() {
                 className={`p-2.5 rounded-xl flex flex-col items-center justify-center border text-center transition-all duration-200 ${
                   isSelected 
                     ? "bg-cyan-500/10 border-cyan-500 text-cyan-300 shadow-glow-cyan/10" 
-                    : "bg-slate-905 border-white/5 text-slate-400 hover:bg-slate-800/50 hover:text-slate-300"
+                    : "bg-slate-900/30 border-white/5 text-slate-400 hover:bg-slate-800/40 hover:text-slate-300"
                 }`}
               >
                 <Icon className={`h-4.5 w-4.5 mb-1 ${isSelected ? 'text-cyan-400 animate-pulse' : 'text-slate-400'}`} />
                 <span className="text-[11px] font-bold tracking-tight">{item.name}</span>
-                <span className="text-[8px] text-slate-500 hidden md:block">{item.desc}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Accessibility Switch */}
-      <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/40 border border-white/5">
-        <div className="flex items-center space-x-2.5">
-          <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400">
-            <Accessibility className="h-4 w-4" />
+      {/* Payment and Accessibility Option Switches */}
+      <div className="space-y-2.5">
+        {/* Toggle: Use Smart Card */}
+        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/40 border border-white/5">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
+              <CreditCard className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-200">Metro Smart Card</h3>
+              <p className="text-[9px] text-slate-400">Apply 10%–20% discount</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xs font-semibold text-slate-200">Accessibility Access</h3>
-            <p className="text-[9px] text-slate-400">Require elevator/escalator gates</p>
-          </div>
-        </div>
-        <button
-          onClick={toggleAccessibilityOnly}
-          className={`w-10 h-5.5 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
-            accessibilityOnly ? "bg-cyan-500" : "bg-slate-700"
-          }`}
-        >
-          <div
-            className={`w-4.5 h-4.5 rounded-full bg-white transition-transform duration-200 ease-in-out transform ${
-              accessibilityOnly ? "translate-x-4.5" : "translate-x-0"
+          <button
+            onClick={() => setUseSmartCard(!useSmartCard)}
+            className={`w-10 h-5.5 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
+              useSmartCard ? "bg-amber-500" : "bg-slate-700"
             }`}
-          />
-        </button>
+          >
+            <div
+              className={`w-4.5 h-4.5 rounded-full bg-white transition-transform duration-200 ease-in-out transform ${
+                useSmartCard ? "translate-x-4.5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Toggle: Accessibility Access */}
+        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/40 border border-white/5">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+              <Accessibility className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-200">Accessibility Access</h3>
+              <p className="text-[9px] text-slate-400">Require elevator/escalator gates</p>
+            </div>
+          </div>
+          <button
+            onClick={toggleAccessibilityOnly}
+            className={`w-10 h-5.5 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
+              accessibilityOnly ? "bg-cyan-500" : "bg-slate-700"
+            }`}
+          >
+            <div
+              className={`w-4.5 h-4.5 rounded-full bg-white transition-transform duration-200 ease-in-out transform ${
+                accessibilityOnly ? "translate-x-4.5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
-      {/* History Section */}
+      {/* Search History */}
       {searchHistory.length > 0 && (
         <div className="flex flex-col space-y-2 border-t border-white/5 pt-4">
           <div className="flex items-center justify-between">
@@ -324,6 +380,9 @@ export default function SearchPanel() {
                   {item.startName} → {item.endName}
                 </div>
                 <div className="flex items-center space-x-1 text-slate-500">
+                  {item.timeOfDay === "Peak" && (
+                    <span className="bg-rose-950/40 text-rose-400 border border-rose-500/10 px-1 py-0.2 rounded text-[8px] font-semibold">Peak</span>
+                  )}
                   <span className="bg-slate-800 text-slate-400 px-1 py-0.2 rounded border border-white/5 text-[9px] font-semibold">{item.mode}</span>
                   <span className="text-[9px] text-slate-500 group-hover:text-slate-400">{item.timestamp}</span>
                 </div>
