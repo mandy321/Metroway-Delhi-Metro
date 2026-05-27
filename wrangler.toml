@@ -1,0 +1,8 @@
+name = "metroway-dmrc-proxy"
+main = "worker.js"
+compatibility_date = "2024-05-01"
+
+# Development / Production environment variables
+[vars]
+DMRC_SCRAPER_ENDPOINT = "https://www.delhimetrorail.com/api/v2/status"
+CACHE_TTL_SECONDS = 300
