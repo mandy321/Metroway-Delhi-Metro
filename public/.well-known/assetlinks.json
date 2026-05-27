@@ -1,14 +1,8 @@
-[
-  {
-    "relation": [
-      "delegate_permission/common.handle_all_urls"
-    ],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "YOUR_ANDROID_APP_PACKAGE_NAME",
-      "sha256_cert_fingerprints": [
-        "YOUR_SHA256_FINGERPRINT_FROM_PWABUILDER"
-      ]
-    }
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "io.github.mandy321.metroway_delhi_metro",
+    "sha256_cert_fingerprints": ["4F:15:B1:C9:89:EA:EB:96:61:2E:EB:D8:76:E0:85:00:E5:17:86:09:7D:D4:3A:03:23:94:52:F5:A3:A9:44:62"]
   }
-]
+}]
