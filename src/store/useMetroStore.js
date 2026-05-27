@@ -15,6 +15,9 @@ export const useMetroStore = create(
       endStationId: "",
       mode: "Balanced",
       timeOfDay: "Off-Peak", 
+      selectedHour: new Date().getHours(),
+      activeEvent: "None",
+      communityReports: {},
       useSmartCard: false,
       activeRoute: null,
       searchHistory: [], 
@@ -27,7 +30,66 @@ export const useMetroStore = create(
       setEndStationId: (id) => set({ endStationId: id }),
       setMode: (mode) => set({ mode }),
       setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
-      setUseSmartCard: (useSmartCard) => set({ useSmartCard }),
+      setSelectedHour: (selectedHour) => {
+        const isPeak = (selectedHour >= 8 && selectedHour <= 10) || (selectedHour >= 17 && selectedHour <= 19);
+        set({ 
+          selectedHour,
+          timeOfDay: isPeak ? "Peak" : "Off-Peak"
+        });
+      },
+      setActiveEvent: (activeEvent) => set({ activeEvent }),
+      submitCrowdReport: (stationId, level) => set((state) => ({
+        communityReports: {
+          ...state.communityReports,
+          [stationId]: level
+        }
+      })),
+      clearReports: () => set({ communityReports: {} }),
+
+      getStationCrowd: (stationId) => {
+        const { stations, selectedHour, activeEvent, communityReports } = get();
+        const station = stations.find(s => s.id === stationId);
+        if (!station) return 0;
+
+        let crowd = station.baseCrowd || 5;
+
+        // DMRC Hourly Rush Multipliers
+        const rushMultipliers = [0.27, 0.17, 0.12, 0.11, 0.21, 0.47, 0.68, 0.86, 0.98, 0.90, 0.70, 0.60, 0.63, 0.58, 0.56, 0.63, 0.75, 0.93, 0.98, 0.86, 0.70, 0.58, 0.46, 0.33];
+        const hour = selectedHour !== undefined ? selectedHour : 12;
+        const rushFactor = rushMultipliers[hour] !== undefined ? rushMultipliers[hour] : 0.6;
+        
+        crowd = crowd * (rushFactor * 1.5); 
+
+        // Event Simulation boosts
+        if (activeEvent && activeEvent !== "None") {
+          if (activeEvent === "IPL Match") {
+            if (stationId === "DG1") crowd = 9.5; 
+            else if (stationId === "JNS") crowd = 8.5; 
+            else if (station.lines.includes("Violet") || station.lines.includes("Blue")) {
+              crowd += 1.5;
+            }
+          } else if (activeEvent === "Music Concert") {
+            if (stationId === "JNS") crowd = 9.5; 
+            else if (stationId === "CES" || stationId === "LN") crowd += 2.0; 
+          } else if (activeEvent === "Diwali Shopping Rush") {
+            if (["RC", "CC", "KG", "LN", "BG"].includes(stationId)) {
+              crowd = 9.8; 
+            } else {
+              crowd += 1.0;
+            }
+          }
+        }
+
+        // Community Report blend
+        const report = communityReports[stationId];
+        if (report !== undefined) {
+          const reportMap = { "Low": 2, "Moderate": 5, "High": 8, "Heavy Rush": 10 };
+          const reportedVal = reportMap[report] || 5;
+          crowd = 0.6 * crowd + 0.4 * reportedVal;
+        }
+
+        return Math.max(1, Math.min(10, Math.round(crowd * 10) / 10));
+      },
       
       toggleAccessibilityOnly: () => set((state) => ({ accessibilityOnly: !state.accessibilityOnly })),
       
@@ -65,10 +127,10 @@ export const useMetroStore = create(
       },
 
       calculateActiveRoute: () => {
-        const { stations, edges, startStationId, endStationId, mode, timeOfDay } = get();
+        const { stations, edges, startStationId, endStationId, mode, timeOfDay, getStationCrowd } = get();
         if (!startStationId || !endStationId || !stations || !edges) return;
 
-        const routeResult = calculateRoute(stations, edges, startStationId, endStationId, mode, timeOfDay);
+        const routeResult = calculateRoute(stations, edges, startStationId, endStationId, mode, timeOfDay, getStationCrowd);
         if (routeResult) {
           const startName = stations.find(s => s.id === startStationId)?.name || "";
           const endName = stations.find(s => s.id === endStationId)?.name || "";
@@ -142,6 +204,9 @@ export const useMetroStore = create(
         endStationId: state.endStationId,
         mode: state.mode,
         timeOfDay: state.timeOfDay,
+        selectedHour: state.selectedHour,
+        activeEvent: state.activeEvent,
+        communityReports: state.communityReports,
         useSmartCard: state.useSmartCard,
         activeRoute: state.activeRoute,
         searchHistory: state.searchHistory,

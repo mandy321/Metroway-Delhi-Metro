@@ -29,6 +29,10 @@ export default function SearchPanel() {
     endStationId,
     mode,
     timeOfDay,
+    selectedHour,
+    activeEvent,
+    setSelectedHour,
+    setActiveEvent,
     useSmartCard,
     searchHistory,
     accessibilityOnly,
@@ -85,7 +89,7 @@ export default function SearchPanel() {
     if (startStationId && endStationId) {
       calculateActiveRoute();
     }
-  }, [startStationId, endStationId, mode, timeOfDay, useSmartCard, calculateActiveRoute]);
+  }, [startStationId, endStationId, mode, timeOfDay, selectedHour, activeEvent, useSmartCard, calculateActiveRoute]);
 
   const filterStations = (query) => {
     if (!query) return stations;
@@ -129,6 +133,7 @@ export default function SearchPanel() {
       case "Grey": return "bg-slate-500/20 text-slate-300 border-slate-500/30";
       case "Rapid": return "bg-rose-900/30 text-rose-300 border-rose-900/40";
       case "Aqua": return "bg-cyan-500/20 text-cyan-300 border-cyan-500/30";
+      case "RRTS": return "bg-emerald-950/30 text-emerald-400 border-emerald-900/40";
       default: return "bg-slate-700/20 text-slate-300 border-slate-600/30";
     }
   };
@@ -191,7 +196,7 @@ export default function SearchPanel() {
                   <div className="flex space-x-1">
                     {station.lines.map(line => (
                       <span key={line} className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${getLineBadgeClass(line)}`}>
-                        {line[0]}
+                        {line === "RRTS" ? "RRTS" : line[0]}
                       </span>
                     ))}
                   </div>
@@ -250,7 +255,7 @@ export default function SearchPanel() {
                   <div className="flex space-x-1">
                     {station.lines.map(line => (
                       <span key={line} className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${getLineBadgeClass(line)}`}>
-                        {line[0]}
+                        {line === "RRTS" ? "RRTS" : line[0]}
                       </span>
                     ))}
                   </div>
@@ -261,33 +266,74 @@ export default function SearchPanel() {
         </div>
       </div>
 
-      {/* Time of Day Modifier */}
+      {/* 24-Hour Departure Time Slider */}
       <div className="flex flex-col space-y-2">
-        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Time of Day (Traffic)</label>
-        <div className="grid grid-cols-2 gap-2 bg-slate-900/60 p-1 rounded-xl border border-white/5">
-          <button
-            onClick={() => setTimeOfDay("Off-Peak")}
-            className={`py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
-              timeOfDay === "Off-Peak" 
-                ? "bg-cyan-500/10 border border-cyan-500/30 text-cyan-300" 
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Clock className="h-3.5 w-3.5" />
-            <span>Off-Peak</span>
-          </button>
-          <button
-            onClick={() => setTimeOfDay("Peak")}
-            className={`py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
-              timeOfDay === "Peak" 
-                ? "bg-rose-500/10 border border-rose-500/30 text-rose-300" 
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Clock className="h-3.5 w-3.5 animate-pulse text-rose-400" />
-            <span>Peak Hours</span>
-          </button>
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Departure Time</label>
+          <span className="text-xs font-bold font-outfit text-cyan-400 bg-cyan-950/40 border border-cyan-500/20 px-2 py-0.5 rounded flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {String(selectedHour).padStart(2, '0')}:00 {selectedHour >= 12 ? 'PM' : 'AM'}
+            <span className={`w-1.5 h-1.5 rounded-full inline-block ml-1 ${timeOfDay === "Peak" ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`}></span>
+          </span>
         </div>
+        <div className="bg-slate-900/60 p-3 rounded-xl border border-white/5 space-y-1.5">
+          <input
+            type="range"
+            min="5"
+            max="23"
+            value={selectedHour || 12}
+            onChange={(e) => setSelectedHour(parseInt(e.target.value))}
+            className="w-full h-1.5 rounded-lg bg-slate-800 appearance-none cursor-pointer accent-cyan-400"
+          />
+          <div className="flex justify-between text-[9px] font-bold text-slate-500 px-1">
+            <span>05:00 AM</span>
+            <span>12:00 PM</span>
+            <span>11:00 PM</span>
+          </div>
+          <div className="text-[9px] text-slate-400 text-center font-medium border-t border-white/5 pt-1.5 mt-1 flex justify-center items-center gap-1">
+            <Info className="h-2.5 w-2.5 text-cyan-400 shrink-0" />
+            <span>
+              {timeOfDay === "Peak" 
+                ? "Active Peak Rush: +25% delay, +1.5 comfort penalty" 
+                : "Off-Peak Travel: Normal speed, 20% smart card discount"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Event Simulation Widget */}
+      <div className="flex flex-col space-y-2">
+        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Active Event Simulator</label>
+        <div className="relative">
+          <select
+            value={activeEvent || "None"}
+            onChange={(e) => {
+              setActiveEvent(e.target.value);
+              // Recalculate route immediately on event switch
+              setTimeout(calculateActiveRoute, 50);
+            }}
+            className="w-full pl-3 pr-8 py-2 rounded-xl text-xs font-semibold glass-input appearance-none bg-slate-900/80 cursor-pointer text-slate-200"
+          >
+            <option value="None" className="bg-slate-950 text-slate-300">🟢 No Event (Standard Routine)</option>
+            <option value="IPL Match" className="bg-slate-950 text-slate-300">🏏 IPL Cricket Match (Arun Jaitley / JLN Stadium)</option>
+            <option value="Music Concert" className="bg-slate-950 text-slate-300">🎵 Concert Live Event (JLN Stadium)</option>
+            <option value="Diwali Shopping Rush" className="bg-slate-950 text-slate-300">🛍️ Diwali Festive Rush (Rajiv Chowk / Chandni Chowk)</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-cyan-400">
+            <ChevronDown className="h-3.5 w-3.5" />
+          </div>
+        </div>
+        {activeEvent && activeEvent !== "None" && (
+          <div className="text-[9px] bg-cyan-950/30 border border-cyan-500/20 text-cyan-300 px-3 py-2 rounded-xl flex items-start gap-1.5 animate-fade-in">
+            <Sparkles className="h-3 w-3 shrink-0 mt-0.5 text-cyan-400" />
+            <div>
+              <span className="font-bold">Active Simulation: </span>
+              {activeEvent === "IPL Match" && "Heavy crowd surges near Delhi Gate & JLN Stadium. Avoid Violet Line hubs."}
+              {activeEvent === "Music Concert" && "JLN Stadium Metro station overcrowding. Platform queue times +15 mins."}
+              {activeEvent === "Diwali Shopping Rush" && "Massive shopping rush at Rajiv Chowk & Chandni Chowk. Expect long transfer queues."}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Routing Modes */}

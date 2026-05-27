@@ -73,7 +73,7 @@ function buildGraph(stations, edges) {
 /**
  * Calculates optimal path using Dijkstra dynamically supplied with station & edge datasets
  */
-export function calculateRoute(stations, edges, startId, endId, mode, timeOfDay = "Off-Peak") {
+export function calculateRoute(stations, edges, startId, endId, mode, timeOfDay = "Off-Peak", getCrowdFn) {
   if (!startId || !endId || !stations || !edges) return null;
 
   const startStation = stations.find(s => s.id === startId);
@@ -82,6 +82,7 @@ export function calculateRoute(stations, edges, startId, endId, mode, timeOfDay 
   if (!startStation || !endStation) return null;
 
   if (startId === endId) {
+    const startCrowd = getCrowdFn ? getCrowdFn(startId) : startStation.baseCrowd;
     return {
       path: [startStation],
       edges: [],
@@ -89,7 +90,7 @@ export function calculateRoute(stations, edges, startId, endId, mode, timeOfDay 
         time: 0,
         transfers: 0,
         fare: 0,
-        crowd: startStation.baseCrowd,
+        crowd: startCrowd,
         comfort: 10,
         safety: 10,
         distance: 0
@@ -126,14 +127,15 @@ export function calculateRoute(stations, edges, startId, endId, mode, timeOfDay 
       const transferTimePenalty = isTransfer ? (isPeak ? 8 : 5) : 0;
       const transferComfortPenalty = isTransfer ? 2 : 0;
 
+      const crowdVal = getCrowdFn ? getCrowdFn(neighbor.to) : neighbor.crowdFactor;
       let adjustedBaseTime = neighbor.baseTime;
-      if (isPeak && neighbor.crowdFactor >= 7 && neighbor.line !== "Orange") {
+      if (isPeak && crowdVal >= 7 && neighbor.line !== "Orange") {
         adjustedBaseTime = neighbor.baseTime * 1.25;
       }
 
       const edgeCost = 
         (weights.time * adjustedBaseTime) + 
-        (weights.crowd * neighbor.crowdFactor) + 
+        (weights.crowd * crowdVal) + 
         (weights.comfort * neighbor.comfortFactor) + 
         (weights.safety * (10 - neighbor.safetyRating));
       
@@ -157,7 +159,7 @@ export function calculateRoute(stations, edges, startId, endId, mode, timeOfDay 
             line: neighbor.line,
             baseTime: neighbor.baseTime,
             adjustedTime: adjustedBaseTime,
-            crowdFactor: neighbor.crowdFactor,
+            crowdFactor: crowdVal,
             safetyRating: neighbor.safetyRating,
             comfortFactor: neighbor.comfortFactor,
             isTransfer
@@ -242,7 +244,7 @@ export function calculateRoute(stations, edges, startId, endId, mode, timeOfDay 
   });
 
   const edgeCount = pathEdges.length;
-  const avgCrowd = edgeCount > 0 ? totalCrowd / edgeCount : startStation.baseCrowd;
+  const avgCrowd = edgeCount > 0 ? totalCrowd / edgeCount : (getCrowdFn ? getCrowdFn(startId) : startStation.baseCrowd);
   const avgSafety = edgeCount > 0 ? totalSafety / edgeCount : 10;
 
   let peakPenalty = isPeak ? 1.5 : 0;

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Polyline, Marker, Popup, Tooltip, useMap } fro
 import L from "leaflet";
 import { useMetroStore } from "../store/useMetroStore";
 import { LINE_COLORS } from "../data/metroData";
-import { Plus, Minus, Navigation, Layers, HelpCircle, Construction } from "lucide-react";
+import { Plus, Minus, Navigation, Layers, HelpCircle, Construction, Users } from "lucide-react";
 
 // Hook to auto-fit map view to the current active route
 function RouteBoundsFitter({ activeRoute }) {
@@ -26,7 +26,7 @@ function RouteBoundsFitter({ activeRoute }) {
 
 export default function MapView() {
   // Query stations and edges dynamically from the persisted store
-  const { stations, edges, activeRoute, startStationId, endStationId, infrastructureStatus } = useMetroStore();
+  const { stations, edges, activeRoute, startStationId, endStationId, infrastructureStatus, getStationCrowd } = useMetroStore();
   
   const [customZoom, setCustomZoom] = useState(null);
   const [centerCoords, setCenterCoords] = useState(null);
@@ -84,37 +84,37 @@ export default function MapView() {
 
     // Interchange Node
     if (station.lines.length > 1) {
+      const crowd = getStationCrowd(station.id);
+      let crowdColor = "bg-emerald-400";
+      if (crowd >= 7.0) crowdColor = "bg-rose-500";
+      else if (crowd >= 4.0) crowdColor = "bg-amber-400";
+
       const activeBorder = isInRoute ? "border-cyan-400 scale-110 shadow-lg" : "border-slate-400";
       return L.divIcon({
         className: "custom-station-interchange-icon",
-        html: `<div class="w-4 h-4 rounded-full bg-slate-950 border-[3px] ${activeBorder} flex items-center justify-center transition-all duration-300">
-                 <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+        html: `<div class="w-4.5 h-4.5 rounded-full bg-slate-950 border-[3px] ${activeBorder} flex items-center justify-center transition-all duration-300">
+                 <div class="w-2 h-2 rounded-full ${crowdColor} ${crowd >= 7.0 ? 'animate-pulse' : ''}"></div>
                </div>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
       });
     }
 
     // Single line stations
     const primaryLine = station.lines[0];
-    let dotColor = "bg-slate-400";
-    if (primaryLine === "Yellow") dotColor = "bg-[#FFC72C]";
-    else if (primaryLine === "Blue") dotColor = "bg-[#0055A5]";
-    else if (primaryLine === "Violet") dotColor = "bg-[#8A2BE2]";
-    else if (primaryLine === "Red") dotColor = "bg-[#E31B23]";
-    else if (primaryLine === "Pink") dotColor = "bg-[#FF69B4]";
-    else if (primaryLine === "Magenta") dotColor = "bg-[#8B008B]";
-    else if (primaryLine === "Orange") dotColor = "bg-[#FF8C00]";
-    else if (primaryLine === "Green") dotColor = "bg-[#228B22]";
-    else if (primaryLine === "Grey") dotColor = "bg-[#808080]";
-    else if (primaryLine === "Rapid") dotColor = "bg-[#A52A2A]";
-    else if (primaryLine === "Aqua") dotColor = "bg-[#00FFFF]";
+    const crowd = getStationCrowd(station.id);
+    let crowdColor = "bg-emerald-400";
+    if (crowd >= 7.0) crowdColor = "bg-rose-500";
+    else if (crowd >= 4.0) crowdColor = "bg-amber-400";
 
-    const activeScale = isInRoute ? "scale-110 border-white border" : "opacity-45 border-slate-950/20 border-[1px] scale-90";
+    const lineColor = LINE_COLORS[primaryLine] || "#cbd5e1";
+    const activeScale = isInRoute ? "scale-110 border-white border" : "opacity-60 scale-90";
 
     return L.divIcon({
       className: "custom-station-dot",
-      html: `<div class="w-3.5 h-3.5 rounded-full ${dotColor} ${activeScale} shadow-sm transition-all duration-300"></div>`,
+      html: `<div class="w-3.5 h-3.5 rounded-full flex items-center justify-center transition-all duration-300 ${activeScale}" style="border: 2px solid ${lineColor}; background-color: #020617;">
+               <div class="w-1.5 h-1.5 rounded-full ${crowdColor} ${crowd >= 7.0 ? 'animate-pulse' : ''}"></div>
+             </div>`,
       iconSize: [14, 14],
       iconAnchor: [7, 7]
     });
@@ -351,6 +351,27 @@ export default function MapView() {
         <div className="flex items-center space-x-2">
           <span className="w-2.5 h-2.5 rounded-full bg-[#00FFFF] inline-block shadow-sm"></span>
           <span className="font-semibold text-slate-700">Aqua</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#006A4E] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">RRTS</span>
+        </div>
+
+        {/* Crowd Density Scale */}
+        <div className="font-bold text-slate-800 border-b border-slate-200 pb-1 mb-1 mt-2.5 tracking-tight flex items-center gap-1 sticky top-0 bg-white/5 bg-opacity-10">
+          <Users className="h-3 w-3 text-cyan-500" /> CROWD
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2 h-2 rounded-full bg-[#10B981] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Low (&lt;4)</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2 h-2 rounded-full bg-[#F59E0B] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Mod (4-7)</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="w-2 h-2 rounded-full bg-[#F43F5E] inline-block shadow-sm"></span>
+          <span className="font-semibold text-slate-700">Heavy (&gt;7)</span>
         </div>
       </div>
 
