@@ -165,6 +165,10 @@ const exitOverrides = {
     { gate: "1", name: "Rajpath / India Gate Side", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
     { gate: "2", name: "Connaught Place / Inner Circle", lit: "Well-Lit", accessibility: ["Escalator"] }
   ],
+  "Naraina Vihar": [
+    { gate: "1", name: "Naraina Block A / Gurudwara / Post Office", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] },
+    { gate: "2", name: "Local Shopping Complex (LSC) / Block H & G", lit: "Well-Lit", accessibility: ["Elevator", "Escalator"] }
+  ]
 };
 
 // Diverse gate templates for stations without specific overrides
