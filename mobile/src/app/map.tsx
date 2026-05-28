@@ -115,7 +115,7 @@ export default function MapScreen() {
 
   const mapHtmlSource = React.useMemo(() => {
     return getMapHtml(store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme);
-  }, [store.stations, store.edges, activeTheme, mapVersion]);
+  }, [store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme, mapVersion]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -175,7 +175,7 @@ export default function MapScreen() {
             <TouchableOpacity style={styles.groupButton} onPress={handleZoomIn}>
               <Ionicons name="add" size={22} color={colors.text} />
             </TouchableOpacity>
-            <View style={[styles.divider, { backgroundColor: scheme === "dark" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)" }]} />
+            <View style={[styles.divider, { backgroundColor: activeTheme === "dark" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)" }]} />
             <TouchableOpacity style={styles.groupButton} onPress={handleZoomOut}>
               <Ionicons name="remove" size={22} color={colors.text} />
             </TouchableOpacity>

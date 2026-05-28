@@ -312,11 +312,21 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
     function drawStations() {
       stationsGroup.clearLayers();
       
+      var activeStationIds = new Set();
+      if (activeRoute && activeRoute.path) {
+        activeRoute.path.forEach(function(s) {
+          activeStationIds.add(s.id);
+        });
+      }
+      var hasActiveRoute = activeStationIds.size > 0;
+      
       stations.forEach(function(station) {
         var coords = [station.coordinates[0], station.coordinates[1]];
         var isStart = station.id === startStationId;
         var isEnd = station.id === endStationId;
         var isInterchange = station.lines.length > 1;
+        var isOnActiveRoute = activeStationIds.has(station.id);
+        var opacity = hasActiveRoute ? (isOnActiveRoute || isStart || isEnd ? 1.0 : 0.18) : 1.0;
 
         var iconHtml = '';
         var size = [16, 16];
@@ -355,7 +365,8 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
 
         var marker = L.marker(coords, {
           icon: customIcon,
-          zIndexOffset: (isStart || isEnd) ? 1000 : isInterchange ? 500 : 0
+          opacity: opacity,
+          zIndexOffset: (isStart || isEnd) ? 1000 : isOnActiveRoute ? 600 : isInterchange ? 500 : 0
         })
         .bindPopup(popupHtml, {
           closeButton: false,

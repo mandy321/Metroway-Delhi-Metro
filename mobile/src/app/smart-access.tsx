@@ -163,9 +163,9 @@ export default function SmartAccessScreen() {
         onRequestClose={() => setSelectedStationId(null)}
       >
         {selectedStation && (
-          <View style={[styles.modalContainer, { backgroundColor: scheme === 'dark' ? '#1c1c1e' : '#f2f2f7' }]}>
+          <View style={[styles.modalContainer, { backgroundColor: activeTheme === 'dark' ? '#1c1c1e' : '#f2f2f7' }]}>
             {/* Modal Header */}
-            <View style={[styles.modalHeader, { backgroundColor: colors.background, borderBottomColor: scheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]}>
+            <View style={[styles.modalHeader, { backgroundColor: colors.background, borderBottomColor: activeTheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>{selectedStation.name}</Text>
               <TouchableOpacity
                 onPress={() => setSelectedStationId(null)}

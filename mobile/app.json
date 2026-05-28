@@ -40,6 +40,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9db30c53-5dfe-463a-af65-42aa909498a0"
+      }
+    },
+    "owner": "mandy321"
   }
 }

@@ -1,11 +1,14 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useColorScheme } from 'react-native';
-
+import { useMetroStore } from '../store/useMetroStore';
 import { Colors } from '@/constants/theme';
 
 export default function AppTabs() {
+  const store = useMetroStore();
   const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const systemTheme = scheme === 'unspecified' ? 'light' : scheme;
+  const activeTheme = store.themeMode === 'system' ? systemTheme : store.themeMode;
+  const colors = Colors[activeTheme];
 
   return (
     <NativeTabs

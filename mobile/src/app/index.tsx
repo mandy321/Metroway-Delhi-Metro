@@ -418,7 +418,7 @@ export default function PlannerScreen() {
   const savings = regularFare - smartCardFare;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: activeTheme === "dark" ? "#1c1c1e" : "#007aff" }]} edges={["top", "left", "right"]}>
       <StatusBar barStyle="light-content" backgroundColor={activeTheme === "dark" ? "#1c1c1e" : "#007aff"} />
 
       {/* Header */}
@@ -430,203 +430,218 @@ export default function PlannerScreen() {
         <Ionicons name="subway-outline" size={28} color="#FFFFFF" />
       </View>
 
-      {isEditingRoute || !store.activeRoute ? (
-        /* Planner Input View */
-        <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
-          {/* Card: Station Inputs */}
-          <View style={styles.inputCard}>
-            <View style={styles.inputRow}>
-              <Ionicons name="radio-button-on" size={22} color="#4CAF50" style={styles.inputIcon} />
-              <TouchableOpacity
-                style={styles.selectButton}
-                onPress={() => openSearchModal("start")}
-              >
-                <Text
-                  style={[
-                    styles.selectButtonText,
-                    !store.startStationId && styles.placeholderText,
-                  ]}
-                >
-                  {store.startStationId
-                    ? getStationName(store.startStationId)
-                    : "Select Boarding Station..."}
-                </Text>
-              </TouchableOpacity>
-              {store.startStationId ? (
-                <TouchableOpacity onPress={() => store.setStartStationId("")} style={styles.clearBtn}>
-                  <Ionicons name="close-circle" size={18} color="#9E9E9E" />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-
-            {/* Connecting Line Visual */}
-            <View style={styles.connectorContainer}>
-              <View style={styles.connectorLine} />
-              <TouchableOpacity onPress={handleSwap} style={styles.swapButton}>
-                <Ionicons name="swap-vertical" size={20} color="#208AEF" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.inputRow}>
-              <Ionicons name="location" size={22} color="#F44336" style={styles.inputIcon} />
-              <TouchableOpacity
-                style={styles.selectButton}
-                onPress={() => openSearchModal("end")}
-              >
-                <Text
-                  style={[
-                    styles.selectButtonText,
-                    !store.endStationId && styles.placeholderText,
-                  ]}
-                >
-                  {store.endStationId
-                    ? getStationName(store.endStationId)
-                    : "Select Destination..."}
-                </Text>
-              </TouchableOpacity>
-              {store.endStationId ? (
-                <TouchableOpacity onPress={() => store.setEndStationId("")} style={styles.clearBtn}>
-                  <Ionicons name="close-circle" size={18} color="#9E9E9E" />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          </View>
-
-          {/* Preset Chips */}
-          <Text style={styles.sectionLabel}>Routing Preference</Text>
-          <View style={styles.chipRow}>
-            {["Balanced", "Fastest", "Less Crowd", "Comfortable"].map((mode) => {
-              const active = store.mode === mode;
-              const iconMap: Record<string, string> = {
-                Balanced: "scale-balance",
-                Fastest: "lightning-bolt",
-                "Less Crowd": "account-multiple-remove",
-                Comfortable: "sofa",
-              };
-              return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        {isEditingRoute || !store.activeRoute ? (
+          /* Planner Input View */
+          <ScrollView style={[styles.scrollContainer, { backgroundColor: colors.background }]} contentContainerStyle={styles.scrollContent}>
+            {/* Card: Station Inputs */}
+            <View style={[styles.inputCard, { backgroundColor: colors.backgroundElement, shadowColor: activeTheme === 'dark' ? '#000' : 'rgba(0,0,0,0.05)' }]}>
+              <View style={[styles.inputRow, { backgroundColor: colors.backgroundSelected, borderColor: colors.border }]}>
+                <Ionicons name="radio-button-on" size={22} color="#4CAF50" style={styles.inputIcon} />
                 <TouchableOpacity
-                  key={mode}
-                  style={[styles.prefChip, active && styles.prefChipActive]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    store.setMode(mode);
-                  }}
+                  style={styles.selectButton}
+                  onPress={() => openSearchModal("start")}
                 >
-                  <MaterialCommunityIcons
-                    name={iconMap[mode] as any || "compass"}
-                    size={16}
-                    color={active ? "#FFFFFF" : "#60646C"}
-                    style={styles.chipIcon}
-                  />
-                  <Text style={[styles.prefChipText, active && styles.prefChipTextActive]}>
-                    {mode}
+                  <Text
+                    style={[
+                      styles.selectButtonText,
+                      { color: colors.text },
+                      !store.startStationId && styles.placeholderText,
+                      !store.startStationId && { color: colors.textSecondary },
+                    ]}
+                  >
+                    {store.startStationId
+                      ? getStationName(store.startStationId)
+                      : "Select Boarding Station..."}
                   </Text>
                 </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Switch Options */}
-          <View style={styles.optionCard}>
-            <View style={styles.optionRow}>
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionTitle}>Use Smart Card</Text>
-                <Text style={styles.optionSubtitle}>Apply 10% discount on fare calculations</Text>
+                {store.startStationId ? (
+                  <TouchableOpacity onPress={() => store.setStartStationId("")} style={styles.clearBtn}>
+                    <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                ) : null}
               </View>
-              <Switch
-                value={store.useSmartCard}
-                onValueChange={(val) => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  store.useSmartCard = val;
-                  // Force recalc if activeRoute is open
-                  if (store.activeRoute) store.calculateActiveRoute();
-                }}
-                trackColor={{ false: "#D1D5DB", true: "#93C5FD" }}
-                thumbColor={store.useSmartCard ? "#208AEF" : "#F3F4F6"}
-              />
-            </View>
 
-            <View style={[styles.optionRow, styles.borderTop]}>
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionTitle}>Accessibility Mode</Text>
-                <Text style={styles.optionSubtitle}>Prioritize lifts & ramps on station routes</Text>
-              </View>
-              <Switch
-                value={store.accessibilityOnly}
-                onValueChange={(val) => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  store.toggleAccessibilityOnly();
-                  if (store.activeRoute) store.calculateActiveRoute();
-                }}
-                trackColor={{ false: "#D1D5DB", true: "#93C5FD" }}
-                thumbColor={store.accessibilityOnly ? "#208AEF" : "#F3F4F6"}
-              />
-            </View>
-          </View>
-
-          {/* Search Button */}
-          <TouchableOpacity style={styles.calculateBtn} onPress={handleCalculateRoute}>
-            <Text style={styles.calculateBtnText}>Calculate Route</Text>
-            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-
-          {/* History Section */}
-          {store.searchHistory.length > 0 && (
-            <View style={styles.historyContainer}>
-              <View style={styles.historyHeader}>
-                <Text style={styles.sectionLabel}>Recent Journeys</Text>
-                <TouchableOpacity onPress={() => store.clearHistory()}>
-                  <Text style={styles.clearAllText}>Clear All</Text>
+              {/* Connecting Line Visual */}
+              <View style={styles.connectorContainer}>
+                <View style={[styles.connectorLine, { backgroundColor: '#007aff' }]} />
+                <TouchableOpacity onPress={handleSwap} style={[styles.swapButton, { backgroundColor: activeTheme === 'dark' ? '#2c2c2e' : '#EFF6FF', borderColor: colors.border }]}>
+                  <Ionicons name="swap-vertical" size={20} color="#007aff" />
                 </TouchableOpacity>
               </View>
-              {store.searchHistory.map((item) => (
+
+              <View style={[styles.inputRow, { backgroundColor: colors.backgroundSelected, borderColor: colors.border }]}>
+                <Ionicons name="location" size={22} color="#F44336" style={styles.inputIcon} />
                 <TouchableOpacity
-                  key={item.id}
-                  style={styles.historyItem}
-                  onPress={() =>
-                    handleHistoryItemTap(item.startStationId, item.endStationId, item.mode)
-                  }
+                  style={styles.selectButton}
+                  onPress={() => openSearchModal("end")}
                 >
-                  <View style={styles.historyLeft}>
-                    <Ionicons name="time-outline" size={18} color="#9E9E9E" />
-                    <View style={styles.historyTextCol}>
-                      <Text style={styles.historyRouteText}>
-                        {item.startName} ➔ {item.endName}
-                      </Text>
-                      <Text style={styles.historyMeta}>
-                        {item.mode} • {item.timestamp}
-                      </Text>
-                    </View>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color="#B0B4BA" />
+                  <Text
+                    style={[
+                      styles.selectButtonText,
+                      { color: colors.text },
+                      !store.endStationId && styles.placeholderText,
+                      !store.endStationId && { color: colors.textSecondary },
+                    ]}
+                  >
+                    {store.endStationId
+                      ? getStationName(store.endStationId)
+                      : "Select Destination..."}
+                  </Text>
                 </TouchableOpacity>
-              ))}
+                {store.endStationId ? (
+                  <TouchableOpacity onPress={() => store.setEndStationId("")} style={styles.clearBtn}>
+                    <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             </View>
-          )}
 
-          {/* Network Metrics Footer */}
-          <View style={styles.footerStats}>
-            <Text style={styles.footerStatsTitle}>Delhi Metro Network Status</Text>
-            <View style={styles.statsGrid}>
-              <View style={styles.statBox}>
-                <Text style={styles.statVal}>{store.stations.length}</Text>
-                <Text style={styles.statLbl}>Stations</Text>
+            {/* Preset Chips */}
+            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Routing Preference</Text>
+            <View style={styles.chipRow}>
+              {["Balanced", "Fastest", "Less Crowd", "Comfortable"].map((mode) => {
+                const active = store.mode === mode;
+                const iconMap: Record<string, string> = {
+                  Balanced: "scale-balance",
+                  Fastest: "lightning-bolt",
+                  "Less Crowd": "account-multiple-remove",
+                  Comfortable: "sofa",
+                };
+                return (
+                  <TouchableOpacity
+                    key={mode}
+                    style={[
+                      styles.prefChip,
+                      { backgroundColor: colors.backgroundElement, borderColor: colors.border },
+                      active && styles.prefChipActive,
+                      active && { backgroundColor: "#007aff", borderColor: "#007aff" }
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      store.setMode(mode);
+                    }}
+                  >
+                    <MaterialCommunityIcons
+                      name={iconMap[mode] as any || "compass"}
+                      size={16}
+                      color={active ? "#FFFFFF" : colors.textSecondary}
+                      style={styles.chipIcon}
+                    />
+                    <Text style={[
+                      styles.prefChipText,
+                      { color: colors.textSecondary },
+                      active && styles.prefChipTextActive,
+                      active && { color: "#FFFFFF" }
+                    ]}>
+                      {mode}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Switch Options */}
+            <View style={[styles.optionCard, { backgroundColor: colors.backgroundElement, shadowColor: activeTheme === 'dark' ? '#000' : 'rgba(0,0,0,0.05)' }]}>
+              <View style={styles.optionRow}>
+                <View style={styles.optionTextContainer}>
+                  <Text style={[styles.optionTitle, { color: colors.text }]}>Use Smart Card</Text>
+                  <Text style={[styles.optionSubtitle, { color: colors.textSecondary }]}>Apply 10% discount on fare calculations</Text>
+                </View>
+                <Switch
+                  value={store.useSmartCard}
+                  onValueChange={(val) => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    store.useSmartCard = val;
+                    // Force recalc if activeRoute is open
+                    if (store.activeRoute) store.calculateActiveRoute();
+                  }}
+                  trackColor={{ false: activeTheme === 'dark' ? '#3a3a3c' : '#D1D5DB', true: "#93C5FD" }}
+                  thumbColor={store.useSmartCard ? "#007aff" : (activeTheme === 'dark' ? '#48484a' : "#F3F4F6")}
+                />
               </View>
-              <View style={styles.statBox}>
-                <Text style={styles.statVal}>12</Text>
-                <Text style={styles.statLbl}>Lines</Text>
-              </View>
-              <View style={styles.statBox}>
-                <Text style={styles.statVal}>Normal</Text>
-                <Text style={styles.statLbl}>Service</Text>
+
+              <View style={[styles.optionRow, styles.borderTop, { borderTopColor: colors.border }]}>
+                <View style={styles.optionTextContainer}>
+                  <Text style={[styles.optionTitle, { color: colors.text }]}>Accessibility Mode</Text>
+                  <Text style={[styles.optionSubtitle, { color: colors.textSecondary }]}>Prioritize lifts & ramps on station routes</Text>
+                </View>
+                <Switch
+                  value={store.accessibilityOnly}
+                  onValueChange={(val) => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    store.toggleAccessibilityOnly();
+                    if (store.activeRoute) store.calculateActiveRoute();
+                  }}
+                  trackColor={{ false: activeTheme === 'dark' ? '#3a3a3c' : '#D1D5DB', true: "#93C5FD" }}
+                  thumbColor={store.accessibilityOnly ? "#007aff" : (activeTheme === 'dark' ? '#48484a' : "#F3F4F6")}
+                />
               </View>
             </View>
-          </View>
-        </ScrollView>
-      ) : (
-        <View style={[styles.routeContainer, { backgroundColor: colors.background }]}>
-          {/* Top route card header */}
-          <View style={[styles.routeHeaderCard, { backgroundColor: scheme === 'dark' ? '#1c1c1e' : '#007aff' }]}>
+
+            {/* Search Button */}
+            <TouchableOpacity style={styles.calculateBtn} onPress={handleCalculateRoute}>
+              <Text style={styles.calculateBtnText}>Calculate Route</Text>
+              <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            {/* History Section */}
+            {store.searchHistory.length > 0 && (
+              <View style={styles.historyContainer}>
+                <View style={styles.historyHeader}>
+                  <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Recent Journeys</Text>
+                  <TouchableOpacity onPress={() => store.clearHistory()}>
+                    <Text style={styles.clearAllText}>Clear All</Text>
+                  </TouchableOpacity>
+                </View>
+                {store.searchHistory.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[styles.historyItem, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
+                    onPress={() =>
+                      handleHistoryItemTap(item.startStationId, item.endStationId, item.mode)
+                    }
+                  >
+                    <View style={styles.historyLeft}>
+                      <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
+                      <View style={styles.historyTextCol}>
+                        <Text style={[styles.historyRouteText, { color: colors.text }]}>
+                          {item.startName} ➔ {item.endName}
+                        </Text>
+                        <Text style={[styles.historyMeta, { color: colors.textSecondary }]}>
+                          {item.mode} • {item.timestamp}
+                        </Text>
+                      </View>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {/* Network Metrics Footer */}
+            <View style={[styles.footerStats, { backgroundColor: colors.backgroundElement }]}>
+              <Text style={[styles.footerStatsTitle, { color: colors.textSecondary }]}>Delhi Metro Network Status</Text>
+              <View style={styles.statsGrid}>
+                <View style={styles.statBox}>
+                  <Text style={[styles.statVal, { color: '#007aff' }]}>{store.stations.length}</Text>
+                  <Text style={[styles.statLbl, { color: colors.textSecondary }]}>Stations</Text>
+                </View>
+                <View style={styles.statBox}>
+                  <Text style={[styles.statVal, { color: '#007aff' }]}>12</Text>
+                  <Text style={[styles.statLbl, { color: colors.textSecondary }]}>Lines</Text>
+                </View>
+                <View style={styles.statBox}>
+                  <Text style={[styles.statVal, { color: '#34c759' }]}>Normal</Text>
+                  <Text style={[styles.statLbl, { color: colors.textSecondary }]}>Service</Text>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        ) : (
+          <View style={[styles.routeContainer, { backgroundColor: colors.background }]}>
+            {/* Top route card header */}
+            <View style={[styles.routeHeaderCard, { backgroundColor: activeTheme === 'dark' ? '#1c1c1e' : '#007aff' }]}>
             <View style={styles.routeHeaderRow}>
               <TouchableOpacity
                 style={styles.backToEditBtn}
@@ -728,13 +743,13 @@ export default function PlannerScreen() {
           </View>
 
           {/* Tab Headers */}
-          <View style={[styles.tabHeaderContainer, { backgroundColor: scheme === 'dark' ? '#1c1c1e' : '#e3e3e8' }]}>
+          <View style={[styles.tabHeaderContainer, { backgroundColor: activeTheme === 'dark' ? '#1c1c1e' : '#e3e3e8' }]}>
             <Animated.View
               style={[
                 styles.activeIndicatorCapsule,
                 {
                   left: tabProgressLeft,
-                  backgroundColor: scheme === 'dark' ? '#2c2c2e' : '#ffffff',
+                  backgroundColor: activeTheme === 'dark' ? '#2c2c2e' : '#ffffff',
                 },
               ]}
             />
@@ -752,12 +767,12 @@ export default function PlannerScreen() {
                 <Ionicons 
                   name={tab.icon as any} 
                   size={16} 
-                  color={activeTab === tab.id ? (scheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary} 
+                  color={activeTab === tab.id ? (activeTheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary} 
                 />
                 <Text style={[
                   styles.tabHeaderButtonText, 
                   { 
-                    color: activeTab === tab.id ? (scheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary,
+                    color: activeTab === tab.id ? (activeTheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary,
                     fontWeight: activeTab === tab.id ? "700" : "500"
                   }
                 ]}>
@@ -1192,6 +1207,7 @@ export default function PlannerScreen() {
           </ScrollView>
         </View>
       )}
+      </View>
 
       {/* Autocomplete Search Modal */}
       <Modal
@@ -1199,22 +1215,23 @@ export default function PlannerScreen() {
         animationType="slide"
         onRequestClose={() => setSearchModalOpen(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
             <TouchableOpacity onPress={() => setSearchModalOpen(false)} style={styles.modalCloseBtn}>
-              <Ionicons name="arrow-back" size={24} color="#000000" />
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
               {activeSearchField === "start" ? "Select Start Station" : "Select Destination"}
             </Text>
           </View>
 
           {/* Search Input */}
-          <View style={styles.modalSearchBox}>
-            <Ionicons name="search" size={20} color="#60646C" style={styles.modalSearchIcon} />
+          <View style={[styles.modalSearchBox, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+            <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.modalSearchIcon} />
             <TextInput
-              style={styles.modalTextInput}
+              style={[styles.modalTextInput, { color: colors.text }]}
               placeholder="Search station name..."
+              placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoFocus
@@ -1228,24 +1245,24 @@ export default function PlannerScreen() {
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={styles.modalListItem}
+                style={[styles.modalListItem, { borderBottomColor: colors.border }]}
                 onPress={() => handleSelectStation(item.id)}
               >
                 <View style={styles.modalListItemLeft}>
-                  <Ionicons name="subway" size={20} color="#208AEF" style={{ marginRight: 12 }} />
+                  <Ionicons name="subway" size={20} color="#007aff" style={{ marginRight: 12 }} />
                   <View>
-                    <Text style={styles.modalStationName}>{item.name}</Text>
+                    <Text style={[styles.modalStationName, { color: colors.text }]}>{item.name}</Text>
                     {getLineBadges(item.id)}
                   </View>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#B0B4BA" />
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
             contentContainerStyle={styles.modalListContent}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons name="warning-outline" size={48} color="#9E9E9E" />
-                <Text style={styles.emptyText}>No stations match "{searchQuery}"</Text>
+                <Ionicons name="warning-outline" size={48} color={colors.textSecondary} />
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No stations match "{searchQuery}"</Text>
               </View>
             }
           />
