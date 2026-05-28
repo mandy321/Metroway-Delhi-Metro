@@ -85,7 +85,23 @@ export default function SmartAccessScreen() {
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Safe & Accessible Transit</Text>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Smart Access</Text>
         </View>
-        <Ionicons name="accessibility-outline" size={28} color="#007aff" />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 14, alignSelf: "flex-end", marginBottom: 2 }}>
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              const nextMode = activeTheme === 'light' ? 'dark' : 'light';
+              store.setThemeMode(nextMode);
+            }}
+            style={[styles.headerThemeBtn, { backgroundColor: activeTheme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
+          >
+            <Ionicons 
+              name={activeTheme === 'light' ? 'moon-outline' : 'sunny-outline'} 
+              size={20} 
+              color={colors.text} 
+            />
+          </TouchableOpacity>
+          <Ionicons name="accessibility-outline" size={28} color="#007aff" />
+        </View>
       </View>
 
       {/* iOS-style Search Bar */}
@@ -340,6 +356,12 @@ export default function SmartAccessScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  headerThemeBtn: {
+    padding: 8,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
     paddingHorizontal: 20,

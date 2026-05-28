@@ -46,6 +46,17 @@ const LINE_COLORS: Record<string, string> = {
   RRTS: "#006A4E",
 };
 
+const getLineContrastColor = (line: string, isDark: boolean) => {
+  const baseColor = LINE_COLORS[line] || "#888888";
+  if (isDark) {
+    return baseColor;
+  } else {
+    if (line === "Yellow") return "#D97706";
+    if (line === "Aqua") return "#0891B2";
+    return baseColor;
+  }
+};
+
 export default function PlannerScreen() {
   const router = useRouter();
   const store = useMetroStore();
@@ -56,6 +67,13 @@ export default function PlannerScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isEditingRoute, setIsEditingRoute] = useState(true);
   const [expandedTransfers, setExpandedTransfers] = useState<Record<string, boolean>>({});
+  const [expandedRuns, setExpandedRuns] = useState<Record<number, boolean>>({});
+
+  const isKeyStation = (idx: number) => {
+    if (idx === 0 || idx === path.length - 1) return true;
+    if (routeEdges[idx - 1]?.isTransfer || routeEdges[idx]?.isTransfer) return true;
+    return false;
+  };
 
   const scheme = useColorScheme() || "light";
   const systemTheme = scheme === "unspecified" ? "light" : scheme;
@@ -427,7 +445,23 @@ export default function PlannerScreen() {
           <Text style={styles.headerTitle}>Metroway</Text>
           <Text style={styles.headerSubtitle}>Delhi Metro Companion</Text>
         </View>
-        <Ionicons name="subway-outline" size={28} color="#FFFFFF" />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              const nextMode = activeTheme === 'light' ? 'dark' : 'light';
+              store.setThemeMode(nextMode);
+            }}
+            style={styles.headerThemeBtn}
+          >
+            <Ionicons 
+              name={activeTheme === 'light' ? 'moon-outline' : 'sunny-outline'} 
+              size={22} 
+              color="#FFFFFF" 
+            />
+          </TouchableOpacity>
+          <Ionicons name="subway-outline" size={26} color="#FFFFFF" />
+        </View>
       </View>
 
       <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -700,7 +734,7 @@ export default function PlannerScreen() {
           </View>
 
           {/* Subway Node Flow Map (Horizontal Scrollable Legs) */}
-          <View style={styles.flowMapContainer}>
+          <View style={[styles.flowMapContainer, { backgroundColor: activeTheme === 'dark' ? '#212225' : '#F3F4F6', borderBottomColor: colors.border }]}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.flowMapContent}>
               {getCondensedLegs().map((leg, idx) => {
                 const isLastLeg = idx === getCondensedLegs().length - 1;
@@ -709,11 +743,11 @@ export default function PlannerScreen() {
 
                 return (
                   <React.Fragment key={idx}>
-                    <View style={styles.flowLegItem}>
+                    <View style={[styles.flowLegItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
                       <View style={[styles.flowLineDot, { backgroundColor: legColor }]} />
                       <View style={{ marginLeft: 6 }}>
-                        <Text style={styles.flowLegLineText}>{leg.line} Line</Text>
-                        <Text style={styles.flowLegStationName} numberOfLines={1}>{leg.startStation.name}</Text>
+                        <Text style={[styles.flowLegLineText, { color: colors.textSecondary }]}>{leg.line} Line</Text>
+                        <Text style={[styles.flowLegStationName, { color: colors.text }]} numberOfLines={1}>{leg.startStation.name}</Text>
                         {boarding && (
                           <Text style={styles.flowLegPlatformText}>
                             Plat {boarding.platNum} • {boarding.termName}
@@ -732,11 +766,17 @@ export default function PlannerScreen() {
                 );
               })}
 
-              <View style={[styles.flowLegItem, { backgroundColor: "#FEF2F2", borderColor: "#FCA5A5" }]}>
-                <Ionicons name="location" size={14} color="#EF4444" style={{ marginRight: 4 }} />
+              <View style={[
+                styles.flowLegItem, 
+                { 
+                  backgroundColor: activeTheme === 'dark' ? 'rgba(239, 68, 68, 0.12)' : '#FEF2F2', 
+                  borderColor: activeTheme === 'dark' ? 'rgba(239, 68, 68, 0.3)' : '#FCA5A5' 
+                }
+              ]}>
+                <Ionicons name="location" size={14} color={activeTheme === 'dark' ? '#FF453A' : '#EF4444'} style={{ marginRight: 4 }} />
                 <View>
-                  <Text style={[styles.flowLegLineText, { color: "#EF4444" }]}>Destination</Text>
-                  <Text style={styles.flowLegStationName} numberOfLines={1}>{getStationName(store.endStationId)}</Text>
+                  <Text style={[styles.flowLegLineText, { color: activeTheme === 'dark' ? '#FF453A' : '#EF4444' }]}>Destination</Text>
+                  <Text style={[styles.flowLegStationName, { color: colors.text }]} numberOfLines={1}>{getStationName(store.endStationId)}</Text>
                 </View>
               </View>
             </ScrollView>
@@ -758,33 +798,41 @@ export default function PlannerScreen() {
               { id: "fare", label: "Fare", icon: "card-outline" },
               { id: "exits", label: "Exits", icon: "exit-outline" },
               { id: "status", label: "Outages", icon: "alert-circle-outline", alertCount: getPathStatusAlerts().length }
-            ].map(tab => (
-              <TouchableOpacity
-                key={tab.id}
-                style={styles.tabHeaderButton}
-                onPress={() => handleTabChange(tab.id)}
-              >
-                <Ionicons 
-                  name={tab.icon as any} 
-                  size={16} 
-                  color={activeTab === tab.id ? (activeTheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary} 
-                />
-                <Text style={[
-                  styles.tabHeaderButtonText, 
-                  { 
-                    color: activeTab === tab.id ? (activeTheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary,
-                    fontWeight: activeTab === tab.id ? "700" : "500"
-                  }
-                ]}>
-                  {tab.label}
-                </Text>
-                {tab.alertCount ? (
-                  <View style={[styles.tabAlertBadge, { backgroundColor: '#ff3b30' }]}>
-                    <Text style={[styles.tabAlertBadgeText, { color: '#ffffff' }]}>{tab.alertCount}</Text>
-                  </View>
-                ) : null}
-              </TouchableOpacity>
-            ))}
+            ].map((tab, idx) => {
+              const isActive = activeTab === tab.id;
+              const isPrevActive = idx > 0 && activeTab === ["timeline", "fare", "exits", "status"][idx - 1];
+              return (
+                <React.Fragment key={tab.id}>
+                  {idx > 0 && !isActive && !isPrevActive && (
+                    <View style={{ width: 1, height: 16, backgroundColor: activeTheme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', alignSelf: 'center', marginHorizontal: -0.5 }} />
+                  )}
+                  <TouchableOpacity
+                    style={styles.tabHeaderButton}
+                    onPress={() => handleTabChange(tab.id)}
+                  >
+                    <Ionicons 
+                      name={tab.icon as any} 
+                      size={15} 
+                      color={isActive ? (activeTheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary} 
+                    />
+                    <Text style={[
+                      styles.tabHeaderButtonText, 
+                      { 
+                        color: isActive ? (activeTheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary,
+                        fontWeight: isActive ? "700" : "500"
+                      }
+                    ]}>
+                      {tab.label}
+                    </Text>
+                    {tab.alertCount ? (
+                      <View style={[styles.tabAlertBadge, { backgroundColor: '#ff3b30' }]}>
+                        <Text style={[styles.tabAlertBadgeText, { color: '#ffffff' }]}>{tab.alertCount}</Text>
+                      </View>
+                    ) : null}
+                  </TouchableOpacity>
+                </React.Fragment>
+              );
+            })}
           </View>
 
           {/* Tab Scroll Content */}
@@ -793,20 +841,54 @@ export default function PlannerScreen() {
             {/* 1. Timeline Tab */}
             {activeTab === "timeline" && (
               <View>
-                {/* Quick Ratings Badges */}
-                <View style={styles.journeyRatings}>
-                  <View style={[styles.ratingPill, styles.ratingBalanced]}>
-                    <Text style={styles.ratingLabel}>Crowd: </Text>
-                    <Text style={styles.ratingVal}>{activeRoute.metrics.crowd}/10</Text>
-                  </View>
-                  <View style={[styles.ratingPill, styles.ratingComfort]}>
-                    <Text style={styles.ratingLabel}>Comfort: </Text>
-                    <Text style={styles.ratingVal}>{activeRoute.metrics.comfort}/10</Text>
-                  </View>
-                  <View style={[styles.ratingPill, styles.ratingSafety]}>
-                    <Text style={styles.ratingLabel}>Safety: </Text>
-                    <Text style={styles.ratingVal}>{activeRoute.metrics.safety}/10</Text>
-                  </View>
+                {/* Premium Metrics Widgets Grid */}
+                <View style={styles.journeyMetricsGrid}>
+                  {[
+                    {
+                      label: "Crowd",
+                      value: activeRoute.metrics.crowd,
+                      icon: "people-outline",
+                      color: activeRoute.metrics.crowd > 7 ? "#FF453A" : activeRoute.metrics.crowd > 4 ? "#FF9F0A" : "#34C759",
+                      desc: activeRoute.metrics.crowd > 7 ? "Very Packed" : activeRoute.metrics.crowd > 4 ? "Standing Only" : "Seats Available"
+                    },
+                    {
+                      label: "Comfort",
+                      value: activeRoute.metrics.comfort,
+                      icon: "leaf-outline",
+                      color: activeRoute.metrics.comfort < 4 ? "#FF453A" : activeRoute.metrics.comfort < 7 ? "#FF9F0A" : "#34C759",
+                      desc: activeRoute.metrics.comfort < 4 ? "Tight Squeeze" : activeRoute.metrics.comfort < 7 ? "Comfy Ride" : "Luxurious"
+                    },
+                    {
+                      label: "Safety",
+                      value: activeRoute.metrics.safety,
+                      icon: "shield-checkmark-outline",
+                      color: activeRoute.metrics.safety < 4 ? "#FF453A" : activeRoute.metrics.safety < 7 ? "#FF9F0A" : "#34C759",
+                      desc: activeRoute.metrics.safety < 4 ? "Low Lit Path" : activeRoute.metrics.safety < 7 ? "Secure Path" : "Highly Secure"
+                    }
+                  ].map((m) => (
+                    <View 
+                      key={m.label} 
+                      style={[
+                        styles.metricCard, 
+                        { 
+                          backgroundColor: colors.backgroundElement,
+                          borderColor: colors.border
+                        }
+                      ]}
+                    >
+                      <View style={styles.metricHeader}>
+                        <Ionicons name={m.icon as any} size={13} color={m.color} />
+                        <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>{m.label}</Text>
+                      </View>
+                      <View style={{ marginVertical: 4 }}>
+                        <Text style={[styles.metricValue, { color: colors.text }]}>{m.value}<Text style={{ fontSize: 9, fontWeight: "400", color: colors.textSecondary }}>/10</Text></Text>
+                        <Text style={[styles.metricDesc, { color: m.color }]} numberOfLines={1}>{m.desc}</Text>
+                      </View>
+                      <View style={[styles.metricTrack, { backgroundColor: activeTheme === 'dark' ? '#2c2c2e' : '#e5e5ea' }]}>
+                        <View style={[styles.metricFill, { width: `${m.value * 10}%`, backgroundColor: m.color }]} />
+                      </View>
+                    </View>
+                  ))}
                 </View>
 
                 {/* Vertical Timeline Nodes */}
@@ -819,11 +901,127 @@ export default function PlannerScreen() {
                                       store.infrastructureStatus[station.id]?.elevator === "Under Maintenance";
                     const lineColor = nextEdge ? (LINE_COLORS[nextEdge.line] || "#888888") : "transparent";
 
+                    const keyStation = isKeyStation(idx);
+                    
+                    if (!keyStation) {
+                      const isStartOfRun = idx > 0 && isKeyStation(idx - 1);
+                      if (!isStartOfRun) {
+                        return null; // Middle of a collapsed intermediate stops run
+                      }
+
+                      // We are at the start of a collapsed intermediate stops run.
+                      // Find the next key station index:
+                      let nextKeyIdx = idx + 1;
+                      while (nextKeyIdx < path.length && !isKeyStation(nextKeyIdx)) {
+                        nextKeyIdx++;
+                      }
+                      
+                      const runStations = path.slice(idx, nextKeyIdx);
+                      const runEdges = routeEdges.slice(idx - 1, nextKeyIdx - 1);
+                      const runDuration = runEdges.reduce((sum, edge) => sum + (edge?.adjustedTime || edge?.baseTime || 2), 0);
+                      const runStops = runStations.length;
+                      const isExpanded = !!expandedRuns[idx];
+                      const runLineColor = routeEdges[idx - 1] ? (LINE_COLORS[routeEdges[idx - 1].line] || "#888888") : "#888888";
+
+                      if (!isExpanded) {
+                        return (
+                          <View key={`collapsed-run-${idx}`} style={styles.stationNode}>
+                            <View style={styles.timelineSidebar}>
+                              {/* Dotted indicator inside sidebar */}
+                              <View style={[styles.stationIndicator, { borderColor: "#A2A2A7", width: 14, height: 14, borderRadius: 7, borderWidth: 2 }]}>
+                                <View style={[styles.stationDot, { backgroundColor: "#A2A2A7", width: 4, height: 4, borderRadius: 2 }]} />
+                              </View>
+                              <View style={[styles.timelineLine, { backgroundColor: runLineColor, borderStyle: "dotted", borderLeftWidth: 2, borderColor: runLineColor, width: 0 }]} />
+                            </View>
+                            <View style={styles.timelineBody}>
+                              <TouchableOpacity 
+                                style={[styles.collapsedRunContainer, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
+                                onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  setExpandedRuns(prev => ({ ...prev, [idx]: true }));
+                                }}
+                              >
+                                <Ionicons name="subway-outline" size={14} color={runLineColor} style={{ marginRight: 6 }} />
+                                <Text style={[styles.collapsedRunText, { color: colors.textSecondary }]}>
+                                  {runStops} stop{runStops > 1 ? 's' : ''} • {runDuration} min{runDuration > 1 ? 's' : ''}
+                                </Text>
+                                <Ionicons name="chevron-down" size={14} color={colors.textSecondary} style={{ marginLeft: "auto" }} />
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        );
+                      } else {
+                        // Expanded - render a "Collapse" button first, then render the stations
+                        return (
+                          <React.Fragment key={`expanded-run-fragment-${idx}`}>
+                            <View style={styles.stationNode}>
+                              <View style={styles.timelineSidebar}>
+                                <View style={[styles.stationIndicator, { borderColor: "#A2A2A7", width: 14, height: 14, borderRadius: 7, borderWidth: 2 }]}>
+                                  <View style={[styles.stationDot, { backgroundColor: "#A2A2A7", width: 4, height: 4, borderRadius: 2 }]} />
+                                </View>
+                                <View style={[styles.timelineLine, { backgroundColor: runLineColor, borderStyle: "solid", borderLeftWidth: 3, borderColor: runLineColor, width: 3 }]} />
+                              </View>
+                              <View style={styles.timelineBody}>
+                                <TouchableOpacity 
+                                  style={[styles.collapsedRunContainer, { backgroundColor: colors.backgroundElement, borderColor: colors.border, paddingVertical: 4 }]}
+                                  onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setExpandedRuns(prev => ({ ...prev, [idx]: false }));
+                                  }}
+                                >
+                                  <Ionicons name="subway-outline" size={12} color={runLineColor} style={{ marginRight: 6 }} />
+                                  <Text style={[styles.collapsedRunText, { color: colors.textSecondary, fontSize: 11 }]}>
+                                    Hide {runStops} stop{runStops > 1 ? 's' : ''}
+                                  </Text>
+                                  <Ionicons name="chevron-up" size={12} color={colors.textSecondary} style={{ marginLeft: "auto" }} />
+                                </TouchableOpacity>
+                              </View>
+                            </View>
+                            
+                            {runStations.map((runStation, runIdx) => {
+                              const globalIdx = idx + runIdx;
+                              const currentEdge = routeEdges[globalIdx];
+                              const currentLineColor = currentEdge ? (LINE_COLORS[currentEdge.line] || "#888888") : "transparent";
+                              const stationAlert = store.infrastructureStatus[runStation.id]?.escalator === "Under Maintenance" || 
+                                                   store.infrastructureStatus[runStation.id]?.elevator === "Under Maintenance";
+
+                              return (
+                                <View key={`${runStation.id}-${globalIdx}`} style={styles.stationNode}>
+                                  <View style={styles.timelineSidebar}>
+                                    <View style={[styles.stationIndicator, { borderColor: currentLineColor, width: 12, height: 12, borderRadius: 6, borderWidth: 2 }]}>
+                                      <View style={[styles.stationDot, { backgroundColor: colors.background, width: 4, height: 4, borderRadius: 2 }]} />
+                                    </View>
+                                    <View style={[styles.timelineLine, { backgroundColor: currentLineColor, borderStyle: "solid", borderLeftWidth: 3, borderColor: currentLineColor, width: 3 }]} />
+                                  </View>
+                                  <View style={[styles.timelineBody, { paddingBottom: 12 }]}>
+                                    <View style={styles.stationHeaderRow}>
+                                      <Text style={[styles.stationNodeName, { color: colors.textSecondary, fontSize: 13, fontWeight: "500" }]}>
+                                        {runStation.name}
+                                      </Text>
+                                      {stationAlert && (
+                                        <View style={[styles.timelineAlertBadge, { paddingHorizontal: 4, paddingVertical: 1 }]}>
+                                          <Ionicons name="warning" size={8} color="#F59E0B" />
+                                          <Text style={[styles.timelineAlertText, { fontSize: 7 }]}>Alert</Text>
+                                        </View>
+                                      )}
+                                    </View>
+                                    <Text style={[styles.intermediateText, { color: colors.textSecondary, marginTop: 1, fontSize: 10 }]}>
+                                      Ride {currentEdge?.line} Line • Approx. {Math.round(currentEdge?.adjustedTime || currentEdge?.baseTime || 2)} mins
+                                    </Text>
+                                  </View>
+                                </View>
+                              );
+                            })}
+                          </React.Fragment>
+                        );
+                      }
+                    }
+
                     return (
                       <View key={`${station.id}-${idx}`} style={styles.stationNode}>
                         <View style={styles.timelineSidebar}>
-                          <View style={[styles.stationIndicator, { borderColor: isEnd ? "#EF4444" : isStart ? "#10B981" : lineColor }]}>
-                            <View style={[styles.stationDot, { backgroundColor: isStart ? "#10B981" : isEnd ? "#EF4444" : "#FFFFFF" }]} />
+                          <View style={[styles.stationIndicator, { borderColor: isEnd ? "#FF453A" : isStart ? "#34C759" : lineColor }]}>
+                            <View style={[styles.stationDot, { backgroundColor: isStart ? "#34C759" : isEnd ? "#FF453A" : lineColor }]} />
                           </View>
                           {!isEnd && (
                             <View 
@@ -842,11 +1040,11 @@ export default function PlannerScreen() {
                         </View>
                         <View style={styles.timelineBody}>
                           <View style={styles.stationHeaderRow}>
-                            <Text style={[styles.stationNodeName, (isStart || isEnd) && styles.boldStation]}>
+                            <Text style={[styles.stationNodeName, { color: colors.text }, (isStart || isEnd) && styles.boldStation, (isStart || isEnd) && { color: colors.text }]}>
                               {station.name}
                             </Text>
                             {isStart && <Text style={styles.endpointBadge}>Start</Text>}
-                            {isEnd && <Text style={[styles.endpointBadge, { backgroundColor: "#FEE2E2", color: "#B91C1C" }]}>End</Text>}
+                            {isEnd && <Text style={[styles.endpointBadge, { backgroundColor: activeTheme === 'dark' ? '#3a1d1d' : '#FEE2E2', color: activeTheme === 'dark' ? '#ff453a' : '#B91C1C' }]}>End</Text>}
                             {hasAlert && (
                               <View style={styles.timelineAlertBadge}>
                                 <Ionicons name="warning" size={10} color="#F59E0B" />
@@ -860,9 +1058,9 @@ export default function PlannerScreen() {
                             {station.lines.map(l => (
                               <View 
                                 key={l} 
-                                style={[styles.lineBadgePill, { backgroundColor: (LINE_COLORS[l] || "#888888") + "15", borderColor: (LINE_COLORS[l] || "#888888") + "25" }]}
+                                style={[styles.lineBadgePill, { backgroundColor: LINE_COLORS[l] || "#888888", borderColor: LINE_COLORS[l] || "#888888" }]}
                               >
-                                <Text style={[styles.lineBadgeText, { color: LINE_COLORS[l] || "#888888" }]}>{l}</Text>
+                                <Text style={[styles.lineBadgeText, { color: "#FFFFFF" }]}>{l}</Text>
                               </View>
                             ))}
                           </View>
@@ -870,10 +1068,26 @@ export default function PlannerScreen() {
                           {isStart && nextEdge && (() => {
                             const termName = getTerminalStationName(station.id, path[1]?.id, nextEdge.line);
                             const platNum = getPlatformNumber(station, nextEdge.line, termName);
+                            const activeLineColor = getLineContrastColor(nextEdge.line, activeTheme === 'dark');
                             return (
-                              <View style={styles.boardingBox}>
-                                <Text style={styles.boardingText}>
-                                  Board <Text style={{ color: lineColor, fontWeight: "bold" }}>{nextEdge.line} Line</Text> towards <Text style={{ fontWeight: "bold", color: "#1F2937" }}>{termName}</Text> (Platform {platNum})
+                              <View style={[
+                                styles.navigationStepCard, 
+                                { 
+                                  backgroundColor: colors.backgroundElement, 
+                                  borderLeftWidth: 4, 
+                                  borderLeftColor: LINE_COLORS[nextEdge.line] || "#888888",
+                                  borderColor: colors.border
+                                }
+                              ]}>
+                                <View style={styles.navCardHeader}>
+                                  <Ionicons name="train" size={15} color={LINE_COLORS[nextEdge.line] || "#888888"} />
+                                  <Text style={[styles.navCardTitle, { color: colors.text }]}>Board Train</Text>
+                                  <View style={[styles.platformPill, { backgroundColor: LINE_COLORS[nextEdge.line] || "#888888" }]}>
+                                    <Text style={styles.platformPillText}>Platform {platNum}</Text>
+                                  </View>
+                                </View>
+                                <Text style={[styles.navCardDesc, { color: colors.textSecondary }]}>
+                                  Take the <Text style={{ color: activeLineColor, fontWeight: "800" }}>{nextEdge.line} Line</Text> towards <Text style={{ fontWeight: "700", color: colors.text }}>{termName}</Text>.
                                 </Text>
                               </View>
                             );
@@ -884,20 +1098,47 @@ export default function PlannerScreen() {
                             const platNum = getPlatformNumber(station, nextEdge.line, termName);
                             const walkInfo = getTransferWalkInfo(station.id, nextEdge.line);
                             const adjustedWalkTime = store.timeOfDay === "Peak" ? walkInfo.time + 3 : walkInfo.time;
+                            const activeLineColor = getLineContrastColor(nextEdge.line, activeTheme === 'dark');
                             return (
-                              <View style={styles.transferBox}>
-                                <View style={styles.transferHeaderRow}>
-                                  <Ionicons name="swap-horizontal" size={14} color="#8B5CF6" style={{ marginRight: 4 }} />
-                                  <Text style={styles.transferTitleText}>
-                                    Transfer to <Text style={{ color: lineColor, fontWeight: "bold" }}>{nextEdge.line} Line</Text> (Platform {platNum})
-                                  </Text>
+                              <View style={[
+                                styles.navigationStepCard, 
+                                { 
+                                  backgroundColor: colors.backgroundElement, 
+                                  borderLeftWidth: 4, 
+                                  borderLeftColor: "#8B5CF6", // purple for transfer
+                                  borderColor: colors.border
+                                }
+                              ]}>
+                                <View style={styles.navCardHeader}>
+                                  <Ionicons name="git-compare" size={15} color="#8B5CF6" />
+                                  <Text style={[styles.navCardTitle, { color: colors.text }]}>Interchange Station</Text>
+                                  <View style={[styles.platformPill, { backgroundColor: LINE_COLORS[nextEdge.line] || "#888888" }]}>
+                                    <Text style={styles.platformPillText}>Platform {platNum}</Text>
+                                  </View>
                                 </View>
-                                <View style={styles.transferWalkBox}>
-                                  <Text style={styles.transferWalkTitle}>
-                                    🚶 {walkInfo.type}: ~{adjustedWalkTime} mins walk ({walkInfo.distance})
-                                  </Text>
-                                  <Text style={styles.transferWalkDesc}>
-                                    {walkInfo.description} {store.timeOfDay === "Peak" && "(+3m peak delay)"}
+                                <Text style={[styles.navCardDesc, { color: colors.textSecondary }]}>
+                                  Switch to the <Text style={{ color: activeLineColor, fontWeight: "800" }}>{nextEdge.line} Line</Text> towards <Text style={{ fontWeight: "700", color: colors.text }}>{termName}</Text>.
+                                </Text>
+                                
+                                <View style={[styles.transferDetailRow, { borderTopColor: colors.border }]}>
+                                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                    <Ionicons name="walk" size={15} color="#8B5CF6" />
+                                    <Text style={[styles.transferPathTitle, { color: colors.text }]}>
+                                      {walkInfo.type}
+                                    </Text>
+                                  </View>
+                                  <View style={{ flexDirection: "row", gap: 6, marginTop: 4, marginBottom: 4 }}>
+                                    <View style={styles.walkMetaBadge}>
+                                      <Text style={styles.walkMetaText}>{walkInfo.distance}</Text>
+                                    </View>
+                                    <View style={[styles.walkMetaBadge, { backgroundColor: store.timeOfDay === "Peak" ? "rgba(239, 68, 68, 0.1)" : "rgba(139, 92, 246, 0.08)" }]}>
+                                      <Text style={[styles.walkMetaText, store.timeOfDay === "Peak" && { color: "#FF453A" }]}>
+                                        🕒 ~{adjustedWalkTime} mins {store.timeOfDay === "Peak" && "(Peak)"}
+                                      </Text>
+                                    </View>
+                                  </View>
+                                  <Text style={[styles.transferPathDesc, { color: colors.textSecondary }]}>
+                                    {walkInfo.description}
                                   </Text>
                                 </View>
                               </View>
@@ -905,15 +1146,15 @@ export default function PlannerScreen() {
                           })()}
 
                           {!isStart && !isEnd && !nextEdge?.isTransfer && (
-                            <Text style={styles.intermediateText}>
-                              Ride {nextEdge?.line} Line • Approx. {Math.round(nextEdge?.adjustedTime || nextEdge?.baseTime || 2)} mins
+                            <Text style={[styles.intermediateText, { color: colors.textSecondary }]}>
+                              Ride <Text style={{ color: getLineContrastColor(nextEdge.line, activeTheme === 'dark'), fontWeight: "700" }}>{nextEdge.line} Line</Text> • Approx. {Math.round(nextEdge?.adjustedTime || nextEdge?.baseTime || 2)} mins
                             </Text>
                           )}
 
                           {isEnd && (
-                            <View style={styles.destArrivedBox}>
-                              <Ionicons name="checkmark-circle" size={14} color="#10B981" style={{ marginRight: 4 }} />
-                              <Text style={styles.destArrivedText}>Destination reached</Text>
+                            <View style={[styles.destArrivedBox, { backgroundColor: activeTheme === 'dark' ? 'rgba(52, 199, 89, 0.08)' : '#ECFDF5', borderColor: activeTheme === 'dark' ? 'rgba(52, 199, 89, 0.2)' : '#A7F3D0' }]}>
+                              <Ionicons name="checkmark-circle" size={14} color="#34c759" style={{ marginRight: 4 }} />
+                              <Text style={[styles.destArrivedText, { color: activeTheme === 'dark' ? '#30D158' : '#065F46' }]}>Destination reached</Text>
                             </View>
                           )}
                         </View>
@@ -928,73 +1169,204 @@ export default function PlannerScreen() {
             {activeTab === "fare" && (
               <View style={styles.tabContentContainer}>
                 <View style={styles.fareCardsRow}>
-                  <View style={styles.fareCard}>
-                    <Text style={styles.fareCardLabel}>Single Token</Text>
-                    <Text style={styles.fareCardSub}>Vending Price</Text>
-                    <Text style={styles.fareCardValue}>₹{regularFare}</Text>
-                  </View>
+                  {/* Single Token Card */}
+                  <TouchableOpacity 
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      store.useSmartCard = false;
+                      store.calculateActiveRoute();
+                    }}
+                    style={[
+                      styles.ticketPassCard, 
+                      { 
+                        backgroundColor: colors.backgroundElement, 
+                        borderColor: !store.useSmartCard ? "#007aff" : colors.border,
+                        borderWidth: !store.useSmartCard ? 2 : 1,
+                        opacity: !store.useSmartCard ? 1 : 0.65,
+                        shadowColor: "#000",
+                        shadowOpacity: !store.useSmartCard ? 0.08 : 0.02,
+                      }
+                    ]}
+                  >
+                    {/* Left Notch */}
+                    <View style={[styles.ticketNotchLeft, { backgroundColor: colors.background }]} />
+                    {/* Right Notch */}
+                    <View style={[styles.ticketNotchRight, { backgroundColor: colors.background }]} />
 
-                  <View style={[styles.fareCard, store.useSmartCard && styles.fareCardActive]}>
-                    <Text style={[styles.fareCardLabel, store.useSmartCard && styles.fareCardLabelActive]}>
-                      {store.useSmartCard && <Ionicons name="sparkles" size={12} color="#F59E0B" />} Smart Card
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <Text style={[styles.fareCardLabel, { color: colors.textSecondary }]}>Single Token</Text>
+                      {!store.useSmartCard ? (
+                        <Ionicons name="checkmark-circle" size={16} color="#007aff" />
+                      ) : (
+                        <Ionicons name="ellipse-outline" size={16} color={colors.textSecondary} />
+                      )}
+                    </View>
+                    <Text style={[styles.fareCardSub, { color: colors.textSecondary, marginTop: 2 }]}>Vending Price</Text>
+                    
+                    {/* Tear-off Line */}
+                    <View style={[styles.ticketTearLine, { borderColor: activeTheme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)' }]} />
+                    
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
+                      <Text style={[styles.fareCardValue, { color: colors.text, fontSize: 22, fontWeight: "900" }]}>₹{regularFare}</Text>
+                      {/* Barcode representation */}
+                      <View style={styles.simulatedBarcode}>
+                        {[1, 3, 1, 2, 4, 1, 2, 3, 1, 2, 1, 2].map((w, i) => (
+                          <View key={i} style={{ width: w, backgroundColor: colors.text, opacity: 0.6, height: "100%", marginRight: 1 }} />
+                        ))}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Smart Card Card */}
+                  <TouchableOpacity 
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      store.useSmartCard = true;
+                      store.calculateActiveRoute();
+                    }}
+                    style={[
+                      styles.ticketPassCard, 
+                      { 
+                        backgroundColor: store.useSmartCard 
+                          ? (activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.12)' : '#FFFDF5') 
+                          : colors.backgroundElement, 
+                        borderColor: store.useSmartCard ? "#F59E0B" : colors.border,
+                        borderWidth: store.useSmartCard ? 2 : 1,
+                        opacity: store.useSmartCard ? 1 : 0.65,
+                        shadowColor: "#F59E0B",
+                        shadowOpacity: store.useSmartCard ? 0.15 : 0.02,
+                        shadowRadius: 8,
+                        elevation: store.useSmartCard ? 4 : 1,
+                      }
+                    ]}
+                  >
+                    {/* Left Notch */}
+                    <View style={[styles.ticketNotchLeft, { backgroundColor: colors.background }]} />
+                    {/* Right Notch */}
+                    <View style={[styles.ticketNotchRight, { backgroundColor: colors.background }]} />
+
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <Text style={[
+                        styles.fareCardLabel, 
+                        { color: store.useSmartCard ? (activeTheme === 'dark' ? '#F59E0B' : '#B45309') : colors.textSecondary }
+                      ]}>
+                        Smart Card
+                      </Text>
+                      {store.useSmartCard ? (
+                        <Ionicons name="checkmark-circle" size={16} color="#F59E0B" />
+                      ) : (
+                        <Ionicons name="ellipse-outline" size={16} color={colors.textSecondary} />
+                      )}
+                    </View>
+                    <Text style={[
+                      styles.fareCardSub, 
+                      { color: store.useSmartCard ? (activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.8)' : '#D97706') : colors.textSecondary, marginTop: 2 }
+                    ]}>
+                      {discountPercent}% Discount
                     </Text>
-                    <Text style={[styles.fareCardSub, store.useSmartCard && styles.fareCardSubActive]}>
-                      Includes {discountPercent}% off
-                    </Text>
-                    <Text style={[styles.fareCardValue, store.useSmartCard && styles.fareCardValueActive]}>
-                      ₹{smartCardFare}
-                    </Text>
-                  </View>
+
+                    {/* Tear-off Line */}
+                    <View style={[styles.ticketTearLine, { borderColor: store.useSmartCard ? (activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(180, 83, 9, 0.2)') : (activeTheme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)') }]} />
+
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
+                      <Text style={[
+                        styles.fareCardValue, 
+                        { color: store.useSmartCard ? (activeTheme === 'dark' ? '#F59E0B' : '#B45309') : colors.text, fontSize: 22, fontWeight: "900" }
+                      ]}>
+                        ₹{smartCardFare}
+                      </Text>
+                      <Ionicons name="barcode-outline" size={22} color={store.useSmartCard ? (activeTheme === 'dark' ? '#F59E0B' : '#B45309') : colors.textSecondary} style={{ opacity: 0.5 }} />
+                    </View>
+                  </TouchableOpacity>
                 </View>
 
                 {store.useSmartCard ? (
-                  <View style={styles.savingsBanner}>
+                  <View style={[
+                    styles.savingsBanner, 
+                    { 
+                      backgroundColor: activeTheme === 'dark' ? 'rgba(16, 185, 129, 0.12)' : '#D1FAE5',
+                      borderColor: activeTheme === 'dark' ? 'rgba(16, 185, 129, 0.3)' : '#A7F3D0'
+                    }
+                  ]}>
                     <Ionicons name="checkmark-circle" size={18} color="#10B981" style={{ marginRight: 8 }} />
-                    <Text style={styles.savingsBannerText}>
-                      Smart Card active! You saved <Text style={{ fontWeight: "bold" }}>₹{savings}</Text> ({discountPercent}% discount applied).
+                    <Text style={[styles.savingsBannerText, { color: activeTheme === 'dark' ? '#34D399' : '#065F46' }]}>
+                      Smart Card active! Saved <Text style={{ fontWeight: "bold" }}>₹{savings}</Text> ({discountPercent}% discount applied).
                     </Text>
                   </View>
                 ) : (
-                  <View style={styles.smartCardPromo}>
+                  <TouchableOpacity 
+                    style={[
+                      styles.smartCardPromo, 
+                      { 
+                        backgroundColor: activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.08)' : '#FFFBEB',
+                        borderColor: activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.2)' : '#FDE68A'
+                      }
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      store.useSmartCard = true;
+                      store.calculateActiveRoute();
+                    }}
+                  >
                     <Ionicons name="card" size={20} color="#F59E0B" style={{ marginRight: 10, marginTop: 2 }} />
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.promoTitle}>Recommendation: Use a Smart Card</Text>
-                      <Text style={styles.promoDesc}>
-                        Save 10% during peak hours, and 20% off during off-peak hours by paying with a smart card. Turn it on in the options above to apply the pricing.
+                      <Text style={[styles.promoTitle, { color: colors.text }]}>Apply Smart Card Discount</Text>
+                      <Text style={[styles.promoDesc, { color: colors.textSecondary }]}>
+                        Tap here to apply pricing with a Smart Card. Save 10% during peak and 20% off during off-peak hours.
                       </Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 )}
 
-                <View style={styles.breakdownCard}>
-                  <Text style={styles.breakdownCardTitle}>Fare Calculation Breakdown</Text>
+                <View style={[styles.breakdownCard, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+                  <Text style={[styles.breakdownCardTitle, { color: colors.text }]}>Itemized Journey Receipt</Text>
                   <View style={styles.breakdownList}>
                     {routeEdges.some((e: any) => e.line === "Orange") ? (
                       <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>Airport Express Premium Flat Fare:</Text>
-                        <Text style={styles.breakdownVal}>₹60.00</Text>
+                        <Text style={[styles.breakdownLabel, { color: colors.textSecondary }]}>Airport Express Flat Fare</Text>
+                        <Text style={[styles.breakdownVal, { color: colors.text }]}>₹60.00</Text>
                       </View>
                     ) : (
                       <>
                         <View style={styles.breakdownRow}>
-                          <Text style={styles.breakdownLabel}>Base Ticket Fare:</Text>
-                          <Text style={styles.breakdownVal}>₹10.00</Text>
+                          <Text style={[styles.breakdownLabel, { color: colors.textSecondary }]}>Base Ticket Fare</Text>
+                          <Text style={[styles.breakdownVal, { color: colors.text }]}>₹10.00</Text>
                         </View>
-                        <View style={[styles.breakdownRow, styles.borderTopSmall]}>
-                          <Text style={styles.breakdownLabel}>Distance Charge ({activeRoute.metrics.distance} km @ ₹2.5/km):</Text>
-                          <Text style={styles.breakdownVal}>₹{Math.round(activeRoute.metrics.distance * 2.5 * 10) / 10}</Text>
+                        <View style={[styles.breakdownRow, styles.borderTopSmall, { borderTopColor: colors.border }]}>
+                          <Text style={[styles.breakdownLabel, { color: colors.textSecondary }]}>Distance Charge ({activeRoute.metrics.distance} km @ ₹2.5/km)</Text>
+                          <Text style={[styles.breakdownVal, { color: colors.text }]}>₹{Math.round(activeRoute.metrics.distance * 2.5 * 10) / 10}</Text>
                         </View>
                         {activeRoute.metrics.transfers > 0 && (
-                          <View style={[styles.breakdownRow, styles.borderTopSmall]}>
-                            <Text style={styles.breakdownLabel}>Interchange Surcharge (₹2/transfer):</Text>
-                            <Text style={styles.breakdownVal}>₹{activeRoute.metrics.transfers * 2}.00</Text>
+                          <View style={[styles.breakdownRow, styles.borderTopSmall, { borderTopColor: colors.border }]}>
+                            <Text style={[styles.breakdownLabel, { color: colors.textSecondary }]}>Interchange Surcharge ({activeRoute.metrics.transfers} @ ₹2.00)</Text>
+                            <Text style={[styles.breakdownVal, { color: colors.text }]}>₹{activeRoute.metrics.transfers * 2}.00</Text>
                           </View>
                         )}
                       </>
                     )}
-                    <View style={[styles.breakdownRow, styles.breakdownTotalRow]}>
-                      <Text style={styles.breakdownTotalLabel}>Subtotal Ticket Price:</Text>
-                      <Text style={styles.breakdownTotalVal}>₹{regularFare}</Text>
+                    
+                    {/* Dotted border separator */}
+                    <View style={{ borderStyle: 'dashed', borderWidth: 0.5, borderColor: colors.border, marginVertical: 8, height: 1, width: "100%" }} />
+                    
+                    <View style={[styles.breakdownRow]}>
+                      <Text style={[styles.breakdownTotalLabel, { color: colors.text }]}>Subtotal Ticket Price</Text>
+                      <Text style={[styles.breakdownTotalVal, { color: colors.text }]}>₹{regularFare}</Text>
+                    </View>
+
+                    {store.useSmartCard && (
+                      <View style={[styles.breakdownRow]}>
+                        <Text style={[styles.breakdownLabel, { color: activeTheme === 'dark' ? '#34D399' : '#065F46', fontWeight: "600" }]}>Smart Card Discount (-{discountPercent}%)</Text>
+                        <Text style={[styles.breakdownVal, { color: activeTheme === 'dark' ? '#34D399' : '#065F46', fontWeight: "700" }]}>-₹{savings}</Text>
+                      </View>
+                    )}
+                    
+                    <View style={[styles.breakdownRow, { borderTopWidth: 1.5, borderTopColor: colors.text, paddingTop: 10, marginTop: 4 }]}>
+                      <Text style={[styles.breakdownTotalLabel, { color: colors.text, fontSize: 14 }]}>Total Charged Fare</Text>
+                      <Text style={[styles.breakdownTotalVal, { color: colors.text, fontSize: 16, fontWeight: "900" }]}>
+                        ₹{store.useSmartCard ? smartCardFare : regularFare}
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -1007,78 +1379,120 @@ export default function PlannerScreen() {
                 {getRecommendedExit() ? (() => {
                   const recommendedExitObj = getRecommendedExit();
                   const lightColor = recommendedExitObj.lit === "Dimly-Lit"
-                    ? "#EF4444"
+                    ? "#FF453A"
                     : recommendedExitObj.lit === "Moderate"
-                    ? "#F59E0B"
-                    : "#10B981";
+                    ? "#FF9F0A"
+                    : "#34C759";
 
                   return (
-                    <View style={styles.recommendedExitCard}>
+                    <View style={[
+                      styles.recommendedExitCard,
+                      {
+                        backgroundColor: colors.backgroundElement,
+                        borderColor: colors.border
+                      }
+                    ]}>
                       <View style={styles.recommendedExitHeader}>
-                        <Ionicons name="checkmark-done-circle" size={20} color="#208AEF" style={{ marginRight: 6 }} />
-                        <Text style={styles.recommendedExitTitle}>Recommended Exit Gate</Text>
+                        <Ionicons name="star" size={15} color="#F59E0B" style={{ marginRight: 6 }} />
+                        <Text style={[styles.recommendedExitTitle, { color: activeTheme === 'dark' ? '#F59E0B' : '#B45309' }]}>Recommended Exit Gate</Text>
                       </View>
                       
-                      <View style={styles.exitGateHeadingRow}>
-                        <View style={styles.exitGateBadge}>
-                          <Text style={styles.exitGateBadgeText}>Gate {recommendedExitObj.gate}</Text>
+                      {/* Premium Circular Gate Emblem layout */}
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 12 }}>
+                        <View style={{
+                          width: 50,
+                          height: 50,
+                          borderRadius: 25,
+                          backgroundColor: lightColor,
+                          justifyContent: "center",
+                          alignItems: "center",
+                          shadowColor: lightColor,
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.25,
+                          shadowRadius: 6,
+                          elevation: 4
+                        }}>
+                          <Text style={{ color: "#FFFFFF", fontSize: 8, fontWeight: "800", textTransform: "uppercase" }}>Gate</Text>
+                          <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900", marginTop: -2 }}>{recommendedExitObj.gate}</Text>
                         </View>
-                        <Text style={styles.exitGateName}>{recommendedExitObj.name}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.exitGateName, { color: colors.text, fontSize: 15, fontWeight: "800" }]}>{recommendedExitObj.name}</Text>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
+                            <Ionicons name="shield-checkmark" size={12} color={lightColor} />
+                            <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Security: <Text style={{ fontWeight: "700", color: lightColor }}>{recommendedExitObj.lit}</Text></Text>
+                          </View>
+                        </View>
                       </View>
 
                       <View style={styles.exitMetaRow}>
-                        <View style={[styles.litIndicator, { borderColor: lightColor + "40", backgroundColor: lightColor + "10" }]}>
-                          <Text style={[styles.litIndicatorText, { color: lightColor }]}>{recommendedExitObj.lit}</Text>
-                        </View>
                         {recommendedExitObj.accessibility?.map((acc: string) => (
-                          <View key={acc} style={styles.accIndicator}>
-                            <Ionicons name="accessibility" size={10} color="#4F46E5" style={{ marginRight: 2 }} />
-                            <Text style={styles.accIndicatorText}>{acc}</Text>
+                          <View key={acc} style={[
+                            styles.accIndicator,
+                            {
+                              backgroundColor: activeTheme === 'dark' ? 'rgba(139, 92, 246, 0.08)' : '#EEF2FF',
+                              borderColor: activeTheme === 'dark' ? 'rgba(139, 92, 246, 0.2)' : '#C7D2FE'
+                            }
+                          ]}>
+                            <Ionicons name="accessibility" size={11} color={activeTheme === 'dark' ? '#BF5AF2' : '#4F46E5'} style={{ marginRight: 4 }} />
+                            <Text style={[styles.accIndicatorText, { color: activeTheme === 'dark' ? '#BF5AF2' : '#4F46E5' }]}>{acc}</Text>
                           </View>
                         ))}
                       </View>
                       
-                      <Text style={styles.exitSecurityNotice}>
-                        * Recommended based on security lighting levels and your {store.accessibilityOnly ? "accessibility settings" : "comfort settings"}.
+                      <Text style={[styles.exitSecurityNotice, { color: colors.textSecondary }]}>
+                        * Selection prioritized for lighting safety and your accessibility preferences.
                       </Text>
                     </View>
                   );
                 })() : (
-                  <Text style={styles.noExitsText}>No exit data available for this destination.</Text>
+                  <Text style={[styles.noExitsText, { color: colors.textSecondary }]}>No exit data available for this destination.</Text>
                 )}
 
-                <Text style={styles.exitSectionTitle}>All Destination Exits</Text>
+                <Text style={[styles.exitSectionTitle, { color: colors.text }]}>All Destination Exits</Text>
                 <View style={styles.allExitsWrapper}>
                   {(() => {
                     const destStationObj = path[path.length - 1];
                     if (!destStationObj || !destStationObj.exits || destStationObj.exits.length === 0) {
-                      return <Text style={styles.noExitsText}>No exit gates cataloged for this station.</Text>;
+                      return <Text style={[styles.noExitsText, { color: colors.textSecondary }]}>No exit gates cataloged for this station.</Text>;
                     }
                     return destStationObj.exits.map((exit: any, idx: number) => {
                       const lightColor = exit.lit === "Dimly-Lit"
-                        ? "#EF4444"
+                        ? "#FF453A"
                         : exit.lit === "Moderate"
-                        ? "#F59E0B"
-                        : "#10B981";
+                        ? "#FF9F0A"
+                        : "#34C759";
 
                       return (
-                        <View key={`all-ex-${idx}`} style={styles.allExitItem}>
-                          <View style={styles.allExitHeading}>
-                            <View style={styles.allExitGateBadge}>
-                              <Text style={styles.allExitGateBadgeText}>Gate {exit.gate}</Text>
+                        <View key={`all-ex-${idx}`} style={[styles.allExitItem, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                            {/* Gate Emblem */}
+                            <View style={{
+                              width: 38,
+                              height: 38,
+                              borderRadius: 19,
+                              backgroundColor: colors.background,
+                              borderColor: lightColor,
+                              borderWidth: 2,
+                              justifyContent: "center",
+                              alignItems: "center"
+                            }}>
+                              <Text style={{ color: colors.textSecondary, fontSize: 7, fontWeight: "800", textTransform: "uppercase" }}>Gate</Text>
+                              <Text style={{ color: colors.text, fontSize: 13, fontWeight: "900", marginTop: -2 }}>{exit.gate}</Text>
                             </View>
-                            <View style={[styles.litPill, { borderColor: lightColor }]}>
-                              <Text style={[styles.litText, { color: lightColor }]}>{exit.lit}</Text>
+                            <View style={{ flex: 1 }}>
+                              <Text style={[styles.allExitName, { color: colors.text, fontSize: 13, fontWeight: "700" }]}>{exit.name}</Text>
+                              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                                <View style={[styles.litPill, { borderColor: lightColor, backgroundColor: lightColor + "08", paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6 }]}>
+                                  <Text style={[styles.litText, { color: lightColor, fontSize: 9, fontWeight: "800" }]}>{exit.lit}</Text>
+                                </View>
+                                {exit.accessibility?.map((acc: string) => (
+                                  <View key={acc} style={[styles.accIndicator, { paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, borderColor: colors.border, backgroundColor: colors.background }]}>
+                                    <Text style={[styles.accIndicatorText, { fontSize: 9, color: colors.textSecondary }]}>{acc}</Text>
+                                  </View>
+                                ))}
+                              </View>
                             </View>
                           </View>
-                          <Text style={styles.allExitName}>{exit.name}</Text>
-                          {exit.accessibility && exit.accessibility.length > 0 && (
-                            <View style={styles.allExitAccRow}>
-                              {exit.accessibility.map((acc: string) => (
-                                <Text key={acc} style={styles.allExitAccText}>• {acc}</Text>
-                              ))}
-                            </View>
-                          )}
                         </View>
                       );
                     });
@@ -1091,20 +1505,37 @@ export default function PlannerScreen() {
             {activeTab === "status" && (
               <View style={styles.tabContentContainer}>
                 {/* Crowd Reporting Form */}
-                <View style={styles.crowdReportCard}>
-                  <Text style={styles.crowdReportTitle}>Report Live Crowd Level</Text>
+                <View style={[styles.crowdReportCard, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+                  <Text style={[styles.crowdReportTitle, { color: colors.text }]}>Report Live Crowd Level</Text>
                   
-                  <Text style={styles.reportFormLabel}>1. Select Station on your Path</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reportStationsScroll}>
+                  <Text style={[styles.reportFormLabel, { color: colors.textSecondary }]}>1. Select Station on your Path</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reportStationsScroll} contentContainerStyle={{ paddingBottom: 6 }}>
                     {path.map(s => {
                       const active = reportingStationId === s.id;
+                      const stationLineColor = LINE_COLORS[s.lines[0]] || "#007aff";
                       return (
                         <TouchableOpacity
                           key={s.id}
-                          style={[styles.reportStationChip, active && styles.reportStationChipActive]}
-                          onPress={() => setReportingStationId(s.id)}
+                          style={[
+                            styles.reportStationChip, 
+                            { 
+                              backgroundColor: colors.background, 
+                              borderColor: active ? '#007aff' : colors.border,
+                              borderWidth: active ? 2 : 1,
+                              borderLeftColor: stationLineColor,
+                              borderLeftWidth: 4,
+                            }
+                          ]}
+                          onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setReportingStationId(s.id);
+                          }}
                         >
-                          <Text style={[styles.reportStationChipText, active && styles.reportStationChipTextActive]}>
+                          <Text style={[
+                            styles.reportStationChipText, 
+                            { color: colors.textSecondary },
+                            active && { color: '#007aff', fontWeight: "800" }
+                          ]}>
                             {s.name}
                           </Text>
                         </TouchableOpacity>
@@ -1112,26 +1543,43 @@ export default function PlannerScreen() {
                     })}
                   </ScrollView>
 
-                  <Text style={styles.reportFormLabel}>2. Select Crowd Level</Text>
+                  <Text style={[styles.reportFormLabel, { color: colors.textSecondary }]}>2. Select Crowd Level</Text>
                   <View style={styles.reportLevelGrid}>
                     {[
-                      { level: "Low", icon: "ellipse", color: "#10B981", desc: "Empty Seats" },
-                      { level: "Moderate", icon: "ellipse", color: "#F59E0B", desc: "Standing Room" },
-                      { level: "High", icon: "ellipse", color: "#EF4444", desc: "Very Rush" },
-                      { level: "Heavy Rush", icon: "ellipse", color: "#B91C1C", desc: "Snags / Delays" }
+                      { level: "Low", icon: "people-outline", color: "#34C759", desc: "Seats Free" },
+                      { level: "Moderate", icon: "people", color: "#FF9F0A", desc: "Standing" },
+                      { level: "High", icon: "alert-circle-outline", color: "#FF453A", desc: "Very Packed" },
+                      { level: "Heavy Rush", icon: "flame-outline", color: "#8E1F1F", desc: "Snags / Delays" }
                     ].map(item => {
                       const active = reportedLevel === item.level;
                       return (
                         <TouchableOpacity
                           key={item.level}
-                          style={[styles.reportLevelBtn, active && { borderColor: item.color, backgroundColor: item.color + "08" }]}
-                          onPress={() => setReportedLevel(item.level)}
+                          activeOpacity={0.8}
+                          style={[
+                            styles.reportLevelTile, 
+                            { 
+                              backgroundColor: colors.background, 
+                              borderColor: active ? item.color : colors.border,
+                              borderWidth: active ? 2 : 1,
+                              shadowColor: item.color,
+                              shadowOpacity: active ? 0.12 : 0,
+                              shadowRadius: 6,
+                              elevation: active ? 3 : 0
+                            }
+                          ]}
+                          onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setReportedLevel(item.level);
+                          }}
                         >
-                          <Ionicons name={item.icon as any} size={10} color={item.color} style={{ marginRight: 4 }} />
-                          <Text style={[styles.reportLevelText, active && { color: item.color, fontWeight: "700" }]}>
+                          <View style={[styles.tileIconCircle, { backgroundColor: item.color + "12" }]}>
+                            <Ionicons name={item.icon as any} size={16} color={item.color} />
+                          </View>
+                          <Text style={[styles.reportLevelText, { color: colors.text }, active && { color: item.color, fontWeight: "800" }]}>
                             {item.level}
                           </Text>
-                          <Text style={styles.reportLevelDesc}>{item.desc}</Text>
+                          <Text style={[styles.reportLevelDesc, { color: colors.textSecondary }]}>{item.desc}</Text>
                         </TouchableOpacity>
                       );
                     })}
@@ -1153,11 +1601,20 @@ export default function PlannerScreen() {
                   <View style={styles.alertsContainer}>
                     <Text style={styles.alertSectionTitle}>Active Path Outages</Text>
                     {getPathStatusAlerts().map((alert, idx) => (
-                      <View key={`out-${idx}`} style={styles.alertItemBox}>
+                      <View 
+                        key={`out-${idx}`} 
+                        style={[
+                          styles.alertItemBox,
+                          {
+                            backgroundColor: activeTheme === 'dark' ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
+                            borderColor: activeTheme === 'dark' ? 'rgba(239, 68, 68, 0.3)' : '#FCA5A5'
+                          }
+                        ]}
+                      >
                         <Ionicons name="alert-circle" size={18} color="#EF4444" style={{ marginRight: 8, marginTop: 1 }} />
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.alertItemTitle}>{alert.stationName}</Text>
-                          <Text style={styles.alertItemDesc}>
+                          <Text style={[styles.alertItemTitle, { color: activeTheme === 'dark' ? '#FF453A' : '#991B1B' }]}>{alert.stationName}</Text>
+                          <Text style={[styles.alertItemDesc, { color: activeTheme === 'dark' ? '#FF453A' : '#B91C1C' }]}>
                             The station's <Text style={{ fontWeight: "bold" }}>{alert.type}</Text> is currently down for maintenance. Alternate stairs are operational.
                           </Text>
                         </View>
@@ -1165,37 +1622,66 @@ export default function PlannerScreen() {
                     ))}
                   </View>
                 ) : (
-                  <View style={styles.noAlertsBox}>
+                  <View style={[
+                    styles.noAlertsBox,
+                    {
+                      backgroundColor: activeTheme === 'dark' ? 'rgba(16, 185, 129, 0.1)' : '#ECFDF5',
+                      borderColor: activeTheme === 'dark' ? 'rgba(16, 185, 129, 0.3)' : '#A7F3D0'
+                    }
+                  ]}>
                     <Ionicons name="checkmark-circle-outline" size={24} color="#10B981" style={{ marginBottom: 6 }} />
-                    <Text style={styles.noAlertsTitle}>All Systems Operational</Text>
-                    <Text style={styles.noAlertsDesc}>
+                    <Text style={[styles.noAlertsTitle, { color: activeTheme === 'dark' ? '#30D158' : '#065F46' }]}>All Systems Operational</Text>
+                    <Text style={[styles.noAlertsDesc, { color: activeTheme === 'dark' ? '#30D158' : '#047857' }]}>
                       No lift or escalator outages are currently reported along your calculated route path.
                     </Text>
                   </View>
                 )}
 
                 {/* Full path equipment grid */}
-                <View style={styles.outageGridCard}>
-                  <Text style={styles.outageGridTitle}>Equipment Operations Grid</Text>
-                  <View style={styles.outageGridHeader}>
-                    <Text style={[styles.gridCellHeader, { flex: 2 }]}>Station</Text>
-                    <Text style={styles.gridCellHeader}>Escalators</Text>
-                    <Text style={styles.gridCellHeader}>Elevators</Text>
-                  </View>
+                <View style={[styles.outageGridCard, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+                  <Text style={[styles.outageGridTitle, { color: colors.textSecondary }]}>Equipment Operations Grid</Text>
+                  
                   <View style={styles.outageGridBody}>
                     {path.map(s => {
                       const stat = store.infrastructureStatus[s.id] || { escalator: "Operational", elevator: "Operational" };
+                      const escalatorOk = stat.escalator === "Operational";
+                      const elevatorOk = stat.elevator === "Operational";
+                      
                       return (
-                        <View key={`grid-row-${s.id}`} style={styles.outageGridRow}>
-                          <Text style={[styles.gridCellBody, { flex: 2, fontWeight: "600" }]} numberOfLines={1}>
+                        <View key={`grid-row-${s.id}`} style={[styles.outageGridRow, { borderBottomColor: colors.border }]}>
+                          <Text style={[styles.gridCellBodyStationName, { color: colors.text }]} numberOfLines={1}>
                             {s.name}
                           </Text>
-                          <Text style={[styles.gridCellBody, { color: stat.escalator === "Operational" ? "#10B981" : "#EF4444", fontWeight: "bold" }]}>
-                            {stat.escalator === "Operational" ? "OK" : "Maint"}
-                          </Text>
-                          <Text style={[styles.gridCellBody, { color: stat.elevator === "Operational" ? "#10B981" : "#EF4444", fontWeight: "bold" }]}>
-                            {stat.elevator === "Operational" ? "OK" : "Maint"}
-                          </Text>
+                          
+                          <View style={styles.gridStatusGroup}>
+                            {/* Escalators */}
+                            <View style={[
+                              styles.gridStatusPill, 
+                              { 
+                                backgroundColor: escalatorOk 
+                                  ? (activeTheme === 'dark' ? 'rgba(52, 199, 89, 0.12)' : '#E6F4EA')
+                                  : (activeTheme === 'dark' ? 'rgba(255, 69, 58, 0.12)' : '#FCE8E6'),
+                              }
+                            ]}>
+                              <Ionicons name="swap-vertical" size={10} color={escalatorOk ? "#34C759" : "#FF453A"} />
+                              <Text style={{ fontSize: 9, fontWeight: "700", color: escalatorOk ? "#34C759" : "#FF453A", marginLeft: 2 }}>Esc</Text>
+                              <View style={[styles.statusPulseDot, { backgroundColor: escalatorOk ? "#34C759" : "#FF453A" }]} />
+                            </View>
+
+                            {/* Elevators */}
+                            <View style={[
+                              styles.gridStatusPill, 
+                              { 
+                                backgroundColor: elevatorOk 
+                                  ? (activeTheme === 'dark' ? 'rgba(52, 199, 89, 0.12)' : '#E6F4EA')
+                                  : (activeTheme === 'dark' ? 'rgba(255, 69, 58, 0.12)' : '#FCE8E6'),
+                              }
+                            ]}>
+                              <Ionicons name="accessibility" size={10} color={elevatorOk ? "#34C759" : "#FF453A"} />
+                              <Text style={{ fontSize: 9, fontWeight: "700", color: elevatorOk ? "#34C759" : "#FF453A", marginLeft: 2 }}>Elev</Text>
+                              <View style={[styles.statusPulseDot, { backgroundColor: elevatorOk ? "#34C759" : "#FF453A" }]} />
+                            </View>
+                          </View>
                         </View>
                       );
                     })}
@@ -1289,6 +1775,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
+  },
+  headerThemeBtn: {
+    padding: 6,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.15)",
   },
   headerTitle: {
     color: "#FFFFFF",
@@ -1645,46 +2136,57 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 40,
   },
-  journeyRatings: {
+  journeyMetricsGrid: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: 8,
     marginBottom: 20,
   },
-  ratingPill: {
-    flexDirection: "row",
-    borderRadius: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+  metricCard: {
     flex: 1,
-    marginHorizontal: 4,
-    justifyContent: "center",
+    borderRadius: 14,
+    padding: 10,
     borderWidth: 1,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
-  ratingBalanced: {
-    backgroundColor: "#EFF6FF",
-    borderColor: "#BFDBFE",
+  metricHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
-  ratingComfort: {
-    backgroundColor: "#ECFDF5",
-    borderColor: "#A7F3D0",
+  metricLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  ratingSafety: {
-    backgroundColor: "#FDF2F8",
-    borderColor: "#FBCFE8",
-  },
-  ratingLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#4B5563",
-  },
-  ratingVal: {
-    fontSize: 11,
+  metricValue: {
+    fontSize: 16,
     fontWeight: "800",
-    color: "#111827",
+    marginTop: 2,
+  },
+  metricDesc: {
+    fontSize: 9,
+    fontWeight: "600",
+    marginTop: 1,
+  },
+  metricTrack: {
+    height: 4,
+    borderRadius: 2,
+    width: "100%",
+    marginTop: 6,
+    overflow: "hidden",
+  },
+  metricFill: {
+    height: "100%",
+    borderRadius: 2,
   },
   stationNode: {
     flexDirection: "row",
-    minHeight: 80,
+    minHeight: 70,
   },
   transferNode: {
     flexDirection: "row",
@@ -1695,10 +2197,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   stationIndicator: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 3,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
     backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
@@ -1723,14 +2225,14 @@ const styles = StyleSheet.create({
   timelineLine: {
     width: 3,
     position: "absolute",
-    top: 20,
+    top: 18,
     bottom: 0,
     zIndex: 1,
   },
   timelineBody: {
     flex: 1,
     paddingLeft: 12,
-    paddingBottom: 24,
+    paddingBottom: 20,
   },
   stationHeaderRow: {
     flexDirection: "row",
@@ -1758,372 +2260,69 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     textTransform: "uppercase",
   },
-  stationSegmentDetails: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 10,
+  navigationStepCard: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
     marginTop: 6,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  segmentLineText: {
-    fontSize: 12,
-    color: "#4B5563",
-    lineHeight: 16,
-  },
-  segmentPlatformText: {
-    fontSize: 12,
-    color: "#208AEF",
-    marginTop: 4,
-    fontWeight: "500",
-  },
-  exitRecommendations: {
-    backgroundColor: "#F0F9FF",
-    borderRadius: 12,
-    padding: 10,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: "#BAE6FD",
-  },
-  exitHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  exitTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#0369A1",
-    textTransform: "uppercase",
-  },
-  exitRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginTop: 4,
-  },
-  exitPill: {
-    backgroundColor: "#0284C7",
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  exitPillText: {
-    color: "#FFFFFF",
-    fontSize: 9,
-    fontWeight: "700",
-  },
-  exitDesc: {
-    flex: 1,
-    fontSize: 11,
-    color: "#0369A1",
-    lineHeight: 14,
-  },
-  intermediateInfo: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-  transferTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#EF4444",
-  },
-  transferSubtitle: {
-    fontSize: 12,
-    color: "#7F1D1D",
-    marginTop: 2,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  modalCloseBtn: {
-    padding: 4,
-    marginRight: 12,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-  },
-  modalSearchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    margin: 16,
-    paddingHorizontal: 12,
-    height: 48,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  modalSearchIcon: {
-    marginRight: 8,
-  },
-  modalTextInput: {
-    flex: 1,
-    height: "100%",
-    fontSize: 15,
-    color: "#111827",
-  },
-  modalListContent: {
-    paddingBottom: 24,
-  },
-  modalListItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  modalListItemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  modalStationName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 4,
-  },
-  badgeRow: {
-    flexDirection: "row",
-    gap: 4,
-  },
-  linePillSmall: {
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
-    borderRadius: 4,
-  },
-  linePillText: {
-    color: "#FFFFFF",
-    fontSize: 9,
-    fontWeight: "700",
-  },
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-    marginTop: 20,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginTop: 12,
-    textAlign: "center",
-  },
-  flowMapContainer: {
-    backgroundColor: "#F3F4F6",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  flowMapContent: {
-    paddingHorizontal: 16,
-    alignItems: "center",
-    gap: 8,
-  },
-  flowLegItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    maxWidth: 200,
-    elevation: 1,
+    marginBottom: 10,
+    elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 1,
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
   },
-  flowLineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  flowLegLineText: {
-    fontSize: 9,
-    fontWeight: "700",
-    color: "#6B7280",
-    textTransform: "uppercase",
-  },
-  flowLegStationName: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#1F2937",
-  },
-  flowLegPlatformText: {
-    fontSize: 9,
-    color: "#208AEF",
-    fontWeight: "600",
-    marginTop: 1,
-  },
-  flowTransferItem: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 4,
-  },
-  flowTransferLabel: {
-    fontSize: 8,
-    color: "#8B5CF6",
-    fontWeight: "800",
-    textTransform: "uppercase",
-    marginTop: 1,
-  },
-  tabHeaderContainer: {
-    flexDirection: "row",
-    position: "relative",
-    marginHorizontal: 16,
-    marginVertical: 14,
-    borderRadius: 14,
-    padding: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  tabHeaderButton: {
-    flex: 1,
+  navCardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 11,
-    gap: 4,
-    zIndex: 2,
-  },
-  tabHeaderButtonText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  activeIndicatorCapsule: {
-    position: "absolute",
-    top: 3,
-    bottom: 3,
-    width: "23.5%",
-    borderRadius: 11,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    zIndex: 1,
-  },
-  tabAlertBadge: {
-    borderRadius: 8,
-    minWidth: 15,
-    height: 15,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 4,
-    marginLeft: 2,
-  },
-  tabAlertBadgeText: {
-    fontSize: 9,
-    fontWeight: "800",
-  },
-  timelineWrapper: {
-    paddingLeft: 10,
-    marginTop: 10,
-  },
-  timelineAlertBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEF3C7",
-    paddingHorizontal: 5,
-    paddingVertical: 1.5,
-    borderRadius: 4,
-    marginLeft: 8,
-    borderWidth: 0.5,
-    borderColor: "#F59E0B",
-  },
-  timelineAlertText: {
-    fontSize: 8,
-    color: "#D97706",
-    fontWeight: "700",
-    marginLeft: 2,
-  },
-  stationLinesRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 4,
-    marginTop: 4,
+    gap: 6,
     marginBottom: 6,
   },
-  lineBadgePill: {
-    borderWidth: 0.5,
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-  },
-  lineBadgeText: {
-    fontSize: 8,
-    fontWeight: "700",
-  },
-  boardingBox: {
-    backgroundColor: "#F0F9FF",
-    borderWidth: 1,
-    borderColor: "#BAE6FD",
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  boardingText: {
-    fontSize: 12,
-    color: "#0369A1",
-    lineHeight: 16,
-  },
-  transferBox: {
-    backgroundColor: "#F5F3FF",
-    borderWidth: 1,
-    borderColor: "#DDD6FE",
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  transferHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  transferTitleText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#6D28D9",
-  },
-  transferWalkBox: {
-    borderLeftWidth: 2,
-    borderLeftColor: "#C4B5FD",
-    paddingLeft: 8,
-    marginTop: 4,
-  },
-  transferWalkTitle: {
+  navCardTitle: {
     fontSize: 11,
-    color: "#5B21B6",
-    fontWeight: "600",
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  transferWalkDesc: {
+  platformPill: {
+    marginLeft: "auto",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  platformPillText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "800",
+  },
+  navCardDesc: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  transferDetailRow: {
+    borderTopWidth: 0.5,
+    paddingTop: 8,
+    marginTop: 8,
+  },
+  transferPathTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  transferPathDesc: {
     fontSize: 10,
-    color: "#7C3AED",
-    marginTop: 1,
+    lineHeight: 14,
+    marginTop: 4,
+  },
+  walkMetaBadge: {
+    backgroundColor: "rgba(139, 92, 246, 0.08)",
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 6,
+  },
+  walkMetaText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#8B5CF6",
   },
   intermediateText: {
     fontSize: 11,
@@ -2157,48 +2356,69 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
   },
-  fareCard: {
+  ticketPassCard: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
     borderRadius: 16,
-    padding: 14,
+    padding: 16,
+    position: "relative",
+    borderWidth: 1,
+    overflow: "hidden",
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
     elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
   },
-  fareCardActive: {
-    borderColor: "#FCD34D",
-    backgroundColor: "#FFFBEB",
+  ticketNotchLeft: {
+    position: "absolute",
+    left: -8,
+    top: "50%",
+    marginTop: -8,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "transparent",
+    zIndex: 3,
+  },
+  ticketNotchRight: {
+    position: "absolute",
+    right: -8,
+    top: "50%",
+    marginTop: -8,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "transparent",
+    zIndex: 3,
+  },
+  ticketTearLine: {
+    borderStyle: "dashed",
+    borderWidth: 0.5,
+    marginVertical: 14,
+    height: 1,
+    width: "100%",
+  },
+  simulatedBarcode: {
+    flexDirection: "row",
+    height: 24,
+    alignItems: "center",
+    opacity: 0.7,
   },
   fareCardLabel: {
     fontSize: 11,
-    fontWeight: "700",
-    color: "#4B5563",
+    fontWeight: "800",
     textTransform: "uppercase",
-  },
-  fareCardLabelActive: {
-    color: "#B45309",
+    letterSpacing: 0.5,
   },
   fareCardSub: {
     fontSize: 10,
     color: "#9CA3AF",
     marginTop: 2,
   },
-  fareCardSubActive: {
-    color: "#D97706",
-  },
   fareCardValue: {
     fontSize: 20,
-    fontWeight: "800",
-    color: "#1F2937",
+    fontWeight: "900",
     marginTop: 10,
-  },
-  fareCardValueActive: {
-    color: "#B45309",
   },
   savingsBanner: {
     flexDirection: "row",
@@ -2248,8 +2468,8 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   breakdownCardTitle: {
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 11,
+    fontWeight: "800",
     color: "#374151",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -2297,7 +2517,6 @@ const styles = StyleSheet.create({
   },
   recommendedExitCard: {
     borderWidth: 1,
-    borderColor: "#BAE6FD",
     borderRadius: 16,
     padding: 16,
     elevation: 2,
@@ -2306,7 +2525,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     marginBottom: 20,
-    backgroundColor: "#F0F9FF",
   },
   recommendedExitHeader: {
     flexDirection: "row",
@@ -2314,63 +2532,31 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   recommendedExitTitle: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#0369A1",
-    textTransform: "uppercase",
-  },
-  exitGateHeadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-    gap: 8,
-  },
-  exitGateBadge: {
-    backgroundColor: "#0284C7",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  exitGateBadgeText: {
-    color: "#FFFFFF",
     fontSize: 11,
     fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   exitGateName: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#0369A1",
-    flex: 1,
+    fontSize: 15,
+    fontWeight: "800",
   },
   exitMetaRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 6,
-    marginBottom: 12,
-  },
-  litIndicator: {
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  litIndicatorText: {
-    fontSize: 10,
-    fontWeight: "700",
+    marginBottom: 10,
   },
   accIndicator: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#EEF2FF",
     borderWidth: 1,
-    borderColor: "#C7D2FE",
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   accIndicatorText: {
     fontSize: 10,
-    color: "#4F46E5",
     fontWeight: "700",
   },
   exitSecurityNotice: {
@@ -2380,8 +2566,8 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   exitSectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 12,
+    fontWeight: "800",
     color: "#374151",
     textTransform: "uppercase",
     marginBottom: 10,
@@ -2391,44 +2577,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   allExitItem: {
-    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 12,
-  },
-  allExitHeading: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  allExitGateBadge: {
-    backgroundColor: "#4B5563",
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  allExitGateBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 9,
-    fontWeight: "700",
   },
   allExitName: {
     fontSize: 13,
-    color: "#1F2937",
-    fontWeight: "600",
-  },
-  allExitAccRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 6,
-  },
-  allExitAccText: {
-    fontSize: 10,
-    color: "#6B7280",
-    fontWeight: "500",
+    fontWeight: "700",
   },
   noExitsText: {
     fontSize: 13,
@@ -2440,17 +2595,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   litText: {
     fontSize: 9,
-    fontWeight: "700",
+    fontWeight: "800",
     textTransform: "uppercase",
   },
   crowdReportCard: {
-    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     borderRadius: 16,
     padding: 16,
     elevation: 2,
@@ -2463,7 +2616,6 @@ const styles = StyleSheet.create({
   crowdReportTitle: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#374151",
     textTransform: "uppercase",
     marginBottom: 12,
     letterSpacing: 0.5,
@@ -2478,25 +2630,14 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   reportStationChip: {
-    backgroundColor: "#F3F4F6",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     borderRadius: 16,
     paddingVertical: 6,
     paddingHorizontal: 12,
     marginRight: 8,
   },
-  reportStationChipActive: {
-    backgroundColor: "#E0F2FE",
-    borderColor: "#3B82F6",
-  },
   reportStationChipText: {
     fontSize: 12,
-    color: "#4B5563",
-  },
-  reportStationChipTextActive: {
-    color: "#2563EB",
-    fontWeight: "700",
   },
   reportLevelGrid: {
     flexDirection: "row",
@@ -2504,23 +2645,28 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
   },
-  reportLevelBtn: {
+  reportLevelTile: {
     flex: 1,
     minWidth: "45%",
-    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 10,
-    padding: 8,
+    borderRadius: 12,
+    padding: 10,
     alignItems: "center",
+  },
+  tileIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 6,
   },
   reportLevelText: {
     fontSize: 12,
-    color: "#374151",
-    fontWeight: "500",
+    fontWeight: "600",
   },
   reportLevelDesc: {
-    fontSize: 8,
+    fontSize: 9,
     color: "#9CA3AF",
     marginTop: 1,
   },
@@ -2554,9 +2700,7 @@ const styles = StyleSheet.create({
   alertItemBox: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: "#FEF2F2",
     borderWidth: 1,
-    borderColor: "#FCA5A5",
     borderRadius: 14,
     padding: 12,
     marginBottom: 8,
@@ -2564,19 +2708,15 @@ const styles = StyleSheet.create({
   alertItemTitle: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#991B1B",
   },
   alertItemDesc: {
     fontSize: 11,
-    color: "#B91C1C",
     marginTop: 2,
     lineHeight: 14,
   },
   noAlertsBox: {
     alignItems: "center",
-    backgroundColor: "#ECFDF5",
     borderWidth: 1,
-    borderColor: "#A7F3D0",
     borderRadius: 14,
     padding: 16,
     marginBottom: 16,
@@ -2584,19 +2724,15 @@ const styles = StyleSheet.create({
   noAlertsTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#065F46",
   },
   noAlertsDesc: {
     fontSize: 11,
-    color: "#047857",
     textAlign: "center",
     marginTop: 2,
     lineHeight: 15,
   },
   outageGridCard: {
-    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     borderRadius: 16,
     padding: 14,
     marginBottom: 24,
@@ -2604,36 +2740,273 @@ const styles = StyleSheet.create({
   outageGridTitle: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#4B5563",
     textTransform: "uppercase",
     marginBottom: 10,
   },
-  outageGridHeader: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    paddingBottom: 6,
-    marginBottom: 6,
-  },
-  gridCellHeader: {
-    flex: 1,
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#6B7280",
-    textTransform: "uppercase",
-    textAlign: "center",
-  },
   outageGridBody: {
-    gap: 4,
+    gap: 8,
   },
   outageGridRow: {
     flexDirection: "row",
-    paddingVertical: 4,
+    paddingVertical: 8,
+    borderBottomWidth: 0.5,
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  gridCellBody: {
+  gridCellBodyStationName: {
     flex: 1,
-    fontSize: 11,
-    color: "#374151",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  gridStatusGroup: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  gridStatusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  statusPulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  collapsedRunContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginVertical: 4,
+  },
+  collapsedRunText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  timelineWrapper: {
+    paddingLeft: 10,
+    marginTop: 10,
+  },
+  timelineAlertBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 4,
+    marginLeft: 8,
+    borderWidth: 0.5,
+    borderColor: "#F59E0B",
+  },
+  timelineAlertText: {
+    fontSize: 8,
+    color: "#D97706",
+    fontWeight: "700",
+    marginLeft: 2,
+  },
+  stationLinesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  lineBadgePill: {
+    borderWidth: 0.5,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  lineBadgeText: {
+    fontSize: 8,
+    fontWeight: "700",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  modalCloseBtn: {
+    padding: 4,
+    marginRight: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  modalSearchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    margin: 16,
+    paddingHorizontal: 12,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  modalSearchIcon: {
+    marginRight: 8,
+  },
+  modalTextInput: {
+    flex: 1,
+    height: "100%",
+    fontSize: 15,
+  },
+  modalListItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+  },
+  modalListItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  modalStationName: {
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  modalListContent: {
+    paddingBottom: 24,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+    marginTop: 20,
+  },
+  emptyText: {
+    fontSize: 14,
+    marginTop: 12,
     textAlign: "center",
   },
+  flowMapContainer: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  flowMapContent: {
+    paddingHorizontal: 16,
+    alignItems: "center",
+    gap: 8,
+  },
+  flowLegItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    maxWidth: 200,
+  },
+  flowLineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  flowLegLineText: {
+    fontSize: 9,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  flowLegStationName: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  flowLegPlatformText: {
+    fontSize: 9,
+    fontWeight: "600",
+    marginTop: 1,
+  },
+  flowTransferItem: {
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  flowTransferLabel: {
+    fontSize: 8,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    marginTop: 1,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    gap: 4,
+  },
+  linePillSmall: {
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 4,
+  },
+  linePillText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "700",
+  },
+  tabHeaderContainer: {
+    flexDirection: "row",
+    position: "relative",
+    marginHorizontal: 16,
+    marginVertical: 14,
+    borderRadius: 14,
+    padding: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  tabHeaderButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 11,
+    gap: 4,
+    zIndex: 2,
+  },
+  tabHeaderButtonText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  activeIndicatorCapsule: {
+    position: "absolute",
+    top: 3,
+    bottom: 3,
+    width: "23.5%",
+    borderRadius: 11,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 1,
+  },
+  tabAlertBadge: {
+    borderRadius: 8,
+    minWidth: 15,
+    height: 15,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+    marginLeft: 2,
+  },
+  tabAlertBadgeText: {
+    fontSize: 9,
+    fontWeight: "800",
+  },
 });
+

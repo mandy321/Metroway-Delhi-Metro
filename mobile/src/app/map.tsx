@@ -126,7 +126,7 @@ export default function MapScreen() {
         <WebView
           ref={webViewRef}
           originWhitelist={["*"]}
-          source={{ html: mapHtmlSource }}
+          source={{ html: mapHtmlSource, baseUrl: "https://carto.com" }}
           style={styles.mapWebView}
           onMessage={handleWebViewMessage}
           onError={() => {
@@ -140,6 +140,7 @@ export default function MapScreen() {
           domStorageEnabled
           javaScriptEnabled
           geolocationEnabled
+          mixedContentMode="always"
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
         />

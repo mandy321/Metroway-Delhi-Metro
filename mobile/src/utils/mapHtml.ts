@@ -1,3 +1,5 @@
+import { LEAFLET_CSS, LEAFLET_JS } from "./leafletAssets";
+
 export function getMapHtml(stations: any[], edges: any[], initialRoute: any, startStationId: string, endStationId: string, theme: 'light' | 'dark' = 'light') {
   const isDark = theme === 'dark';
   const tileUrl = isDark
@@ -28,7 +30,9 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    ${LEAFLET_CSS}
+  </style>
   <style>
     body {
       padding: 0;
@@ -184,7 +188,9 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
 <body>
   <div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    ${LEAFLET_JS}
+  </script>
   <script>
     // Configuration Data
     var stations = ${JSON.stringify(stations)};
@@ -194,28 +200,65 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
     var endStationId = ${JSON.stringify(endStationId || "")};
     var activeRoute = ${JSON.stringify(initialRoute || null)};
 
-    // Initialize Map
-    var map = L.map('map', {
-      zoomControl: false,
-      maxZoom: 16,
-      minZoom: 10,
-      zoomSnap: 0.5,
-      zoomDelta: 0.5
-    }).setView([28.6304, 77.2177], 11);
-
-    // Add Tile Layer
-    L.tileLayer('${tileUrl}', {
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
-    }).addTo(map);
-
-    // Layers containers
-    var edgesGroup = L.layerGroup().addTo(map);
-    var activeRouteGroup = L.layerGroup().addTo(map);
-    var stationsGroup = L.layerGroup().addTo(map);
+    // Map instances & layers definitions
+    var map;
+    var edgesGroup;
+    var activeRouteGroup;
+    var stationsGroup;
     
     // Markers & Polylines indices
     var stationMarkers = {};
     var userLocationMarker = null;
+
+    // Notify React Native that map is ready with bridge polling
+    function checkAndNotifyReady() {
+      if (window.ReactNativeWebView) {
+        sendToReactNative({ type: 'MAP_READY' });
+      } else {
+        setTimeout(checkAndNotifyReady, 100);
+      }
+    }
+
+    // Safe Map Initialization
+    function initMap() {
+      if (typeof L === 'undefined') {
+        setTimeout(initMap, 100);
+        return;
+      }
+
+      try {
+        map = L.map('map', {
+          zoomControl: false,
+          maxZoom: 16,
+          minZoom: 10,
+          zoomSnap: 0.5,
+          zoomDelta: 0.5
+        }).setView([28.6304, 77.2177], 11);
+
+        // Add Tile Layer
+        L.tileLayer('${tileUrl}', {
+          attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+        }).addTo(map);
+
+        edgesGroup = L.layerGroup().addTo(map);
+        activeRouteGroup = L.layerGroup().addTo(map);
+        stationsGroup = L.layerGroup().addTo(map);
+
+        // Draw bases
+        drawBaseNetwork();
+        drawStations();
+        if (activeRoute) {
+          drawActiveRoute();
+        }
+
+        // Notify app shell
+        checkAndNotifyReady();
+      } catch (err) {
+        if (window.ReactNativeWebView) {
+          sendToReactNative({ type: 'MAP_READY' }); // Dismiss overlay
+        }
+      }
+    }
 
     // Build Delhi Metro base tracks
     function drawBaseNetwork() {
@@ -450,14 +493,8 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
       }
     });
 
-    // Initial draw
-    drawBaseNetwork();
-    drawStations();
-    
-    // Notify React Native that map is ready
-    setTimeout(function() {
-      sendToReactNative({ type: 'MAP_READY' });
-    }, 300);
+    // Start Initialization
+    initMap();
   </script>
 </body>
 </html>
