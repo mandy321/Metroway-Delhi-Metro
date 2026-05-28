@@ -60,6 +60,7 @@ const getLineContrastColor = (line: string, isDark: boolean) => {
 export default function PlannerScreen() {
   const router = useRouter();
   const store = useMetroStore();
+  const searchInputRef = React.useRef<TextInput>(null);
 
   // Local state
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -68,6 +69,11 @@ export default function PlannerScreen() {
   const [isEditingRoute, setIsEditingRoute] = useState(true);
   const [expandedTransfers, setExpandedTransfers] = useState<Record<string, boolean>>({});
   const [expandedRuns, setExpandedRuns] = useState<Record<number, boolean>>({});
+  const [expandedRunsState, setExpandedRunsState] = useState<Record<number, boolean>>({});
+  const [expandedStops, setExpandedStops] = useState<Record<string, boolean>>({});
+
+  const routeEdges = store.activeRoute?.edges || [];
+  const path = store.activeRoute?.path || [];
 
   const isKeyStation = (idx: number) => {
     if (idx === 0 || idx === path.length - 1) return true;
@@ -75,9 +81,7 @@ export default function PlannerScreen() {
     return false;
   };
 
-  const scheme = useColorScheme() || "light";
-  const systemTheme = scheme === "unspecified" ? "light" : scheme;
-  const activeTheme = store.themeMode === "system" ? systemTheme : store.themeMode;
+  const activeTheme = "dark";
   const colors = Colors[activeTheme];
   const [activeTab, setActiveTab] = useState("timeline");
   const tabProgress = React.useRef(new Animated.Value(0)).current;
@@ -207,8 +211,6 @@ export default function PlannerScreen() {
   };
 
   const activeRoute = store.activeRoute;
-  const path = activeRoute?.path || [];
-  const routeEdges = activeRoute?.edges || [];
 
   // Exit recommendation engine
   const getRecommendedExit = () => {
@@ -446,20 +448,6 @@ export default function PlannerScreen() {
           <Text style={styles.headerSubtitle}>Delhi Metro Companion</Text>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              const nextMode = activeTheme === 'light' ? 'dark' : 'light';
-              store.setThemeMode(nextMode);
-            }}
-            style={styles.headerThemeBtn}
-          >
-            <Ionicons 
-              name={activeTheme === 'light' ? 'moon-outline' : 'sunny-outline'} 
-              size={22} 
-              color="#FFFFFF" 
-            />
-          </TouchableOpacity>
           <Ionicons name="subway-outline" size={26} color="#FFFFFF" />
         </View>
       </View>
@@ -1700,6 +1688,11 @@ export default function PlannerScreen() {
         visible={searchModalOpen}
         animationType="slide"
         onRequestClose={() => setSearchModalOpen(false)}
+        onShow={() => {
+          setTimeout(() => {
+            searchInputRef.current?.focus();
+          }, 150);
+        }}
       >
         <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
@@ -1715,6 +1708,7 @@ export default function PlannerScreen() {
           <View style={[styles.modalSearchBox, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
             <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.modalSearchIcon} />
             <TextInput
+              ref={searchInputRef}
               style={[styles.modalTextInput, { color: colors.text }]}
               placeholder="Search station name..."
               placeholderTextColor={colors.textSecondary}

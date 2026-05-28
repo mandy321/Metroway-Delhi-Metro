@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMetroStore } from "../store/useMetroStore";
 import { Colors } from "../constants/theme";
 import { getMapHtml } from "../utils/mapHtml";
+import { documentDirectory, writeAsStringAsync, EncodingType } from "expo-file-system/legacy";
 
 const DELHI_CENTER = {
   latitude: 28.6304,
@@ -27,9 +28,7 @@ const DELHI_CENTER = {
 export default function MapScreen() {
   const router = useRouter();
   const store = useMetroStore();
-  const scheme = useColorScheme() || "light";
-  const systemTheme = scheme === "unspecified" ? "light" : scheme;
-  const activeTheme = store.themeMode === "system" ? systemTheme : store.themeMode;
+  const activeTheme = "dark";
   const colors = Colors[activeTheme];
   
   const webViewRef = useRef<WebView | null>(null);
@@ -38,6 +37,36 @@ export default function MapScreen() {
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState(false);
   const [mapVersion, setMapVersion] = useState(0); // Used to force reload/retry
+  const [mapUri, setMapUri] = useState<string | null>(null);
+
+  const mapHtmlSource = React.useMemo(() => {
+    return getMapHtml(store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme);
+  }, [store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme, mapVersion]);
+
+  // Write the HTML to a local file to bypass WebView length/truncation limits on Android
+  useEffect(() => {
+    let isMounted = true;
+    const writeMapFile = async () => {
+      try {
+        const fileUri = documentDirectory + "map.html";
+        await writeAsStringAsync(fileUri, mapHtmlSource, {
+          encoding: EncodingType.UTF8,
+        });
+        if (isMounted) {
+          setMapUri(fileUri);
+        }
+      } catch (err) {
+        console.warn("Failed to write map.html file:", err);
+        if (isMounted) {
+          setMapError(true);
+        }
+      }
+    };
+    writeMapFile();
+    return () => {
+      isMounted = false;
+    };
+  }, [mapHtmlSource]);
 
   // Keep route synced with WebView when activeRoute, startStation, or endStation changes
   useEffect(() => {
@@ -99,7 +128,7 @@ export default function MapScreen() {
 
   const handleCenterMap = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    webViewRef.current?.postMessage(JSON.stringify({ type: "CENTER_ON_DELHI" }));
+    webViewRef.current?.postMessage(JSON.stringify({ type: "LOCATE_USER" }));
   };
 
   const handleRetry = () => {
@@ -113,36 +142,38 @@ export default function MapScreen() {
     return store.stations.find((s) => s.id === id)?.name || "";
   };
 
-  const mapHtmlSource = React.useMemo(() => {
-    return getMapHtml(store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme);
-  }, [store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme, mapVersion]);
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={activeTheme === "dark" ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
       {/* Interactive Map WebView */}
-      {!mapError && (
+      {!mapError && mapUri && (
         <WebView
           ref={webViewRef}
           originWhitelist={["*"]}
-          source={{ html: mapHtmlSource, baseUrl: "https://carto.com" }}
+          source={{ uri: mapUri }}
+          allowFileAccess={true}
+          allowFileAccessFromFileURLs={true}
+          allowUniversalAccessFromFileURLs={true}
           style={styles.mapWebView}
           onMessage={handleWebViewMessage}
-          onError={() => {
+          onError={(e) => {
+            console.warn("WebView error:", e.nativeEvent);
             setMapError(true);
             setMapLoading(false);
           }}
-          onHttpError={() => {
+          onHttpError={(e) => {
+            console.warn("WebView HTTP error:", e.nativeEvent);
             setMapError(true);
             setMapLoading(false);
           }}
-          domStorageEnabled
-          javaScriptEnabled
-          geolocationEnabled
+          domStorageEnabled={true}
+          javaScriptEnabled={true}
+          geolocationEnabled={true}
           mixedContentMode="always"
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
+          userAgent="Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
         />
       )}
 
@@ -188,22 +219,6 @@ export default function MapScreen() {
             onPress={handleCenterMap}
           >
             <Ionicons name="navigate-outline" size={22} color={colors.text} />
-          </TouchableOpacity>
-
-          {/* Theme Mode Toggle Button */}
-          <TouchableOpacity
-            style={[styles.roundButton, { backgroundColor: colors.backgroundElement }]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              const nextMode = activeTheme === 'light' ? 'dark' : 'light';
-              store.setThemeMode(nextMode);
-            }}
-          >
-            <Ionicons 
-              name={activeTheme === 'light' ? 'moon-outline' : 'sunny-outline'} 
-              size={20} 
-              color={colors.text} 
-            />
           </TouchableOpacity>
         </View>
       )}

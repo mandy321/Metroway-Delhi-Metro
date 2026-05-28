@@ -1,10 +1,8 @@
 import { LEAFLET_CSS, LEAFLET_JS } from "./leafletAssets";
 
-export function getMapHtml(stations: any[], edges: any[], initialRoute: any, startStationId: string, endStationId: string, theme: 'light' | 'dark' = 'light') {
-  const isDark = theme === 'dark';
-  const tileUrl = isDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+export function getMapHtml(stations: any[], edges: any[], initialRoute: any, startStationId: string, endStationId: string, theme: 'light' | 'dark' = 'dark') {
+  const isDark = true;
+  const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
   const LINE_COLORS: Record<string, string> = {
     Red: "#E21D24",
@@ -244,12 +242,52 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         activeRouteGroup = L.layerGroup().addTo(map);
         stationsGroup = L.layerGroup().addTo(map);
 
+        // Set up location handlers
+        map.on('locationfound', function(e) {
+          if (userLocationMarker) {
+            userLocationMarker.setLatLng(e.latlng);
+          } else {
+            var userIcon = L.divIcon({
+              className: 'station-marker',
+              html: '<div class="user-location-pulse"></div><div class="user-location-dot"></div>',
+              iconSize: [28, 28],
+              iconAnchor: [14, 14]
+            });
+            userLocationMarker = L.marker(e.latlng, { icon: userIcon, zIndexOffset: 2000 }).addTo(map);
+          }
+
+          if (window.userAccuracyCircle) {
+            window.userAccuracyCircle.setLatLng(e.latlng).setRadius(e.accuracy);
+          } else {
+            window.userAccuracyCircle = L.circle(e.latlng, e.accuracy, {
+              color: '#007aff',
+              fillColor: '#007aff',
+              fillOpacity: 0.15,
+              weight: 1
+            }).addTo(map);
+          }
+        });
+
+        map.on('locationerror', function(e) {
+          // Fallback center
+          map.setView([28.6304, 77.2177], 11);
+        });
+
         // Draw bases
         drawBaseNetwork();
         drawStations();
         if (activeRoute) {
           drawActiveRoute();
         }
+
+        // Force container dimensions recalculation to prevent grey/blank screen
+        map.invalidateSize();
+        setTimeout(function() {
+          if (map) map.invalidateSize();
+        }, 100);
+        setTimeout(function() {
+          if (map) map.invalidateSize();
+        }, 500);
 
         // Notify app shell
         checkAndNotifyReady();

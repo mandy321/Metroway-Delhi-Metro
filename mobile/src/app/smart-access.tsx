@@ -38,9 +38,7 @@ const LINE_COLORS: Record<string, string> = {
 
 export default function SmartAccessScreen() {
   const store = useMetroStore();
-  const scheme = useColorScheme() || "light";
-  const systemTheme = scheme === "unspecified" ? "light" : scheme;
-  const activeTheme = store.themeMode === "system" ? systemTheme : store.themeMode;
+  const activeTheme = "dark";
   const colors = Colors[activeTheme];
 
   // Local state
@@ -86,20 +84,6 @@ export default function SmartAccessScreen() {
           <Text style={[styles.headerTitle, { color: colors.text }]}>Smart Access</Text>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14, alignSelf: "flex-end", marginBottom: 2 }}>
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              const nextMode = activeTheme === 'light' ? 'dark' : 'light';
-              store.setThemeMode(nextMode);
-            }}
-            style={[styles.headerThemeBtn, { backgroundColor: activeTheme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
-          >
-            <Ionicons 
-              name={activeTheme === 'light' ? 'moon-outline' : 'sunny-outline'} 
-              size={20} 
-              color={colors.text} 
-            />
-          </TouchableOpacity>
           <Ionicons name="accessibility-outline" size={28} color="#007aff" />
         </View>
       </View>
