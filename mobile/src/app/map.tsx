@@ -28,7 +28,9 @@ export default function MapScreen() {
   const router = useRouter();
   const store = useMetroStore();
   const scheme = useColorScheme() || "light";
-  const colors = Colors[scheme === "unspecified" ? "light" : scheme];
+  const systemTheme = scheme === "unspecified" ? "light" : scheme;
+  const activeTheme = store.themeMode === "system" ? systemTheme : store.themeMode;
+  const colors = Colors[activeTheme];
   
   const webViewRef = useRef<WebView | null>(null);
   
@@ -112,9 +114,8 @@ export default function MapScreen() {
   };
 
   const mapHtmlSource = React.useMemo(() => {
-    const mapTheme = scheme === "dark" ? "dark" : "light";
-    return getMapHtml(store.stations, store.edges, store.activeRoute, mapTheme);
-  }, [store.stations, store.edges, scheme, mapVersion]);
+    return getMapHtml(store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme);
+  }, [store.stations, store.edges, activeTheme, mapVersion]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -187,6 +188,22 @@ export default function MapScreen() {
           >
             <Ionicons name="navigate-outline" size={22} color={colors.text} />
           </TouchableOpacity>
+
+          {/* Theme Mode Toggle Button */}
+          <TouchableOpacity
+            style={[styles.roundButton, { backgroundColor: colors.backgroundElement }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              const nextMode = activeTheme === 'light' ? 'dark' : 'light';
+              store.setThemeMode(nextMode);
+            }}
+          >
+            <Ionicons 
+              name={activeTheme === 'light' ? 'moon-outline' : 'sunny-outline'} 
+              size={20} 
+              color={colors.text} 
+            />
+          </TouchableOpacity>
         </View>
       )}
 
@@ -218,14 +235,14 @@ export default function MapScreen() {
               <View style={[styles.statIconWrap, { backgroundColor: 'rgba(0,122,255,0.1)' }]}>
                 <Ionicons name="time" size={18} color="#007aff" />
               </View>
-              <Text style={[styles.bottomStatVal, { color: colors.text }]}>{store.activeRoute.totalTime}m</Text>
+              <Text style={[styles.bottomStatVal, { color: colors.text }]}>{store.activeRoute.metrics.time}m</Text>
               <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>Time</Text>
             </View>
             <View style={styles.bottomStatItem}>
               <View style={[styles.statIconWrap, { backgroundColor: 'rgba(88,86,214,0.1)' }]}>
                 <Ionicons name="git-compare" size={18} color="#5856d6" />
               </View>
-              <Text style={[styles.bottomStatVal, { color: colors.text }]}>{store.activeRoute.interchanges}</Text>
+              <Text style={[styles.bottomStatVal, { color: colors.text }]}>{store.activeRoute.metrics.transfers}</Text>
               <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>Transfers</Text>
             </View>
             <View style={styles.bottomStatItem}>
@@ -233,7 +250,7 @@ export default function MapScreen() {
                 <Ionicons name="card" size={18} color="#34c759" />
               </View>
               <Text style={[styles.bottomStatVal, { color: colors.text }]}>
-                ₹{store.useSmartCard ? Math.round(store.activeRoute.fare * 0.9) : store.activeRoute.fare}
+                ₹{store.useSmartCard ? Math.round(store.activeRoute.metrics.fare * 0.9) : store.activeRoute.metrics.fare}
               </Text>
               <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>Fare</Text>
             </View>

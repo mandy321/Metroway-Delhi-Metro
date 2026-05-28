@@ -1,4 +1,4 @@
-export function getMapHtml(stations: any[], edges: any[], initialRoute: any, theme: 'light' | 'dark' = 'light') {
+export function getMapHtml(stations: any[], edges: any[], initialRoute: any, startStationId: string, endStationId: string, theme: 'light' | 'dark' = 'light') {
   const isDark = theme === 'dark';
   const tileUrl = isDark
     ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
@@ -190,9 +190,9 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, the
     var stations = ${JSON.stringify(stations)};
     var edges = ${JSON.stringify(edges)};
     var lineColors = ${JSON.stringify(LINE_COLORS)};
-    var startStationId = "";
-    var endStationId = "";
-    var activeRoute = null;
+    var startStationId = ${JSON.stringify(startStationId || "")};
+    var endStationId = ${JSON.stringify(endStationId || "")};
+    var activeRoute = ${JSON.stringify(initialRoute || null)};
 
     // Initialize Map
     var map = L.map('map', {

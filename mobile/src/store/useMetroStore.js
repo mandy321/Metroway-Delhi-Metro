@@ -25,6 +25,7 @@ export const useMetroStore = create(
       isOffline: false,
       accessibilityOnly: false,
       infrastructureStatus: {},
+      themeMode: "system",
 
       // Actions
       setStartStationId: (id) => set({ startStationId: id }),
@@ -46,6 +47,7 @@ export const useMetroStore = create(
         }
       })),
       clearReports: () => set({ communityReports: {} }),
+      setThemeMode: (themeMode) => set({ themeMode }),
 
       getStationCrowd: (stationId) => {
         const { stations, selectedHour, activeEvent, communityReports } = get();

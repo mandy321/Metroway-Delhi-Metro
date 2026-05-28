@@ -58,7 +58,9 @@ export default function PlannerScreen() {
   const [expandedTransfers, setExpandedTransfers] = useState<Record<string, boolean>>({});
 
   const scheme = useColorScheme() || "light";
-  const colors = Colors[scheme === "unspecified" ? "light" : scheme];
+  const systemTheme = scheme === "unspecified" ? "light" : scheme;
+  const activeTheme = store.themeMode === "system" ? systemTheme : store.themeMode;
+  const colors = Colors[activeTheme];
   const [activeTab, setActiveTab] = useState("timeline");
   const tabProgress = React.useRef(new Animated.Value(0)).current;
 

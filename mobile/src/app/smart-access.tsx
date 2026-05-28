@@ -39,7 +39,9 @@ const LINE_COLORS: Record<string, string> = {
 export default function SmartAccessScreen() {
   const store = useMetroStore();
   const scheme = useColorScheme() || "light";
-  const colors = Colors[scheme === "unspecified" ? "light" : scheme];
+  const systemTheme = scheme === "unspecified" ? "light" : scheme;
+  const activeTheme = store.themeMode === "system" ? systemTheme : store.themeMode;
+  const colors = Colors[activeTheme];
 
   // Local state
   const [searchQuery, setSearchQuery] = useState("");
