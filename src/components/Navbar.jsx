@@ -6,7 +6,7 @@ export default function Navbar() {
   const { isOffline } = useMetroStore();
 
   return (
-    <nav className="glass-panel sticky top-0 z-[1000] px-6 py-4 flex items-center justify-between border-b border-white/10 shadow-lg select-none">
+    <nav className="glass-panel relative z-10 px-6 py-4 flex items-center justify-between border-b border-white/10 shadow-lg select-none">
       <div className="flex items-center space-x-3">
         <div className="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2.5 rounded-xl shadow-glow-cyan animate-pulse">
           <Train className="h-6 w-6 text-white" />
