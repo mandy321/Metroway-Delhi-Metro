@@ -18,7 +18,44 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMetroStore } from "../store/useMetroStore";
 import { Colors } from "../constants/theme";
 import { getMapHtml } from "../utils/mapHtml";
-import { documentDirectory, writeAsStringAsync, EncodingType } from "expo-file-system/legacy";
+
+// Pure JavaScript UTF-8 Base64 Encoder
+function base64Encode(str: string): string {
+  const b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let encoded = '';
+  let i = 0;
+  
+  const utf8Bytes: number[] = [];
+  for (let j = 0; j < str.length; j++) {
+    let c = str.charCodeAt(j);
+    if (c < 128) {
+      utf8Bytes.push(c);
+    } else if (c < 2048) {
+      utf8Bytes.push((c >> 6) | 192);
+      utf8Bytes.push((c & 63) | 128);
+    } else {
+      utf8Bytes.push((c >> 12) | 224);
+      utf8Bytes.push(((c >> 6) & 63) | 128);
+      utf8Bytes.push((c & 63) | 128);
+    }
+  }
+
+  while (i < utf8Bytes.length) {
+    const byte1 = utf8Bytes[i++];
+    const byte2 = i < utf8Bytes.length ? utf8Bytes[i++] : NaN;
+    const byte3 = i < utf8Bytes.length ? utf8Bytes[i++] : NaN;
+
+    const enc1 = byte1 >> 2;
+    const enc2 = ((byte1 & 3) << 4) | (isNaN(byte2) ? 0 : byte2 >> 4);
+    const enc3 = isNaN(byte2) ? 64 : ((byte2 & 15) << 2) | (isNaN(byte3) ? 0 : byte3 >> 6);
+    const enc4 = isNaN(byte3) ? 64 : byte3 & 63;
+
+    encoded += b64chars.charAt(enc1) + b64chars.charAt(enc2) +
+               (enc3 === 64 ? '=' : b64chars.charAt(enc3)) +
+               (enc4 === 64 ? '=' : b64chars.charAt(enc4));
+  }
+  return encoded;
+}
 
 const DELHI_CENTER = {
   latitude: 28.6304,
@@ -37,35 +74,19 @@ export default function MapScreen() {
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState(false);
   const [mapVersion, setMapVersion] = useState(0); // Used to force reload/retry
-  const [mapUri, setMapUri] = useState<string | null>(null);
 
   const mapHtmlSource = React.useMemo(() => {
     return getMapHtml(store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme);
   }, [store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme, mapVersion]);
 
-  // Write the HTML to a local file to bypass WebView length/truncation limits on Android
-  useEffect(() => {
-    let isMounted = true;
-    const writeMapFile = async () => {
-      try {
-        const fileUri = documentDirectory + "map.html";
-        await writeAsStringAsync(fileUri, mapHtmlSource, {
-          encoding: EncodingType.UTF8,
-        });
-        if (isMounted) {
-          setMapUri(fileUri);
-        }
-      } catch (err) {
-        console.warn("Failed to write map.html file:", err);
-        if (isMounted) {
-          setMapError(true);
-        }
-      }
-    };
-    writeMapFile();
-    return () => {
-      isMounted = false;
-    };
+  const mapDataUri = React.useMemo(() => {
+    try {
+      const base64Content = base64Encode(mapHtmlSource);
+      return "data:text/html;base64," + base64Content;
+    } catch (e) {
+      console.warn("Base64 encoding failed:", e);
+      return null;
+    }
   }, [mapHtmlSource]);
 
   // Keep route synced with WebView when activeRoute, startStation, or endStation changes
@@ -147,14 +168,11 @@ export default function MapScreen() {
       <StatusBar barStyle={activeTheme === "dark" ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
       {/* Interactive Map WebView */}
-      {!mapError && mapUri && (
+      {!mapError && mapDataUri && (
         <WebView
           ref={webViewRef}
           originWhitelist={["*"]}
-          source={{ uri: mapUri }}
-          allowFileAccess={true}
-          allowFileAccessFromFileURLs={true}
-          allowUniversalAccessFromFileURLs={true}
+          source={{ uri: mapDataUri }}
           style={styles.mapWebView}
           onMessage={handleWebViewMessage}
           onError={(e) => {
