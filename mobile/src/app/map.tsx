@@ -30,6 +30,8 @@ const LINE_COLORS: Record<string, string> = {
   Grey: "#7E8B92",
   Aqua: "#00BCD4",
   "Rapid Metro": "#FF9800",
+  Rapid: "#A52A2A",
+  RRTS: "#006A4E",
 };
 
 // Center of Delhi Metro network (Rajiv Chowk coordinates)
@@ -49,20 +51,23 @@ export default function MapScreen() {
   // Center map on active route coordinates when computed
   useEffect(() => {
     if (mapReady && store.activeRoute && store.activeRoute.path && mapRef.current) {
-      // Filter path to get valid stations
-      const routeStations = store.activeRoute.path.filter((node: any) => node.type === "Station");
+      const routeStations = store.activeRoute.path;
       if (routeStations.length > 0) {
-        const coords = routeStations.map((node: any) => ({
-          latitude: node.coordinates[0],
-          longitude: node.coordinates[1],
-        }));
+        const coords = routeStations
+          .filter((node: any) => node && node.coordinates)
+          .map((node: any) => ({
+            latitude: node.coordinates[0],
+            longitude: node.coordinates[1],
+          }));
 
-        setTimeout(() => {
-          mapRef.current?.fitToCoordinates(coords, {
-            edgePadding: { top: 80, right: 80, bottom: 200, left: 80 },
-            animated: true,
-          });
-        }, 300);
+        if (coords.length > 0) {
+          setTimeout(() => {
+            mapRef.current?.fitToCoordinates(coords, {
+              edgePadding: { top: 80, right: 80, bottom: 200, left: 80 },
+              animated: true,
+            });
+          }, 300);
+        }
       }
     }
   }, [mapReady, store.activeRoute]);
@@ -134,72 +139,47 @@ export default function MapScreen() {
 
   // Helper to draw highlighted active route
   const renderActiveRouteHighlight = () => {
-    if (!store.activeRoute) return null;
+    if (!store.activeRoute || !store.activeRoute.edges) return null;
 
-    const pathNodes = store.activeRoute.path;
     const polylines: React.ReactNode[] = [];
 
-    for (let i = 0; i < pathNodes.length - 1; i++) {
-      const current = pathNodes[i];
-      const next = pathNodes[i + 1];
+    store.activeRoute.edges.forEach((edge: any, idx: number) => {
+      const sourceStation = store.stations.find((s) => s.id === edge.source);
+      const targetStation = store.stations.find((s) => s.id === edge.target);
 
-      // Skip transfer nodes for coordinate drawing, but bridge between stations
-      if (current.type === "Station" && next.type === "Station") {
-        const sourceCoords = {
-          latitude: current.coordinates[0],
-          longitude: current.coordinates[1],
-        };
-        const nextCoords = {
-          latitude: next.coordinates[0],
-          longitude: next.coordinates[1],
-        };
-        const line = current.line || next.line || "Blue";
-        const lineColor = LINE_COLORS[line] || "#888888";
+      if (!sourceStation || !targetStation) return;
 
-        polylines.push(
-          <Polyline
-            key={`active-route-bg-${i}`}
-            coordinates={[sourceCoords, nextCoords]}
-            strokeColor="#1F2937"
-            strokeWidth={7}
-            zIndex={5}
-          />
-        );
-        polylines.push(
-          <Polyline
-            key={`active-route-fg-${i}`}
-            coordinates={[sourceCoords, nextCoords]}
-            strokeColor={lineColor}
-            strokeWidth={4}
-            zIndex={6}
-          />
-        );
-      } else if (current.type === "Station" && next.type === "Transfer") {
-        // Find next station after transfer
-        const nextStation = pathNodes[i + 2];
-        if (nextStation && nextStation.type === "Station") {
-          const sourceCoords = {
-            latitude: current.coordinates[0],
-            longitude: current.coordinates[1],
-          };
-          const nextCoords = {
-            latitude: nextStation.coordinates[0],
-            longitude: nextStation.coordinates[1],
-          };
-          // Transfer walking dashed line
-          polylines.push(
-            <Polyline
-              key={`active-route-transfer-${i}`}
-              coordinates={[sourceCoords, nextCoords]}
-              strokeColor="#EF4444"
-              strokeWidth={4}
-              lineDashPattern={[5, 5]}
-              zIndex={7}
-            />
-          );
-        }
-      }
-    }
+      const sourceCoords = {
+        latitude: sourceStation.coordinates[0],
+        longitude: sourceStation.coordinates[1],
+      };
+      const targetCoords = {
+        latitude: targetStation.coordinates[0],
+        longitude: targetStation.coordinates[1],
+      };
+
+      const routeColor = edge.isTransfer ? "#A855F7" : (LINE_COLORS[edge.line] || "#0072BB");
+
+      polylines.push(
+        <Polyline
+          key={`active-route-bg-${idx}`}
+          coordinates={[sourceCoords, targetCoords]}
+          strokeColor="#1F2937"
+          strokeWidth={8}
+          zIndex={5}
+        />
+      );
+      polylines.push(
+        <Polyline
+          key={`active-route-fg-${idx}`}
+          coordinates={[sourceCoords, targetCoords]}
+          strokeColor={routeColor}
+          strokeWidth={4}
+          lineDashPattern={edge.isTransfer ? [6, 6] : undefined}
+          zIndex={6}
+        />
+      );
+    });
 
     return polylines;
   };

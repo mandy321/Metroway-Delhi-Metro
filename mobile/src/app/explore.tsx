@@ -31,6 +31,8 @@ const LINE_COLORS: Record<string, string> = {
   Grey: "#7E8B92",
   Aqua: "#00BCD4",
   "Rapid Metro": "#FF9800",
+  Rapid: "#A52A2A",
+  RRTS: "#006A4E",
 };
 
 export default function StationExplorerScreen() {
@@ -287,7 +289,7 @@ export default function StationExplorerScreen() {
                       <View key={`exit-${index}`} style={styles.exitItem}>
                         <View style={styles.exitHeading}>
                           <View style={styles.gateBadge}>
-                            <Text style={styles.gateBadgeText}>Gate {exit.number || index + 1}</Text>
+                            <Text style={styles.gateBadgeText}>Gate {exit.gate || index + 1}</Text>
                           </View>
                           <View style={[styles.litPill, { borderColor: lightColor }]}>
                             <Text style={[styles.litText, { color: lightColor }]}>
@@ -296,8 +298,18 @@ export default function StationExplorerScreen() {
                           </View>
                         </View>
                         <Text style={styles.exitLandmark}>
-                          Nearby: {exit.landmark || "Immediate exit and local streets"}
+                          Nearby: {exit.name || "Immediate exit and local streets"}
                         </Text>
+                        {exit.accessibility && exit.accessibility.length > 0 && (
+                          <View style={styles.exitAccessibilityRow}>
+                            {exit.accessibility.map((feat: string) => (
+                              <View key={feat} style={styles.exitAccBadge}>
+                                <Ionicons name="accessibility" size={10} color="#4F46E5" style={{ marginRight: 2 }} />
+                                <Text style={styles.exitAccText}>{feat}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        )}
                       </View>
                     );
                   })
@@ -598,6 +610,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#4B5563",
     lineHeight: 18,
+    marginBottom: 4,
+  },
+  exitAccessibilityRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+    marginTop: 4,
+  },
+  exitAccBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  exitAccText: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#4F46E5",
   },
   noExits: {
     paddingVertical: 12,
