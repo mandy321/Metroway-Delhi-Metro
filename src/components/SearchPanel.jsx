@@ -22,7 +22,7 @@ import {
   Layers
 } from "lucide-react";
 
-export default function SearchPanel() {
+export default function SearchPanel({ onSelectEnd }) {
   const {
     stations,
     startStationId,
@@ -111,6 +111,9 @@ export default function SearchPanel() {
     setEndStationId(station.id);
     setEndQuery(station.name);
     setEndOpen(false);
+    if (onSelectEnd) {
+      onSelectEnd();
+    }
   };
 
   const selectHistoryItem = (item) => {
@@ -118,6 +121,9 @@ export default function SearchPanel() {
     setEndStationId(item.endStationId);
     setMode(item.mode);
     if (item.timeOfDay) setTimeOfDay(item.timeOfDay);
+    if (onSelectEnd) {
+      onSelectEnd();
+    }
   };
 
   const getLineBadgeClass = (lineName) => {

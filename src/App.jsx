@@ -127,17 +127,7 @@ export default function App() {
                 <RouteDetails />
               </div>
             ) : (
-              <div className="flex flex-col space-y-4">
-                <SearchPanel />
-                {activeRoute && (
-                  <button
-                    onClick={() => setIsEditingRoute(false)}
-                    className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-bold text-sm text-white active:scale-95 transition duration-150 shadow-md"
-                  >
-                    View Active Journey
-                  </button>
-                )}
-              </div>
+              <SearchPanel onSelectEnd={() => setIsEditingRoute(false)} />
             )}
           </div>
         )}
