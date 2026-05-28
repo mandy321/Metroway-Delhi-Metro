@@ -419,10 +419,10 @@ export default function PlannerScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <StatusBar barStyle="light-content" backgroundColor="#208AEF" />
+      <StatusBar barStyle="light-content" backgroundColor={activeTheme === "dark" ? "#1c1c1e" : "#007aff"} />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: activeTheme === "dark" ? "#1c1c1e" : "#007aff" }]}>
         <View>
           <Text style={styles.headerTitle}>Metroway</Text>
           <Text style={styles.headerSubtitle}>Delhi Metro Companion</Text>

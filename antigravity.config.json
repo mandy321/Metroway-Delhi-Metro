@@ -1,0 +1,33 @@
+
+{
+
+  "orchestration": {
+
+    "managerModel": "gemini-3.5-flash",
+
+    "routing": {
+
+      "codeGeneration": "deepseek-v4-pro",
+
+      "fileSystemOperations": "deepseek-v4-flash"
+
+    }
+
+  },
+
+  "plugins": {
+
+    "Antigravity-DeepSeek-Integration": {
+
+      "enabled": true,
+
+      "tokenOptimization": true,
+
+      "enforceCodeOnlyGuardrail": true
+
+    }
+
+  }
+
+}
+

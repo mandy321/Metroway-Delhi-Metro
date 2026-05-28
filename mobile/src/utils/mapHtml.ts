@@ -108,11 +108,11 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
     }
     
     .pin-start {
-      background: #34c759 !important; /* Apple Green */
+      background: ' + (isDark ? '#30D158' : '#34C759') + ' !important; /* Apple Green */
     }
     
     .pin-end {
-      background: #ff3b30 !important; /* Apple Red */
+      background: ' + (isDark ? '#FF453A' : '#FF3B30') + ' !important; /* Apple Red */
     }
 
     .pulse-ring {
@@ -243,7 +243,7 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         var hasActiveRoute = activeEdges.size > 0;
         
         var key = edge.source + '-' + edge.target;
-        var opacity = hasActiveRoute ? (activeEdges.has(key) ? 0.08 : 0.08) : 0.5;
+        var opacity = hasActiveRoute ? (activeEdges.has(key) ? 0.8 : 0.15) : 0.5;
         var weight = 2.5;
 
         // Draw track
@@ -281,7 +281,7 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         L.polyline([sourceCoords, targetCoords], {
           color: '${isDark ? '#000000' : '#1f2937'}',
           weight: 7,
-          opacity: 0.9,
+          opacity: 1.0,
           lineCap: 'round',
           interactive: false
         }).addTo(activeRouteGroup);
@@ -348,8 +348,8 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           '<div style="font-weight: 700; font-size: 14px; margin-bottom: 2px;">' + station.name + '</div>' +
           '<div style="color: #8e8e93; font-size: 11px; margin-bottom: 8px;">' + station.lines.join(' &bull; ') + ' Line' + (station.lines.length > 1 ? 's' : '') + '</div>' +
           '<div style="display: flex; gap: 8px;">' +
-            '<button onclick="setStationAsStart(\\'' + station.id + '\\')" style="flex: 1; border: none; background: #34c759; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 11px; cursor: pointer;">From Here</button>' +
-            '<button onclick="setStationAsEnd(\\'' + station.id + '\\')" style="flex: 1; border: none; background: #ff3b30; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 11px; cursor: pointer;">To Here</button>' +
+            '<button onclick="setStationAsStart(\\'' + station.id + '\\')" style="flex: 1; border: none; background: ' + (isDark ? '#30D158' : '#34C759') + '; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 11px; cursor: pointer;">From Here</button>' +
+            '<button onclick="setStationAsEnd(\\'' + station.id + '\\')" style="flex: 1; border: none; background: ' + (isDark ? '#FF453A' : '#FF3B30') + '; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 11px; cursor: pointer;">To Here</button>' +
           '</div>' +
         '</div>';
 
