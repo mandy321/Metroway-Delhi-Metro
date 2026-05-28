@@ -22,13 +22,17 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState("planner");
   const [isEditingRoute, setIsEditingRoute] = useState(false);
+  const [hadRoute, setHadRoute] = useState(false);
 
-  // Auto collapse inputs when active route changes
+  // Auto collapse inputs only when active route is first calculated
   useEffect(() => {
-    if (activeRoute) {
+    if (activeRoute && !hadRoute) {
       setIsEditingRoute(false);
+      setHadRoute(true);
+    } else if (!activeRoute && hadRoute) {
+      setHadRoute(false);
     }
-  }, [activeRoute]);
+  }, [activeRoute, hadRoute]);
 
   const startStationName = stations.find(s => s.id === startStationId)?.name || "";
   const endStationName = stations.find(s => s.id === endStationId)?.name || "";
@@ -123,7 +127,17 @@ export default function App() {
                 <RouteDetails />
               </div>
             ) : (
-              <SearchPanel />
+              <div className="flex flex-col space-y-4">
+                <SearchPanel />
+                {activeRoute && (
+                  <button
+                    onClick={() => setIsEditingRoute(false)}
+                    className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-bold text-sm text-white active:scale-95 transition duration-150 shadow-md"
+                  >
+                    View Active Journey
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}
