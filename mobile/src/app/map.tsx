@@ -9,7 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE, Callout } from "react-native-maps";
+import MapView, { Marker, Polyline, Callout } from "react-native-maps";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
@@ -193,7 +193,6 @@ export default function MapScreen() {
         ref={mapRef}
         style={styles.map}
         initialRegion={DELHI_CENTER}
-        provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
         onMapReady={() => setMapReady(true)}
         showsCompass
       >
