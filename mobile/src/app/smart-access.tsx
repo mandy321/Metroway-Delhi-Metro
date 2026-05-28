@@ -10,6 +10,7 @@ import {
   FlatList,
   Platform,
   StatusBar,
+  useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -35,8 +36,10 @@ const LINE_COLORS: Record<string, string> = {
   RRTS: "#006A4E",
 };
 
-export default function StationExplorerScreen() {
+export default function SmartAccessScreen() {
   const store = useMetroStore();
+  const scheme = useColorScheme() || "light";
+  const colors = Colors[scheme === "unspecified" ? "light" : scheme];
 
   // Local state
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,25 +74,25 @@ export default function StationExplorerScreen() {
   const selectedStatus = selectedStationId ? store.infrastructureStatus[selectedStationId] : null;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <StatusBar barStyle="light-content" backgroundColor="#208AEF" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
+      <StatusBar barStyle={scheme === "dark" ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
-      {/* Header */}
+      {/* Apple-style Premium Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Station Directory</Text>
-          <Text style={styles.headerSubtitle}>Explore Facilities & Exits</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Safe & Accessible Transit</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Smart Access</Text>
         </View>
-        <Ionicons name="search-outline" size={26} color="#FFFFFF" />
+        <Ionicons name="accessibility-outline" size={28} color="#007aff" />
       </View>
 
-      {/* Search Input */}
-      <View style={styles.searchBox}>
-        <Ionicons name="search" size={20} color="#6B7280" style={styles.searchIcon} />
+      {/* iOS-style Search Bar */}
+      <View style={[styles.searchBox, { backgroundColor: colors.backgroundElement }]}>
+        <Ionicons name="search" size={18} color={colors.textSecondary} style={styles.searchIcon} />
         <TextInput
-          style={styles.textInput}
-          placeholder="Search stations by name..."
-          placeholderTextColor="#9CA3AF"
+          style={[styles.textInput, { color: colors.text }]}
+          placeholder="Search station or exit landmarks..."
+          placeholderTextColor={colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
           clearButtonMode="while-editing"
@@ -100,68 +103,81 @@ export default function StationExplorerScreen() {
       <FlatList
         data={filteredStations}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.stationItem}
-            onPress={() => handleSelectStation(item.id)}
-          >
-            <View style={styles.stationItemLeft}>
-              <View style={styles.subwayIconBg}>
-                <Ionicons name="subway" size={20} color="#208AEF" />
-              </View>
-              <View>
-                <Text style={styles.stationName}>{item.name}</Text>
-                <View style={styles.badgeRow}>
-                  {item.lines.map((line) => (
-                    <View
-                      key={line}
-                      style={[
-                        styles.linePill,
-                        { backgroundColor: LINE_COLORS[line] || "#888888" },
-                      ]}
-                    >
-                      <Text style={styles.linePillText}>{line}</Text>
-                    </View>
-                  ))}
+        renderItem={({ item }) => {
+          // Check if station has accessibility features
+          const hasBrokenFacilities = 
+            store.infrastructureStatus[item.id]?.escalator === "Under Maintenance" ||
+            store.infrastructureStatus[item.id]?.elevator === "Under Maintenance";
+
+          return (
+            <TouchableOpacity
+              style={[styles.stationItem, { backgroundColor: colors.backgroundElement }]}
+              onPress={() => handleSelectStation(item.id)}
+            >
+              <View style={styles.stationItemLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: 'rgba(0,122,255,0.08)' }]}>
+                  <Ionicons name="subway-outline" size={20} color="#007aff" />
+                </View>
+                <View style={styles.stationInfoWrap}>
+                  <View style={styles.nameRow}>
+                    <Text style={[styles.stationName, { color: colors.text }]}>{item.name}</Text>
+                    {hasBrokenFacilities && (
+                      <Ionicons name="warning" size={14} color="#ff9500" style={{ marginLeft: 6 }} />
+                    )}
+                  </View>
+                  <View style={styles.badgeRow}>
+                    {item.lines.map((line) => (
+                      <View
+                        key={line}
+                        style={[
+                          styles.linePill,
+                          { backgroundColor: LINE_COLORS[line] || "#888888" },
+                        ]}
+                      >
+                        <Text style={styles.linePillText}>{line}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#B0B4BA" />
-          </TouchableOpacity>
-        )}
+              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          );
+        }}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="alert-circle-outline" size={48} color="#9CA3AF" />
-            <Text style={styles.emptyText}>No stations match "{searchQuery}"</Text>
+            <Ionicons name="search-outline" size={44} color={colors.textSecondary} />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No stations match "{searchQuery}"</Text>
           </View>
         }
       />
 
-      {/* Station Details Modal */}
+      {/* iOS Modal View */}
       <Modal
         visible={!!selectedStation}
         animationType="slide"
+        presentationStyle="pageSheet"
         onRequestClose={() => setSelectedStationId(null)}
       >
         {selectedStation && (
-          <SafeAreaView style={styles.modalContainer}>
+          <View style={[styles.modalContainer, { backgroundColor: scheme === 'dark' ? '#1c1c1e' : '#f2f2f7' }]}>
             {/* Modal Header */}
-            <View style={styles.modalHeader}>
+            <View style={[styles.modalHeader, { backgroundColor: colors.background, borderBottomColor: scheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{selectedStation.name}</Text>
               <TouchableOpacity
                 onPress={() => setSelectedStationId(null)}
-                style={styles.modalCloseBtn}
+                style={[styles.modalCloseBtn, { backgroundColor: colors.backgroundElement }]}
               >
-                <Ionicons name="arrow-back" size={24} color="#111827" />
+                <Ionicons name="close" size={20} color={colors.text} />
               </TouchableOpacity>
-              <Text style={styles.modalTitle}>{selectedStation.name}</Text>
             </View>
 
-            <ScrollView style={styles.modalScroll}>
-              {/* Lines segment */}
-              <View style={styles.modalCard}>
-                <Text style={styles.cardLabel}>Lines Connected</Text>
-                <View style={[styles.badgeRow, { marginTop: 8 }]}>
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              {/* Lines tag */}
+              <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
+                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Connected Lines</Text>
+                <View style={styles.modalBadgeRow}>
                   {selectedStation.lines.map((line) => (
                     <View
                       key={line}
@@ -176,135 +192,127 @@ export default function StationExplorerScreen() {
                 </View>
               </View>
 
-              {/* Infrastructure Facilities */}
-              <View style={styles.modalCard}>
+              {/* Infrastructure status card */}
+              <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
                 <View style={styles.facilityHeaderRow}>
-                  <Text style={styles.cardLabel}>Live Facilities Status</Text>
+                  <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Accessibility Status</Text>
                   <Text style={styles.lastUpdatedText}>
-                    Last Updated: {selectedStatus?.lastUpdated || "Just now"}
+                    Live Status
                   </Text>
                 </View>
 
                 {/* Escalator */}
                 <View style={styles.facilityRow}>
                   <View style={styles.facilityInfo}>
-                    <MaterialCommunityIcons
-                      name="escalator"
-                      size={24}
-                      color="#208AEF"
-                      style={{ marginRight: 12 }}
-                    />
+                    <View style={[styles.facilityIconWrap, { backgroundColor: 'rgba(0,122,255,0.08)' }]}>
+                      <MaterialCommunityIcons name="escalator" size={22} color="#007aff" />
+                    </View>
                     <View>
-                      <Text style={styles.facilityName}>Escalators</Text>
+                      <Text style={[styles.facilityName, { color: colors.text }]}>Escalators</Text>
                       <View style={styles.statusBadgeRow}>
                         <View
                           style={[
                             styles.statusDot,
                             {
                               backgroundColor:
-                                selectedStatus?.escalator === "Operational"
-                                  ? "#10B981"
-                                  : "#EF4444",
+                                selectedStatus?.escalator === "Operational" || !selectedStatus?.escalator
+                                  ? "#34c759"
+                                  : "#ff3b30",
                             },
                           ]}
                         />
-                        <Text style={styles.statusText}>
+                        <Text style={[styles.statusText, { color: colors.textSecondary }]}>
                           {selectedStatus?.escalator || "Operational"}
                         </Text>
                       </View>
                     </View>
                   </View>
                   <TouchableOpacity
-                    style={styles.reportBtn}
+                    style={[styles.reportBtn, { backgroundColor: colors.backgroundElement }]}
                     onPress={() => handleToggleFacility(selectedStation.id, "escalator")}
                   >
-                    <Text style={styles.reportBtnText}>Toggle Status</Text>
+                    <Text style={styles.reportBtnText}>Report Change</Text>
                   </TouchableOpacity>
                 </View>
 
                 {/* Elevator */}
-                <View style={[styles.facilityRow, styles.borderTop]}>
+                <View style={[styles.facilityRow, styles.borderTop, { borderTopColor: colors.backgroundElement }]}>
                   <View style={styles.facilityInfo}>
-                    <MaterialCommunityIcons
-                      name="elevator"
-                      size={24}
-                      color="#208AEF"
-                      style={{ marginRight: 12 }}
-                    />
+                    <View style={[styles.facilityIconWrap, { backgroundColor: 'rgba(0,122,255,0.08)' }]}>
+                      <MaterialCommunityIcons name="elevator" size={22} color="#007aff" />
+                    </View>
                     <View>
-                      <Text style={styles.facilityName}>Elevators / Lifts</Text>
+                      <Text style={[styles.facilityName, { color: colors.text }]}>Elevators / Lifts</Text>
                       <View style={styles.statusBadgeRow}>
                         <View
                           style={[
                             styles.statusDot,
                             {
                               backgroundColor:
-                                selectedStatus?.elevator === "Operational"
-                                  ? "#10B981"
-                                  : "#EF4444",
+                                selectedStatus?.elevator === "Operational" || !selectedStatus?.elevator
+                                  ? "#34c759"
+                                  : "#ff3b30",
                             },
                           ]}
                         />
-                        <Text style={styles.statusText}>
+                        <Text style={[styles.statusText, { color: colors.textSecondary }]}>
                           {selectedStatus?.elevator || "Operational"}
                         </Text>
                       </View>
                     </View>
                   </View>
                   <TouchableOpacity
-                    style={styles.reportBtn}
+                    style={[styles.reportBtn, { backgroundColor: colors.backgroundElement }]}
                     onPress={() => handleToggleFacility(selectedStation.id, "elevator")}
                   >
-                    <Text style={styles.reportBtnText}>Toggle Status</Text>
+                    <Text style={styles.reportBtnText}>Report Change</Text>
                   </TouchableOpacity>
                 </View>
               </View>
 
-              {/* Station layout & platforms */}
-              <View style={styles.modalCard}>
-                <Text style={styles.cardLabel}>Platform Information</Text>
-                <View style={styles.platformDetails}>
-                  <Ionicons name="information-circle-outline" size={20} color="#208AEF" style={{ marginRight: 8 }} />
-                  <Text style={styles.platformText}>
-                    This is a {selectedStation.lines.length > 1 ? "major interchange" : "standard"} station.{" "}
-                    Platform gates are equipped with screen doors for safety.
+              {/* Station layout & safety notes */}
+              <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
+                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Station Information</Text>
+                <View style={[styles.platformDetails, { backgroundColor: colors.backgroundElement }]}>
+                  <Ionicons name="shield-checkmark" size={18} color="#34c759" style={{ marginRight: 10 }} />
+                  <Text style={[styles.platformText, { color: colors.text }]}>
+                    Equipped with 24/7 CCTV surveillance, tactile paths for visually impaired commuters, and emergency help points on all platforms.
                   </Text>
                 </View>
               </View>
 
-              {/* Gate Exits */}
-              <View style={[styles.modalCard, { marginBottom: 32 }]}>
-                <Text style={styles.cardLabel}>Exit Gates Directory</Text>
+              {/* Exit directory with safety parameters */}
+              <View style={[styles.modalCard, { backgroundColor: colors.background, marginBottom: 40 }]}>
+                <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Exits & Gate Safety Directory</Text>
                 {selectedStation.exits && selectedStation.exits.length > 0 ? (
                   selectedStation.exits.map((exit, index) => {
-                    // Match lighting colors
                     const lightColor =
                       exit.lit === "Dimly-Lit"
-                        ? "#EF4444"
+                        ? "#ff3b30"
                         : exit.lit === "Moderate"
-                        ? "#F59E0B"
-                        : "#10B981";
+                        ? "#ff9500"
+                        : "#34c759";
 
                     return (
-                      <View key={`exit-${index}`} style={styles.exitItem}>
+                      <View key={`exit-${index}`} style={[styles.exitItem, { borderBottomColor: colors.backgroundElement }]}>
                         <View style={styles.exitHeading}>
-                          <View style={styles.gateBadge}>
-                            <Text style={styles.gateBadgeText}>Gate {exit.gate || index + 1}</Text>
+                          <View style={[styles.gateBadge, { backgroundColor: colors.backgroundSelected }]}>
+                            <Text style={[styles.gateBadgeText, { color: colors.text }]}>Gate {exit.gate || index + 1}</Text>
                           </View>
                           <View style={[styles.litPill, { borderColor: lightColor }]}>
                             <Text style={[styles.litText, { color: lightColor }]}>
-                              {exit.lit || "Bright"}
+                              {exit.lit || "Brightly-Lit"}
                             </Text>
                           </View>
                         </View>
-                        <Text style={styles.exitLandmark}>
-                          Nearby: {exit.name || "Immediate exit and local streets"}
+                        <Text style={[styles.exitLandmark, { color: colors.text }]}>
+                          Nearby: {exit.name || "Immediate exit / Main roadway"}
                         </Text>
                         {exit.accessibility && exit.accessibility.length > 0 && (
                           <View style={styles.exitAccessibilityRow}>
                             {exit.accessibility.map((feat: string) => (
-                              <View key={feat} style={styles.exitAccBadge}>
-                                <Ionicons name="accessibility" size={10} color="#4F46E5" style={{ marginRight: 2 }} />
+                              <View key={feat} style={[styles.exitAccBadge, { backgroundColor: 'rgba(88,86,214,0.08)' }]}>
+                                <Ionicons name="checkmark-circle-outline" size={10} color="#5856d6" style={{ marginRight: 2 }} />
                                 <Text style={styles.exitAccText}>{feat}</Text>
                               </View>
                             ))}
@@ -315,12 +323,12 @@ export default function StationExplorerScreen() {
                   })
                 ) : (
                   <View style={styles.noExits}>
-                    <Text style={styles.noExitsText}>No detailed exit gates data available.</Text>
+                    <Text style={[styles.noExitsText, { color: colors.textSecondary }]}>No detailed exit gates data available.</Text>
                   </View>
                 )}
               </View>
             </ScrollView>
-          </SafeAreaView>
+          </View>
         )}
       </Modal>
     </SafeAreaView>
@@ -330,46 +338,35 @@ export default function StationExplorerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
   },
   header: {
-    backgroundColor: "#208AEF",
-    paddingHorizontal: 16,
-    paddingVertical: 18,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 10,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    alignItems: "flex-end",
   },
   headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "bold",
-    letterSpacing: 0.5,
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.8,
   },
   headerSubtitle: {
-    color: "#E0E1E6",
     fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
-    margin: 16,
+    marginHorizontal: 20,
+    marginVertical: 14,
     paddingHorizontal: 12,
-    height: 48,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    height: 38,
+    borderRadius: 10,
   },
   searchIcon: {
     marginRight: 8,
@@ -378,51 +375,54 @@ const styles = StyleSheet.create({
     flex: 1,
     height: "100%",
     fontSize: 15,
-    color: "#111827",
+    padding: 0,
   },
   listContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingBottom: 32,
   },
   stationItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    padding: 14,
+    padding: 12,
     borderRadius: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#EFF1F5",
-    elevation: 1,
+    marginBottom: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
   },
   stationItemLeft: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   },
-  subwayIconBg: {
+  iconContainer: {
     width: 38,
     height: 38,
-    borderRadius: 19,
-    backgroundColor: "#EFF6FF",
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
   },
+  stationInfoWrap: {
+    flex: 1,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   stationName: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: -0.3,
   },
   badgeRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 4,
+    marginTop: 4,
   },
   linePill: {
     paddingHorizontal: 6,
@@ -438,57 +438,61 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 32,
-    marginTop: 40,
+    marginTop: 60,
   },
   emptyText: {
     fontSize: 14,
-    color: "#6B7280",
+    fontWeight: "500",
     marginTop: 12,
     textAlign: "center",
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: "#F3F4F6",
   },
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   modalCloseBtn: {
-    padding: 4,
-    marginRight: 12,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
-    color: "#111827",
+    letterSpacing: -0.4,
   },
   modalScroll: {
     flex: 1,
     padding: 16,
   },
   modalCard: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
-    elevation: 2,
+    marginBottom: 14,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
   },
   cardLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
-    color: "#4B5563",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  modalBadgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
   },
   modalLinePill: {
     paddingHorizontal: 10,
@@ -507,8 +511,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   lastUpdatedText: {
-    fontSize: 10,
-    color: "#9CA3AF",
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#34c759",
   },
   facilityRow: {
     flexDirection: "row",
@@ -517,23 +522,29 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   borderTop: {
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   facilityInfo: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
   },
+  facilityIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
   facilityName: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#1F2937",
   },
   statusBadgeRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: 3,
   },
   statusDot: {
     width: 6,
@@ -542,41 +553,34 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   statusText: {
-    fontSize: 12,
-    color: "#4B5563",
+    fontSize: 11,
     fontWeight: "500",
   },
   reportBtn: {
-    backgroundColor: "#EFF6FF",
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
   },
   reportBtnText: {
     fontSize: 11,
-    color: "#208AEF",
-    fontWeight: "700",
+    color: "#007aff",
+    fontWeight: "600",
   },
   platformDetails: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#EEF2F6",
     padding: 12,
     borderRadius: 12,
-    marginTop: 8,
   },
   platformText: {
     flex: 1,
-    fontSize: 13,
-    color: "#4B5563",
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500",
   },
   exitItem: {
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   exitHeading: {
     flexDirection: "row",
@@ -585,14 +589,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   gateBadge: {
-    backgroundColor: "#374151",
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   gateBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "700",
   },
   litPill: {
@@ -608,30 +610,26 @@ const styles = StyleSheet.create({
   },
   exitLandmark: {
     fontSize: 13,
-    color: "#4B5563",
     lineHeight: 18,
-    marginBottom: 4,
+    fontWeight: "500",
   },
   exitAccessibilityRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 4,
-    marginTop: 4,
+    marginTop: 6,
   },
   exitAccBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#EEF2FF",
-    borderWidth: 1,
-    borderColor: "#C7D2FE",
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   exitAccText: {
     fontSize: 9,
-    fontWeight: "700",
-    color: "#4F46E5",
+    fontWeight: "600",
+    color: "#5856d6",
   },
   noExits: {
     paddingVertical: 12,
@@ -639,6 +637,5 @@ const styles = StyleSheet.create({
   },
   noExitsText: {
     fontSize: 13,
-    color: "#9CA3AF",
   },
 });

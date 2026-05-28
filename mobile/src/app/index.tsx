@@ -11,6 +11,10 @@ import {
   Switch,
   Platform,
   StatusBar,
+  Animated,
+  LayoutAnimation,
+  UIManager,
+  useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -18,6 +22,10 @@ import * as Haptics from "expo-haptics";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useMetroStore } from "../store/useMetroStore";
 import { Colors } from "../constants/theme";
+
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 // Line color mapping helper
 const LINE_COLORS: Record<string, string> = {
@@ -49,8 +57,46 @@ export default function PlannerScreen() {
   const [isEditingRoute, setIsEditingRoute] = useState(true);
   const [expandedTransfers, setExpandedTransfers] = useState<Record<string, boolean>>({});
 
-  // Active Journey state
+  const scheme = useColorScheme() || "light";
+  const colors = Colors[scheme === "unspecified" ? "light" : scheme];
   const [activeTab, setActiveTab] = useState("timeline");
+  const tabProgress = React.useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const tabIndex = ["timeline", "fare", "exits", "status"].indexOf(activeTab);
+    Animated.spring(tabProgress, {
+      toValue: tabIndex,
+      useNativeDriver: false,
+      tension: 50,
+      friction: 9,
+    }).start();
+  }, [activeTab]);
+
+  const handleTabChange = (tabId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    LayoutAnimation.configureNext({
+      duration: 300,
+      create: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+      },
+      update: {
+        type: LayoutAnimation.Types.spring,
+        springDamping: 0.85,
+      },
+      delete: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+      },
+    });
+    setActiveTab(tabId);
+  };
+
+  const tabProgressLeft = tabProgress.interpolate({
+    inputRange: [0, 1, 2, 3],
+    outputRange: ["0.75%", "25.75%", "50.75%", "75.75%"],
+  });
+
   const [reportingStationId, setReportingStationId] = useState("");
   const [reportedLevel, setReportedLevel] = useState("Moderate");
   const [reportSuccess, setReportSuccess] = useState(false);
@@ -576,10 +622,9 @@ export default function PlannerScreen() {
           </View>
         </ScrollView>
       ) : (
-        /* Active Route Timeline View */
-        <View style={styles.routeContainer}>
+        <View style={[styles.routeContainer, { backgroundColor: colors.background }]}>
           {/* Top route card header */}
-          <View style={styles.routeHeaderCard}>
+          <View style={[styles.routeHeaderCard, { backgroundColor: scheme === 'dark' ? '#1c1c1e' : '#007aff' }]}>
             <View style={styles.routeHeaderRow}>
               <TouchableOpacity
                 style={styles.backToEditBtn}
@@ -681,7 +726,16 @@ export default function PlannerScreen() {
           </View>
 
           {/* Tab Headers */}
-          <View style={styles.tabHeaderContainer}>
+          <View style={[styles.tabHeaderContainer, { backgroundColor: scheme === 'dark' ? '#1c1c1e' : '#e3e3e8' }]}>
+            <Animated.View
+              style={[
+                styles.activeIndicatorCapsule,
+                {
+                  left: tabProgressLeft,
+                  backgroundColor: scheme === 'dark' ? '#2c2c2e' : '#ffffff',
+                },
+              ]}
+            />
             {[
               { id: "timeline", label: "Timeline", icon: "list-outline" },
               { id: "fare", label: "Fare", icon: "card-outline" },
@@ -690,23 +744,26 @@ export default function PlannerScreen() {
             ].map(tab => (
               <TouchableOpacity
                 key={tab.id}
-                style={[styles.tabHeaderButton, activeTab === tab.id && styles.tabHeaderButtonActive]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setActiveTab(tab.id);
-                }}
+                style={styles.tabHeaderButton}
+                onPress={() => handleTabChange(tab.id)}
               >
                 <Ionicons 
                   name={tab.icon as any} 
-                  size={18} 
-                  color={activeTab === tab.id ? "#208AEF" : "#6B7280"} 
+                  size={16} 
+                  color={activeTab === tab.id ? (scheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary} 
                 />
-                <Text style={[styles.tabHeaderButtonText, activeTab === tab.id && styles.tabHeaderButtonTextActive]}>
+                <Text style={[
+                  styles.tabHeaderButtonText, 
+                  { 
+                    color: activeTab === tab.id ? (scheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary,
+                    fontWeight: activeTab === tab.id ? "700" : "500"
+                  }
+                ]}>
                   {tab.label}
                 </Text>
                 {tab.alertCount ? (
-                  <View style={styles.tabAlertBadge}>
-                    <Text style={styles.tabAlertBadgeText}>{tab.alertCount}</Text>
+                  <View style={[styles.tabAlertBadge, { backgroundColor: '#ff3b30' }]}>
+                    <Text style={[styles.tabAlertBadgeText, { color: '#ffffff' }]}>{tab.alertCount}</Text>
                   </View>
                 ) : null}
               </TouchableOpacity>
@@ -1911,50 +1968,55 @@ const styles = StyleSheet.create({
   },
   tabHeaderContainer: {
     flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    elevation: 2,
+    position: "relative",
+    marginHorizontal: 16,
+    marginVertical: 14,
+    borderRadius: 14,
+    padding: 3,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowRadius: 10,
+    elevation: 3,
   },
   tabHeaderButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 14,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
+    paddingVertical: 10,
+    borderRadius: 11,
     gap: 4,
-  },
-  tabHeaderButtonActive: {
-    borderBottomColor: "#208AEF",
+    zIndex: 2,
   },
   tabHeaderButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: "500",
   },
-  tabHeaderButtonTextActive: {
-    color: "#208AEF",
-    fontWeight: "700",
+  activeIndicatorCapsule: {
+    position: "absolute",
+    top: 3,
+    bottom: 3,
+    width: "23.5%",
+    borderRadius: 11,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 1,
   },
   tabAlertBadge: {
-    backgroundColor: "#FEE2E2",
     borderRadius: 8,
-    minWidth: 14,
-    height: 14,
+    minWidth: 15,
+    height: 15,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 3,
+    paddingHorizontal: 4,
     marginLeft: 2,
   },
   tabAlertBadgeText: {
-    fontSize: 8,
-    color: "#EF4444",
+    fontSize: 9,
     fontWeight: "800",
   },
   timelineWrapper: {
@@ -2348,6 +2410,23 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#6B7280",
     fontWeight: "500",
+  },
+  noExitsText: {
+    fontSize: 13,
+    color: "#6B7280",
+    textAlign: "center",
+    marginVertical: 12,
+  },
+  litPill: {
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  litText: {
+    fontSize: 9,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
   crowdReportCard: {
     backgroundColor: "#FFFFFF",

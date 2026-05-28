@@ -7,298 +7,205 @@ import {
   Dimensions,
   StatusBar,
   Platform,
+  ActivityIndicator,
+  useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MapView, { Marker, Polyline, Callout } from "react-native-maps";
+import { WebView } from "react-native-webview";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { useMetroStore } from "../store/useMetroStore";
 import { Colors } from "../constants/theme";
+import { getMapHtml } from "../utils/mapHtml";
 
-const LINE_COLORS: Record<string, string> = {
-  Red: "#E21D24",
-  Yellow: "#FDB813",
-  Blue: "#0072BB",
-  Green: "#00A550",
-  Violet: "#702082",
-  Pink: "#E91E63",
-  Magenta: "#9C27B0",
-  Orange: "#FF5722",
-  Airport: "#FF5722",
-  Gray: "#7E8B92",
-  Grey: "#7E8B92",
-  Aqua: "#00BCD4",
-  "Rapid Metro": "#FF9800",
-  Rapid: "#A52A2A",
-  RRTS: "#006A4E",
-};
-
-// Center of Delhi Metro network (Rajiv Chowk coordinates)
 const DELHI_CENTER = {
   latitude: 28.6304,
   longitude: 77.2177,
-  latitudeDelta: 0.15,
-  longitudeDelta: 0.15,
 };
 
 export default function MapScreen() {
   const router = useRouter();
   const store = useMetroStore();
-  const mapRef = useRef<MapView | null>(null);
-  const [mapReady, setMapReady] = useState(false);
+  const scheme = useColorScheme() || "light";
+  const colors = Colors[scheme === "unspecified" ? "light" : scheme];
+  
+  const webViewRef = useRef<WebView | null>(null);
+  
+  // Lifecycle & Loading State
+  const [mapLoading, setMapLoading] = useState(true);
+  const [mapError, setMapError] = useState(false);
+  const [mapVersion, setMapVersion] = useState(0); // Used to force reload/retry
 
-  // Center map on active route coordinates when computed
+  // Keep route synced with WebView when activeRoute, startStation, or endStation changes
   useEffect(() => {
-    if (mapReady && store.activeRoute && store.activeRoute.path && mapRef.current) {
-      const routeStations = store.activeRoute.path;
-      if (routeStations.length > 0) {
-        const coords = routeStations
-          .filter((node: any) => node && node.coordinates)
-          .map((node: any) => ({
-            latitude: node.coordinates[0],
-            longitude: node.coordinates[1],
-          }));
-
-        if (coords.length > 0) {
-          setTimeout(() => {
-            mapRef.current?.fitToCoordinates(coords, {
-              edgePadding: { top: 80, right: 80, bottom: 200, left: 80 },
-              animated: true,
-            });
-          }, 300);
-        }
-      }
+    if (!mapLoading && !mapError && webViewRef.current) {
+      const message = {
+        type: "UPDATE_ROUTE",
+        startStationId: store.startStationId,
+        endStationId: store.endStationId,
+        activeRoute: store.activeRoute,
+      };
+      webViewRef.current.postMessage(JSON.stringify(message));
     }
-  }, [mapReady, store.activeRoute]);
+  }, [mapLoading, mapError, store.startStationId, store.endStationId, store.activeRoute]);
+
+  // Handle Messages from WebView Leaflet Map
+  const handleWebViewMessage = (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      
+      switch (data.type) {
+        case "MAP_READY":
+          setMapLoading(false);
+          setMapError(false);
+          break;
+        case "SET_START":
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          store.setStartStationId(data.stationId);
+          if (store.endStationId) {
+            store.calculateActiveRoute();
+          }
+          break;
+        case "SET_END":
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          store.setEndStationId(data.stationId);
+          if (store.startStationId) {
+            store.calculateActiveRoute();
+          }
+          break;
+        case "STATION_CLICK":
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          break;
+        default:
+          break;
+      }
+    } catch (e) {
+      console.warn("Error parsing WebView message:", e);
+    }
+  };
+
+  const handleZoomIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    webViewRef.current?.postMessage(JSON.stringify({ type: "ZOOM_IN" }));
+  };
+
+  const handleZoomOut = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    webViewRef.current?.postMessage(JSON.stringify({ type: "ZOOM_OUT" }));
+  };
 
   const handleCenterMap = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    mapRef.current?.animateToRegion(DELHI_CENTER, 600);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    webViewRef.current?.postMessage(JSON.stringify({ type: "CENTER_ON_DELHI" }));
   };
 
-  const handleMarkerPress = (stationId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
-
-  const handleSetStart = (stationId: string) => {
+  const handleRetry = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    store.setStartStationId(stationId);
-    if (store.endStationId) {
-      store.calculateActiveRoute();
-    }
-  };
-
-  const handleSetEnd = (stationId: string) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    store.setEndStationId(stationId);
-    if (store.startStationId) {
-      store.calculateActiveRoute();
-    }
+    setMapLoading(true);
+    setMapError(false);
+    setMapVersion((prev) => prev + 1);
   };
 
   const getStationName = (id: string) => {
     return store.stations.find((s) => s.id === id)?.name || "";
   };
 
-  // Convert array coordinate [lat, lng] to object
-  const getLatLng = (station: any) => {
-    if (!station || !station.coordinates) return null;
-    return {
-      latitude: station.coordinates[0],
-      longitude: station.coordinates[1],
-    };
-  };
-
-  // Helper to draw connection edges
-  const renderTrackEdges = () => {
-    return store.edges.map((edge) => {
-      const source = store.stations.find((s) => s.id === edge.source);
-      const target = store.stations.find((s) => s.id === edge.target);
-      if (!source || !target) return null;
-
-      const sourceCoords = getLatLng(source);
-      const targetCoords = getLatLng(target);
-      if (!sourceCoords || !targetCoords) return null;
-
-      // Color from edge lines
-      const line = edge.line || "Blue";
-      const lineColor = LINE_COLORS[line] || "#888888";
-
-      return (
-        <Polyline
-          key={`${edge.source}-${edge.target}-${line}`}
-          coordinates={[sourceCoords, targetCoords]}
-          strokeColor={lineColor}
-          strokeWidth={3}
-          lineDashPattern={line === "Orange" ? [6, 4] : undefined} // Airport Express dashed
-        />
-      );
-    });
-  };
-
-  // Helper to draw highlighted active route
-  const renderActiveRouteHighlight = () => {
-    if (!store.activeRoute || !store.activeRoute.edges) return null;
-
-    const polylines: React.ReactNode[] = [];
-
-    store.activeRoute.edges.forEach((edge: any, idx: number) => {
-      const sourceStation = store.stations.find((s) => s.id === edge.source);
-      const targetStation = store.stations.find((s) => s.id === edge.target);
-
-      if (!sourceStation || !targetStation) return;
-
-      const sourceCoords = {
-        latitude: sourceStation.coordinates[0],
-        longitude: sourceStation.coordinates[1],
-      };
-      const targetCoords = {
-        latitude: targetStation.coordinates[0],
-        longitude: targetStation.coordinates[1],
-      };
-
-      const routeColor = edge.isTransfer ? "#A855F7" : (LINE_COLORS[edge.line] || "#0072BB");
-
-      polylines.push(
-        <Polyline
-          key={`active-route-bg-${idx}`}
-          coordinates={[sourceCoords, targetCoords]}
-          strokeColor="#1F2937"
-          strokeWidth={8}
-          zIndex={5}
-        />
-      );
-      polylines.push(
-        <Polyline
-          key={`active-route-fg-${idx}`}
-          coordinates={[sourceCoords, targetCoords]}
-          strokeColor={routeColor}
-          strokeWidth={4}
-          lineDashPattern={edge.isTransfer ? [6, 6] : undefined}
-          zIndex={6}
-        />
-      );
-    });
-
-    return polylines;
-  };
+  const mapHtmlSource = React.useMemo(() => {
+    const mapTheme = scheme === "dark" ? "dark" : "light";
+    return getMapHtml(store.stations, store.edges, store.activeRoute, mapTheme);
+  }, [store.stations, store.edges, scheme, mapVersion]);
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={scheme === "dark" ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
-      {/* Main Map View */}
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        initialRegion={DELHI_CENTER}
-        onMapReady={() => setMapReady(true)}
-        showsCompass
-      >
-        {/* Render Track Connections */}
-        {renderTrackEdges()}
+      {/* Interactive Map WebView */}
+      {!mapError && (
+        <WebView
+          ref={webViewRef}
+          originWhitelist={["*"]}
+          source={{ html: mapHtmlSource }}
+          style={styles.mapWebView}
+          onMessage={handleWebViewMessage}
+          onError={() => {
+            setMapError(true);
+            setMapLoading(false);
+          }}
+          onHttpError={() => {
+            setMapError(true);
+            setMapLoading(false);
+          }}
+          domStorageEnabled
+          javaScriptEnabled
+          geolocationEnabled
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
 
-        {/* Highlight Route */}
-        {renderActiveRouteHighlight()}
+      {/* Loading Skeleton State */}
+      {mapLoading && !mapError && (
+        <View style={[styles.overlayContainer, { backgroundColor: colors.background }]}>
+          <ActivityIndicator size="large" color="#007aff" />
+          <Text style={[styles.overlayText, { color: colors.textSecondary }]}>Loading Metro Network...</Text>
+        </View>
+      )}
 
-        {/* Render Station Markers */}
-        {store.stations.map((station) => {
-          const coords = getLatLng(station);
-          if (!coords) return null;
+      {/* Error / Retry Fallback State */}
+      {mapError && (
+        <View style={[styles.overlayContainer, { backgroundColor: colors.background }]}>
+          <Ionicons name="cloud-offline-outline" size={48} color="#ff3b30" />
+          <Text style={[styles.errorTitle, { color: colors.text }]}>Connection Failed</Text>
+          <Text style={[styles.errorSub, { color: colors.textSecondary }]}>
+            Unable to load metro map tiles. Please check your internet connection and try again.
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+            <Text style={styles.retryButtonText}>Retry Connection</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-          // Determine marker color
-          const primaryLine = station.lines[0];
-          const markerColor = LINE_COLORS[primaryLine] || "#888888";
-          
-          // Check if station is start or end
-          const isStart = station.id === store.startStationId;
-          const isEnd = station.id === store.endStationId;
-          const isInterchange = station.lines.length > 1;
+      {/* Floating Apple-Style Control Stack */}
+      {!mapLoading && !mapError && (
+        <View style={styles.floatingControls}>
+          {/* Zoom Stack */}
+          <View style={[styles.controlGroup, { backgroundColor: colors.backgroundElement }]}>
+            <TouchableOpacity style={styles.groupButton} onPress={handleZoomIn}>
+              <Ionicons name="add" size={22} color={colors.text} />
+            </TouchableOpacity>
+            <View style={[styles.divider, { backgroundColor: scheme === "dark" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)" }]} />
+            <TouchableOpacity style={styles.groupButton} onPress={handleZoomOut}>
+              <Ionicons name="remove" size={22} color={colors.text} />
+            </TouchableOpacity>
+          </View>
 
-          return (
-            <Marker
-              key={station.id}
-              coordinate={coords}
-              onPress={() => handleMarkerPress(station.id)}
-              anchor={{ x: 0.5, y: 0.5 }}
-              zIndex={isStart || isEnd ? 20 : isInterchange ? 10 : 1}
-            >
-              {/* Custom Marker Pin */}
-              <View
-                style={[
-                  styles.markerContainer,
-                  isStart && styles.startMarker,
-                  isEnd && styles.endMarker,
-                  isInterchange && !isStart && !isEnd && styles.interchangeMarker,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.markerInner,
-                    {
-                      backgroundColor: isStart
-                        ? "#10B981"
-                        : isEnd
-                        ? "#EF4444"
-                        : markerColor,
-                    },
-                  ]}
-                />
-              </View>
+          {/* Locate Center Button */}
+          <TouchableOpacity
+            style={[styles.roundButton, { backgroundColor: colors.backgroundElement }]}
+            onPress={handleCenterMap}
+          >
+            <Ionicons name="navigate-outline" size={22} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+      )}
 
-              {/* Callout Dialog */}
-              <Callout tooltip style={styles.calloutContainer}>
-                <View style={styles.calloutCard}>
-                  <Text style={styles.calloutTitle}>{station.name}</Text>
-                  <Text style={styles.calloutSubtitle}>
-                    {station.lines.join(" • ")} Line{station.lines.length > 1 ? "s" : ""}
-                  </Text>
-                  <View style={styles.calloutActionRow}>
-                    <TouchableOpacity
-                      style={[styles.calloutBtn, styles.calloutStartBtn]}
-                      onPress={() => handleSetStart(station.id)}
-                    >
-                      <Text style={styles.calloutBtnText}>From Here</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.calloutBtn, styles.calloutEndBtn]}
-                      onPress={() => handleSetEnd(station.id)}
-                    >
-                      <Text style={styles.calloutBtnText}>To Here</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Callout>
-            </Marker>
-          );
-        })}
-      </MapView>
-
-      {/* Floating Control Buttons */}
-      <View style={styles.floatingControls}>
-        <TouchableOpacity style={styles.roundButton} onPress={handleCenterMap}>
-          <Ionicons name="locate" size={24} color="#374151" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Active Route Summary Bottom Card */}
-      {store.activeRoute && (
-        <View style={styles.bottomCard}>
+      {/* Premium Apple-Style Active Route Summary Bottom Card */}
+      {!mapLoading && !mapError && store.activeRoute && (
+        <View style={[styles.bottomCard, { backgroundColor: colors.backgroundElement }]}>
           <View style={styles.bottomCardHeader}>
             <View style={styles.bottomCardRoute}>
-              <Text style={styles.bottomRouteText} numberOfLines={1}>
+              <Text style={[styles.bottomRouteText, { color: colors.text }]} numberOfLines={1}>
                 {getStationName(store.startStationId)} ➔ {getStationName(store.endStationId)}
               </Text>
-              <Text style={styles.bottomRouteMeta}>
-                {store.mode} Mode
+              <Text style={[styles.bottomRouteMeta, { color: colors.textSecondary }]}>
+                Fastest Route • {store.mode} Mode
               </Text>
             </View>
             <TouchableOpacity
               style={styles.closeRouteBtn}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                // Navigate back to Planner index
                 router.push("/");
               }}
             >
@@ -308,21 +215,27 @@ export default function MapScreen() {
 
           <View style={styles.bottomStatsGrid}>
             <View style={styles.bottomStatItem}>
-              <Ionicons name="time-outline" size={18} color="#208AEF" />
-              <Text style={styles.bottomStatVal}>{store.activeRoute.totalTime}m</Text>
-              <Text style={styles.bottomStatLbl}>Time</Text>
+              <View style={[styles.statIconWrap, { backgroundColor: 'rgba(0,122,255,0.1)' }]}>
+                <Ionicons name="time" size={18} color="#007aff" />
+              </View>
+              <Text style={[styles.bottomStatVal, { color: colors.text }]}>{store.activeRoute.totalTime}m</Text>
+              <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>Time</Text>
             </View>
             <View style={styles.bottomStatItem}>
-              <Ionicons name="git-compare-outline" size={18} color="#10B981" />
-              <Text style={styles.bottomStatVal}>{store.activeRoute.interchanges}</Text>
-              <Text style={styles.bottomStatLbl}>Transfers</Text>
+              <View style={[styles.statIconWrap, { backgroundColor: 'rgba(88,86,214,0.1)' }]}>
+                <Ionicons name="git-compare" size={18} color="#5856d6" />
+              </View>
+              <Text style={[styles.bottomStatVal, { color: colors.text }]}>{store.activeRoute.interchanges}</Text>
+              <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>Transfers</Text>
             </View>
             <View style={styles.bottomStatItem}>
-              <Ionicons name="cash-outline" size={18} color="#F59E0B" />
-              <Text style={styles.bottomStatVal}>
-                ₹{store.useSmartCard ? store.activeRoute.fare * 0.9 : store.activeRoute.fare}
+              <View style={[styles.statIconWrap, { backgroundColor: 'rgba(52,199,89,0.1)' }]}>
+                <Ionicons name="card" size={18} color="#34c759" />
+              </View>
+              <Text style={[styles.bottomStatVal, { color: colors.text }]}>
+                ₹{store.useSmartCard ? Math.round(store.activeRoute.fare * 0.9) : store.activeRoute.fare}
               </Text>
-              <Text style={styles.bottomStatLbl}>Fare</Text>
+              <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>Fare</Text>
             </View>
           </View>
         </View>
@@ -335,182 +248,168 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  map: {
+  mapWebView: {
+    flex: 1,
     width: Dimensions.get("window").width,
     height: Dimensions.get("window").height,
   },
-  markerContainer: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: "#FFFFFF",
+  overlayContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#4B5563",
+    padding: 30,
+    zIndex: 10,
+  },
+  overlayText: {
+    marginTop: 14,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorSub: {
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 18,
+    marginBottom: 24,
+    paddingHorizontal: 10,
+  },
+  retryButton: {
+    backgroundColor: "#007aff",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    shadowColor: "#007aff",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
     elevation: 2,
   },
-  markerInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  startMarker: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-    backgroundColor: "#10B981",
-    elevation: 4,
-  },
-  endMarker: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-    backgroundColor: "#EF4444",
-    elevation: 4,
-  },
-  interchangeMarker: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#111827",
-    backgroundColor: "#FFFFFF",
-  },
-  calloutContainer: {
-    width: 180,
-    borderRadius: 12,
-  },
-  calloutCard: {
-    backgroundColor: "#FFFFFF",
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    alignItems: "center",
-  },
-  calloutTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1F2937",
-    textAlign: "center",
-  },
-  calloutSubtitle: {
-    fontSize: 10,
-    color: "#6B7280",
-    marginTop: 2,
-    textAlign: "center",
-  },
-  calloutActionRow: {
-    flexDirection: "row",
-    marginTop: 10,
-    gap: 6,
-  },
-  calloutBtn: {
-    paddingVertical: 5,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  calloutStartBtn: {
-    backgroundColor: "#10B981",
-  },
-  calloutEndBtn: {
-    backgroundColor: "#EF4444",
-  },
-  calloutBtnText: {
+  retryButtonText: {
     color: "#FFFFFF",
-    fontSize: 9,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "600",
   },
   floatingControls: {
     position: "absolute",
     right: 16,
-    top: Platform.OS === "ios" ? 60 : 40,
+    top: Platform.OS === "ios" ? 64 : 48,
     gap: 12,
+    zIndex: 5,
   },
-  roundButton: {
-    backgroundColor: "#FFFFFF",
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+  controlGroup: {
+    borderRadius: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    overflow: "hidden",
+  },
+  groupButton: {
+    width: 44,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 3,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    width: "70%",
+    alignSelf: "center",
+  },
+  roundButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   bottomCard: {
     position: "absolute",
     bottom: Platform.OS === "ios" ? 100 : 80,
     left: 16,
     right: 16,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 16,
-    elevation: 5,
+    elevation: 8,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    zIndex: 5,
   },
   bottomCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-    paddingBottom: 10,
-    marginBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(142,142,147,0.2)",
+    paddingBottom: 12,
+    marginBottom: 14,
   },
   bottomCardRoute: {
     flex: 1,
     paddingRight: 10,
   },
   bottomRouteText: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#111827",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.3,
   },
   bottomRouteMeta: {
     fontSize: 11,
-    color: "#6B7280",
     marginTop: 2,
   },
   closeRouteBtn: {
-    backgroundColor: "#208AEF",
+    backgroundColor: "#007aff",
     paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    borderRadius: 14,
   },
   editBtnText: {
     color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   bottomStatsGrid: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
+    paddingHorizontal: 8,
   },
   bottomStatItem: {
     alignItems: "center",
+    flex: 1,
+  },
+  statIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 6,
   },
   bottomStatVal: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#1F2937",
-    marginTop: 2,
   },
   bottomStatLbl: {
-    fontSize: 10,
-    color: "#9CA3AF",
+    fontSize: 9,
+    fontWeight: "600",
     textTransform: "uppercase",
+    letterSpacing: 0.3,
+    marginTop: 1,
   },
 });
