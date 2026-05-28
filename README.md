@@ -105,5 +105,46 @@ npx wrangler deploy
 
 ---
 
+## 📱 Mobile Application (React Native / Expo Router)
+The repository contains a fully-fledged native mobile application located in the `mobile/` directory. Built using Expo Router and React Native, it shares the offline routing engine logic with the Web app, but is optimized for handheld devices with a native map view, custom tab navigation, and gesture-driven panels.
+
+### Mobile Features:
+- **Native Routing Map**: Utilizes native maps (`react-native-maps`) to draw high-contrast routes with black border backgrounds under colored foreground lines.
+- **Auto-Zoom Camera**: Intelligently frames calculated routes on the map.
+- **Tabbed Journey Planner**: A gorgeous panel showing:
+  - **Timeline**: Color-coded metro route transitions, platform numbers, transfers, and station list.
+  - **Fare Breakdown**: Compares Single Journey Tokens vs. Metro Smart Cards with exact savings percentages.
+  - **Exit Recommender**: Suggests optimal exit gates based on accessibility and lighting features.
+  - **Facility Status & Outages**: Real-time status table of lifts/escalators and custom crowd reporting forms.
+- **Station Explorer Directory**: Shows complete list of station exits with dedicated accessibility icon tags (Escalators, Elevators, Wheelchair Ramps, Tactile Paths).
+
+### Building the Mobile App Locally:
+1. Navigate to the mobile directory:
+   ```bash
+   cd mobile
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the development server:
+   ```bash
+   npx expo start
+   ```
+4. Build the Production Release APK (Android) locally:
+   ```bash
+   cd android && chmod +x gradlew && ./gradlew assembleRelease
+   ```
+   The compiled APK will be generated at `mobile/android/app/build/outputs/apk/release/app-release.apk`.
+
+---
+
 ## 🔐 Zero-Key Notice
-This application requires **no premium API keys** (like Mapbox or Google Maps). Leaflet loads map tiles from CartoDB's public servers, making it completely free, open-source, and unrestricted.
+This application requires **no premium API keys** (like Mapbox or Google Maps). Leaflet / native maps load tiles and routing data from free public servers and local offline configurations, making it lightweight and unrestricted.
+
+---
+
+## 🛡️ License & Copyright
+Copyright © 2026 Metroway (Mandeep). All rights reserved.
+
+This project is proprietary and confidential. Unauthorized copying, distribution, modification, reverse engineering, publishing on public marketplaces/app stores, or commercial usage of this source code and compiled binaries is strictly prohibited.
