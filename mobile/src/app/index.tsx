@@ -487,8 +487,8 @@ export default function PlannerScreen() {
               {/* Connecting Line Visual */}
               <View style={styles.connectorContainer}>
                 <View style={[styles.connectorLine, { backgroundColor: '#007aff' }]} />
-                <TouchableOpacity onPress={handleSwap} style={[styles.swapButton, { backgroundColor: activeTheme === 'dark' ? '#2c2c2e' : '#EFF6FF', borderColor: colors.border }]}>
-                  <Ionicons name="swap-vertical" size={20} color="#007aff" />
+                <TouchableOpacity hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} onPress={handleSwap} style={[styles.swapButton, { backgroundColor: activeTheme === 'dark' ? '#2c2c2e' : '#EFF6FF', borderColor: colors.border }]}>
+                  <Ionicons name="swap-vertical" size={24} color="#007aff" />
                 </TouchableOpacity>
               </View>
 
@@ -1848,9 +1848,9 @@ const styles = StyleSheet.create({
     marginLeft: "auto",
     marginRight: 12,
     backgroundColor: "#EFF6FF",
-    borderRadius: 20,
-    width: 36,
-    height: 36,
+    borderRadius: 24,
+    width: 44,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
@@ -2070,6 +2070,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 12,
     marginLeft: 6,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   viewMapBtn: {
     flexDirection: "row",
@@ -2234,14 +2237,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   stationNodeName: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#374151",
-    fontWeight: "600",
+    fontWeight: "700",
   },
   boldStation: {
-    fontSize: 16,
+    fontSize: 19,
     color: "#111827",
-    fontWeight: "800",
+    fontWeight: "900",
   },
   endpointBadge: {
     marginLeft: 8,
@@ -2777,6 +2780,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     marginVertical: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   collapsedRunText: {
     fontSize: 12,

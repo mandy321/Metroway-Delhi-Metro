@@ -25,7 +25,8 @@ export default function RouteDetails() {
   const { 
     stations, 
     edges, // Query full network connections
-    activeRoute, 
+    activeRoute,
+    isCalculating,
     infrastructureStatus, 
     accessibilityOnly, 
     useSmartCard, 
@@ -53,6 +54,21 @@ export default function RouteDetails() {
       setReportingStationId("");
     }, 2000);
   };
+
+  if (isCalculating) {
+    return (
+      <div className="glass-panel flex-1 p-8 rounded-2xl flex flex-col items-center justify-center text-center border border-white/10 shadow-xl min-h-[300px] animate-pulse">
+        <div className="bg-slate-900/50 p-4 rounded-full border border-white/5 mb-4 text-slate-600">
+          <Navigation className="h-8 w-8" />
+        </div>
+        <div className="h-6 w-48 bg-slate-800 rounded mb-2"></div>
+        <div className="h-4 w-64 bg-slate-800/50 rounded mt-1"></div>
+        <p className="text-sm text-slate-500 max-w-sm mt-4">
+          Computing optimal route...
+        </p>
+      </div>
+    );
+  }
 
   if (!activeRoute) {
     return (

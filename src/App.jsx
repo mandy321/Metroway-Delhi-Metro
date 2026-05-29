@@ -75,7 +75,7 @@ export default function App() {
       <Navbar />
 
       {/* Desktop Dashboard Layout (hidden on mobile, lg:flex) */}
-      <main className="hidden lg:flex flex-1 w-full max-w-[1400px] mx-auto p-6 gap-6 z-10">
+      <main className="hidden lg:flex flex-1 w-full max-w-[1400px] mx-auto p-6 lg:p-8 xl:p-12 gap-8 z-10">
         
         {/* Column 1: Journey Planner Inputs & Station directory search */}
         <div className="flex flex-col space-y-6 w-96 shrink-0">

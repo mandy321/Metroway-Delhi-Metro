@@ -36,7 +36,7 @@ export default function Navbar() {
 
         {/* Offline / Online Badge */}
         {isOffline ? (
-          <div className="flex items-center space-x-1.5 bg-rose-500/20 border border-rose-500/30 text-rose-300 py-1.5 px-3 rounded-full text-xs font-medium animate-pulse">
+          <div className="flex items-center space-x-1.5 bg-rose-500/30 border border-rose-500/40 text-rose-200 py-1.5 px-4 rounded-full text-xs font-bold shadow-[0_0_10px_rgba(244,63,94,0.4)] animate-pulse">
             <WifiOff className="h-3.5 w-3.5" />
             <span>Offline (Cached)</span>
           </div>

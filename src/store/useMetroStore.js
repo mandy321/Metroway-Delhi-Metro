@@ -20,6 +20,7 @@ export const useMetroStore = create(
       communityReports: {},
       useSmartCard: false,
       activeRoute: null,
+      isCalculating: false,
       searchHistory: [], 
       isOffline: !navigator.onLine,
       accessibilityOnly: false,
@@ -130,31 +131,39 @@ export const useMetroStore = create(
         const { stations, edges, startStationId, endStationId, mode, timeOfDay, getStationCrowd } = get();
         if (!startStationId || !endStationId || !stations || !edges) return;
 
-        const routeResult = calculateRoute(stations, edges, startStationId, endStationId, mode, timeOfDay, getStationCrowd);
-        if (routeResult) {
-          const startName = stations.find(s => s.id === startStationId)?.name || "";
-          const endName = stations.find(s => s.id === endStationId)?.name || "";
-          
-          const newHistoryItem = {
-            id: `${startStationId}-${endStationId}-${mode}-${timeOfDay}-${Date.now()}`,
-            startStationId,
-            endStationId,
-            startName,
-            endName,
-            mode,
-            timeOfDay,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          };
+        set({ isCalculating: true });
 
-          const filteredHistory = get().searchHistory.filter(
-            item => !(item.startStationId === startStationId && item.endStationId === endStationId && item.mode === mode && item.timeOfDay === timeOfDay)
-          );
+        // Simulate a tiny delay for UX so the skeleton loader shows up for complex routes
+        setTimeout(() => {
+          const routeResult = calculateRoute(stations, edges, startStationId, endStationId, mode, timeOfDay, getStationCrowd);
+          if (routeResult) {
+            const startName = stations.find(s => s.id === startStationId)?.name || "";
+            const endName = stations.find(s => s.id === endStationId)?.name || "";
 
-          set({
-            activeRoute: routeResult,
-            searchHistory: [newHistoryItem, ...filteredHistory].slice(0, 10)
-          });
-        }
+            const newHistoryItem = {
+              id: `${startStationId}-${endStationId}-${mode}-${timeOfDay}-${Date.now()}`,
+              startStationId,
+              endStationId,
+              startName,
+              endName,
+              mode,
+              timeOfDay,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+
+            const filteredHistory = get().searchHistory.filter(
+              item => !(item.startStationId === startStationId && item.endStationId === endStationId && item.mode === mode && item.timeOfDay === timeOfDay)
+            );
+
+            set({
+              activeRoute: routeResult,
+              searchHistory: [newHistoryItem, ...filteredHistory].slice(0, 10),
+              isCalculating: false
+            });
+          } else {
+            set({ isCalculating: false });
+          }
+        }, 400); // 400ms loading skeleton delay
       },
 
       clearHistory: () => set({ searchHistory: [] }),
