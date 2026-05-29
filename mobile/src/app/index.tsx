@@ -87,6 +87,16 @@ export default function PlannerScreen() {
   const tabProgress = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Sync current hour to the store on mount so that crowd levels and peak status match the actual system time
+    const currentHour = new Date().getHours();
+    store.setSelectedHour(currentHour);
+    // Recalculate route to apply new peak/hour adjustments
+    if (store.startStationId && store.endStationId) {
+      store.calculateActiveRoute();
+    }
+  }, []);
+
+  useEffect(() => {
     const tabIndex = ["timeline", "fare", "exits", "status"].indexOf(activeTab);
     Animated.spring(tabProgress, {
       toValue: tabIndex,
@@ -441,16 +451,18 @@ export default function PlannerScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: activeTheme === "dark" ? "#1c1c1e" : "#007aff" }]} edges={["top", "left", "right"]}>
       <StatusBar barStyle="light-content" backgroundColor={activeTheme === "dark" ? "#1c1c1e" : "#007aff"} />
 
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: activeTheme === "dark" ? "#1c1c1e" : "#007aff" }]}>
-        <View>
-          <Text style={styles.headerTitle}>Metroway</Text>
-          <Text style={styles.headerSubtitle}>Delhi Metro Companion</Text>
+      {/* Header (Only show when editing/searching) */}
+      {(isEditingRoute || !store.activeRoute) && (
+        <View style={[styles.header, { backgroundColor: activeTheme === "dark" ? "#1c1c1e" : "#007aff" }]}>
+          <View>
+            <Text style={styles.headerTitle}>Metroway</Text>
+            <Text style={styles.headerSubtitle}>Delhi Metro Companion</Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <Ionicons name="subway-outline" size={26} color="#FFFFFF" />
+          </View>
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-          <Ionicons name="subway-outline" size={26} color="#FFFFFF" />
-        </View>
-      </View>
+      )}
 
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         {isEditingRoute || !store.activeRoute ? (
@@ -798,11 +810,6 @@ export default function PlannerScreen() {
                     style={styles.tabHeaderButton}
                     onPress={() => handleTabChange(tab.id)}
                   >
-                    <Ionicons 
-                      name={tab.icon as any} 
-                      size={15} 
-                      color={isActive ? (activeTheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary} 
-                    />
                     <Text style={[
                       styles.tabHeaderButtonText, 
                       { 
@@ -1760,7 +1767,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#208AEF",
     paddingHorizontal: 16,
-    paddingVertical: 18,
+    paddingVertical: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -1777,13 +1784,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: "#FFFFFF",
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
     letterSpacing: 0.5,
   },
   headerSubtitle: {
     color: "#E0E1E6",
-    fontSize: 12,
+    fontSize: 11,
   },
   scrollContainer: {
     flex: 1,
@@ -2044,7 +2051,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#208AEF",
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    padding: 16,
+    padding: 12,
     elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -2055,7 +2062,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 8,
   },
   backToEditBtn: {
     flexDirection: "row",
@@ -2093,7 +2100,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
-    marginBottom: 20,
+    marginBottom: 8,
   },
   summaryStationName: {
     color: "#FFFFFF",
@@ -2107,7 +2114,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     backgroundColor: "rgba(255, 255, 255, 0.12)",
     borderRadius: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 6,
   },
   gridStat: {
@@ -2136,7 +2143,7 @@ const styles = StyleSheet.create({
   journeyMetricsGrid: {
     flexDirection: "row",
     gap: 8,
-    marginBottom: 20,
+    marginBottom: 12,
   },
   metricCard: {
     flex: 1,
@@ -2963,7 +2970,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     position: "relative",
     marginHorizontal: 16,
-    marginVertical: 14,
+    marginVertical: 8,
     borderRadius: 14,
     padding: 3,
     shadowOffset: { width: 0, height: 4 },

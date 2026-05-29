@@ -5,9 +5,7 @@ import { Colors } from '@/constants/theme';
 
 export default function AppTabs() {
   const store = useMetroStore();
-  const scheme = useColorScheme();
-  const systemTheme = scheme === 'unspecified' ? 'light' : scheme;
-  const activeTheme = store.themeMode === 'system' ? systemTheme : store.themeMode;
+  const activeTheme = 'dark';
   const colors = Colors[activeTheme];
 
   return (

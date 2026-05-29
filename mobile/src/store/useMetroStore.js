@@ -15,7 +15,10 @@ export const useMetroStore = create(
       startStationId: "",
       endStationId: "",
       mode: "Balanced",
-      timeOfDay: "Off-Peak", 
+      timeOfDay: (() => {
+        const currentHour = new Date().getHours();
+        return (currentHour >= 8 && currentHour <= 10) || (currentHour >= 17 && currentHour <= 19) ? "Peak" : "Off-Peak";
+      })(),
       selectedHour: new Date().getHours(),
       activeEvent: "None",
       communityReports: {},

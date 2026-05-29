@@ -110,12 +110,28 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
     }
     
     .pin-start {
-      background: ' + (isDark ? '#30D158' : '#34C759') + ' !important; /* Apple Green */
+      background: ${isDark ? '#30D158' : '#34C759'} !important; /* Apple Green */
     }
     
     .pin-end {
-      background: ' + (isDark ? '#FF453A' : '#FF3B30') + ' !important; /* Apple Red */
+      background: ${isDark ? '#FF453A' : '#FF3B30'} !important; /* Apple Red */
     }
+
+    .pin-transfer {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3.5px solid #a855f7; /* Purple transfer accent */
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    ${isDark ? `
+    .pin-transfer {
+      background: #1e1e1e;
+      border-color: #a855f7;
+    }
+    ` : ''}
 
     .pulse-ring {
       position: absolute;
@@ -400,6 +416,15 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         });
       }
       var hasActiveRoute = activeStationIds.size > 0;
+
+      var transferStationIds = new Set();
+      if (activeRoute && activeRoute.edges) {
+        activeRoute.edges.forEach(function(e) {
+          if (e.isTransfer) {
+            transferStationIds.add(e.source);
+          }
+        });
+      }
       
       stations.forEach(function(station) {
         var coords = [station.coordinates[0], station.coordinates[1]];
@@ -418,6 +443,9 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         } else if (isEnd) {
           iconHtml = '<div class="pin-selected pin-end"><div class="pulse-ring"></div></div>';
           size = [36, 36];
+        } else if (transferStationIds.has(station.id)) {
+          iconHtml = '<div class="pin-transfer"></div>';
+          size = [20, 20];
         } else if (isInterchange) {
           iconHtml = '<div class="station-dot-interchange"></div>';
           size = [20, 20];
@@ -439,15 +467,15 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           '<div style="font-weight: 700; font-size: 14px; margin-bottom: 2px;">' + station.name + '</div>' +
           '<div style="color: #8e8e93; font-size: 11px; margin-bottom: 8px;">' + station.lines.join(' &bull; ') + ' Line' + (station.lines.length > 1 ? 's' : '') + '</div>' +
           '<div style="display: flex; gap: 8px;">' +
-            '<button onclick="setStationAsStart(\\'' + station.id + '\\')" style="flex: 1; border: none; background: ' + (isDark ? '#30D158' : '#34C759') + '; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 11px; cursor: pointer;">From Here</button>' +
-            '<button onclick="setStationAsEnd(\\'' + station.id + '\\')" style="flex: 1; border: none; background: ' + (isDark ? '#FF453A' : '#FF3B30') + '; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 11px; cursor: pointer;">To Here</button>' +
+            '<button onclick="setStationAsStart(\\\'' + station.id + '\\\')" style="flex: 1; border: none; background: ${isDark ? '#30D158' : '#34C759'}; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 11px; cursor: pointer;">From Here</button>' +
+            '<button onclick="setStationAsEnd(\\\'' + station.id + '\\\')" style="flex: 1; border: none; background: ${isDark ? '#FF453A' : '#FF3B30'}; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 11px; cursor: pointer;">To Here</button>' +
           '</div>' +
         '</div>';
 
         var marker = L.marker(coords, {
           icon: customIcon,
           opacity: opacity,
-          zIndexOffset: (isStart || isEnd) ? 1000 : isOnActiveRoute ? 600 : isInterchange ? 500 : 0
+          zIndexOffset: (isStart || isEnd) ? 1000 : transferStationIds.has(station.id) ? 800 : isOnActiveRoute ? 600 : isInterchange ? 500 : 0
         })
         .bindPopup(popupHtml, {
           closeButton: false,
