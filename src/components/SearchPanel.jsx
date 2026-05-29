@@ -135,11 +135,11 @@ export default function SearchPanel({ onSelectEnd }) {
       case "Pink": return "bg-pink-500/20 text-pink-300 border-pink-500/30";
       case "Magenta": return "bg-fuchsia-600/20 text-fuchsia-300 border-fuchsia-600/30";
       case "Orange": return "bg-orange-500/20 text-orange-400 border-orange-500/30";
-      case "Green": return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+      case "Green": return "bg-emerald-400/25 text-emerald-300 border-emerald-400/40";
       case "Grey": return "bg-slate-500/20 text-slate-300 border-slate-500/30";
       case "Rapid": return "bg-rose-900/30 text-rose-300 border-rose-900/40";
       case "Aqua": return "bg-cyan-500/20 text-cyan-300 border-cyan-500/30";
-      case "RRTS": return "bg-emerald-950/30 text-emerald-400 border-emerald-900/40";
+      case "RRTS": return "bg-emerald-900/30 text-emerald-300 border-emerald-800/40";
       default: return "bg-slate-700/20 text-slate-300 border-slate-600/30";
     }
   };
