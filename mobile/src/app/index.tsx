@@ -2231,7 +2231,7 @@ const styles = StyleSheet.create({
   },
   timelineContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 400,
   },
   journeyMetricsGrid: {
     flexDirection: "row",
