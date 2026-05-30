@@ -1,8 +1,8 @@
 import { LEAFLET_CSS, LEAFLET_JS } from "./leafletAssets";
 
-export function getMapHtml(stations: any[], edges: any[], initialRoute: any, startStationId: string, endStationId: string, theme: 'light' | 'dark' = 'dark') {
-  const isDark = true;
-  const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+export function getMapHtml(stations: any[], edges: any[], initialRoute: any, startStationId: string, endStationId: string, theme: 'light' | 'dark' = 'dark', realtimeArrivals: Record<string, any> = {}) {
+  const isDark = theme === 'dark';
+  const tileUrl = isDark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
   const LINE_COLORS: Record<string, string> = {
     Red: "#E21D24",
@@ -42,6 +42,9 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
       height: 100%;
       width: 100vw;
     }
+    .leaflet-container {
+      background: ${isDark ? '#121212' : '#f4f4f7'} !important;
+    }
     /* Hide Leaflet default controls for clean Apple-look */
     .leaflet-control-zoom {
       display: none !important;
@@ -70,8 +73,8 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
     }
     
     .station-dot {
-      width: 10px;
-      height: 10px;
+      width: 100%;
+      height: 100%;
       border-radius: 50%;
       background: #ffffff;
       border: 2px solid #555555;
@@ -80,8 +83,8 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
     }
 
     .station-dot-interchange {
-      width: 13px;
-      height: 13px;
+      width: 100%;
+      height: 100%;
       border-radius: 50%;
       background: #ffffff;
       border: 3px solid #111111;
@@ -101,8 +104,8 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
 
     /* Selection markers */
     .pin-selected {
-      width: 16px;
-      height: 16px;
+      width: 100%;
+      height: 100%;
       border-radius: 50%;
       border: 3.5px solid #ffffff;
       box-shadow: 0 0 0 2.5px rgba(0,0,0,0.2), 0 3px 8px rgba(0,0,0,0.3);
@@ -118,8 +121,8 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
     }
 
     .pin-transfer {
-      width: 14px;
-      height: 14px;
+      width: 100%;
+      height: 100%;
       border-radius: 50%;
       background: #ffffff;
       border: 3.5px solid #a855f7; /* Purple transfer accent */
@@ -213,6 +216,7 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
     var startStationId = ${JSON.stringify(startStationId || "")};
     var endStationId = ${JSON.stringify(endStationId || "")};
     var activeRoute = ${JSON.stringify(initialRoute || null)};
+    var realtimeArrivals = ${JSON.stringify(realtimeArrivals || {})};
 
     // Map instances & layers definitions
     var map;
@@ -258,7 +262,6 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         activeRouteGroup = L.layerGroup().addTo(map);
         stationsGroup = L.layerGroup().addTo(map);
 
-        // Set up location handlers
         map.on('locationfound', function(e) {
           if (userLocationMarker) {
             userLocationMarker.setLatLng(e.latlng);
@@ -282,6 +285,12 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
               weight: 1
             }).addTo(map);
           }
+
+          sendToReactNative({
+            type: 'USER_LOCATION',
+            latitude: e.latlng.lat,
+            longitude: e.latlng.lng
+          });
         });
 
         map.on('locationerror', function(e) {
@@ -295,6 +304,9 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         if (activeRoute) {
           drawActiveRoute();
         }
+
+        // Start locating immediately on launch
+        map.locate({ setView: false, maxZoom: 15, watch: true, enableHighAccuracy: true });
 
         // Force container dimensions recalculation to prevent grey/blank screen
         map.invalidateSize();
@@ -335,23 +347,40 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         var sourceCoords = [source.coordinates[0], source.coordinates[1]];
         var targetCoords = [target.coordinates[0], target.coordinates[1]];
 
-        var isDashed = edge.line === 'Orange' || edge.line === 'Airport';
-        var color = lineColors[edge.line] || '#888888';
+        var isSkywalk = edge.line === 'Skywalk';
+        var isDashed = edge.line === 'Orange' || edge.line === 'Airport' || isSkywalk;
+        var color = isSkywalk ? '#a855f7' : (lineColors[edge.line] || '#888888');
         var hasActiveRoute = activeEdges.size > 0;
         
         var key = edge.source + '-' + edge.target;
         var opacity = hasActiveRoute ? (activeEdges.has(key) ? 0.8 : 0.15) : 0.5;
-        var weight = 2.5;
+        var weight = isSkywalk ? 3.5 : 2.5;
+        var dashArray = isSkywalk ? '3, 6' : (isDashed ? '6, 5' : null);
 
         // Draw track
         L.polyline([sourceCoords, targetCoords], {
           color: color,
           weight: weight,
           opacity: opacity,
-          dashArray: isDashed ? '6, 5' : null,
+          dashArray: dashArray,
           lineCap: 'round',
           interactive: false
         }).addTo(edgesGroup);
+
+        // Add midpoint skywalk walking indicator
+        if (isSkywalk) {
+          var midLat = (sourceCoords[0] + targetCoords[0]) / 2;
+          var midLng = (sourceCoords[1] + targetCoords[1]) / 2;
+          var walkIcon = L.divIcon({
+            className: 'station-marker',
+            html: '<div style="background: ' + (isDark ? '#1e1e1e' : '#ffffff') + '; border: 1.5px solid #a855f7; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.3); font-size: 11px;">🚶</div>',
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+          });
+          L.marker([midLat, midLng], { icon: walkIcon, zIndexOffset: 900 })
+            .bindPopup('<div style="font-family: inherit; font-size: 11px; font-weight: 700; color: ' + (isDark ? '#ffffff' : '#000000') + '; text-align: center;">🚶 Skywalk Pathway<br/><span style="font-weight: 500; font-size: 10px; color: #8e8e93;">(' + edge.baseTime + ' min walk)</span></div>', { closeButton: false })
+            .addTo(edgesGroup);
+        }
       });
     }
 
@@ -438,16 +467,16 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         var size = [16, 16];
 
         if (isStart) {
-          iconHtml = '<div class="pin-selected pin-start"><div class="pulse-ring"></div></div>';
-          size = [36, 36];
+          iconHtml = '<div class="pin-selected pin-start"><div class="pulse-ring"></div><span style="color: white; font-size: 8px; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,0.6); line-height: 1;">START</span></div>';
+          size = [38, 38];
         } else if (isEnd) {
-          iconHtml = '<div class="pin-selected pin-end"><div class="pulse-ring"></div></div>';
-          size = [36, 36];
+          iconHtml = '<div class="pin-selected pin-end"><div class="pulse-ring"></div><span style="color: white; font-size: 9px; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,0.6); line-height: 1;">END</span></div>';
+          size = [38, 38];
         } else if (transferStationIds.has(station.id)) {
           iconHtml = '<div class="pin-transfer"></div>';
           size = [20, 20];
         } else if (isInterchange) {
-          iconHtml = '<div class="station-dot-interchange"></div>';
+          iconHtml = '<div class="station-dot-interchange" style="display: flex; align-items: center; justify-content: center;"><div style="width: 6px; height: 6px; border-radius: 50%; background: ' + (isDark ? '#ffffff' : '#111111') + ';"></div></div>';
           size = [20, 20];
         } else {
           var lineColor = lineColors[station.lines[0]] || '#888888';
@@ -462,13 +491,100 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           iconAnchor: [size[0] / 2, size[1] / 2]
         });
 
+        // Build line badges
+        var lineBadgesHtml = station.lines.map(function(line) {
+          var color = lineColors[line] || '#888888';
+          return '<span style="background: ' + color + '; color: white; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; display: inline-block; margin-right: 4px; margin-bottom: 4px;">' + line + '</span>';
+        }).join('');
+
+        // Interchange badge & details
+        var interchangeHeader = '';
+        var transferInfoHtml = '';
+        if (isInterchange) {
+          interchangeHeader = '<span style="background: ' + (isDark ? 'rgba(168, 85, 247, 0.2)' : '#F3E8FF') + '; color: ' + (isDark ? '#C084FC' : '#7E22CE') + '; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; display: inline-block; margin-left: 6px; border: 0.5px solid ' + (isDark ? 'rgba(168, 85, 247, 0.3)' : '#DDD6FE') + ';">Interchange</span>';
+
+          var transferInfoText = 'Standard interchange concourse walkway.';
+          if (station.id === "NS52" || station.id === "NS51") transferInfoText = '🚶 Sector 52-51 Pedestrian Pathway (300m, free e-rickshaws).';
+          else if (station.id === "DK" || station.id === "DDS") transferInfoText = '🚶 Covered Skywalk with Travelators (1.2 km).';
+          else if (station.id === "RG") transferInfoText = '🚶 Elevated Interchange Bridge Skywalk (400m).';
+          else if (station.id === "HK") transferInfoText = '🚶 Deep underground escalators (350m).';
+          else if (station.id === "RC") transferInfoText = '🚶 Central Concourse escalators & stairs (200m).';
+          else if (station.id === "KG") transferInfoText = '🚶 Multi-level escalator shafts & tunnel (300m).';
+
+          transferInfoHtml = '<div style="margin-bottom: 8px; padding: 6px; background: ' + (isDark ? 'rgba(139, 92, 246, 0.12)' : '#F5F3FF') + '; border: 0.5px solid ' + (isDark ? 'rgba(139, 92, 246, 0.3)' : '#DDD6FE') + '; border-radius: 6px; font-size: 10px; color: ' + (isDark ? '#A855F7' : '#6D28D9') + '; font-weight: 500; line-height: 1.3;">' + transferInfoText + '</div>';
+        }
+
+        // Accessibility Features parser
+        var hasElevator = false;
+        var hasEscalator = false;
+        var hasWheelchair = false;
+        if (station.exits) {
+          station.exits.forEach(function(exit) {
+            if (exit.accessibility) {
+              exit.accessibility.forEach(function(facility) {
+                var facLower = facility.toLowerCase();
+                if (facLower.indexOf('elevator') !== -1 || facLower.indexOf('lift') !== -1) hasElevator = true;
+                if (facLower.indexOf('escalator') !== -1) hasEscalator = true;
+                if (facLower.indexOf('wheelchair') !== -1 || facLower.indexOf('ramp') !== -1) hasWheelchair = true;
+              });
+            }
+          });
+        }
+        var facilitiesHtml = '';
+        if (hasElevator || hasEscalator || hasWheelchair) {
+          facilitiesHtml += '<div style="margin-bottom: 8px; font-size: 10px; color: ' + (isDark ? '#aaaaaa' : '#666666') + '; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">';
+          facilitiesHtml += '<span style="font-weight: 700;">Facilities:</span>';
+          if (hasElevator) facilitiesHtml += '<span style="background: ' + (isDark ? '#2c2c2e' : '#e5e5ea') + '; padding: 1px 4px; border-radius: 3px;">🛗 Lift</span>';
+          if (hasEscalator) facilitiesHtml += '<span style="background: ' + (isDark ? '#2c2c2e' : '#e5e5ea') + '; padding: 1px 4px; border-radius: 3px;">📶 Escalator</span>';
+          if (hasWheelchair) facilitiesHtml += '<span style="background: ' + (isDark ? '#2c2c2e' : '#e5e5ea') + '; padding: 1px 4px; border-radius: 3px;">♿ Ramp</span>';
+          facilitiesHtml += '</div>';
+        }
+
+        // Crowd Estimator
+        var crowdVal = station.baseCrowd || 5;
+        var crowdLabel = 'Low';
+        var crowdColor = '#34c759'; // Apple Green
+        if (crowdVal > 7) {
+          crowdLabel = 'Heavy Rush';
+          crowdColor = '#ff3b30'; // Apple Red
+        } else if (crowdVal > 4) {
+          crowdLabel = 'Moderate';
+          crowdColor = '#ff9500'; // Apple Orange
+        }
+        var crowdHtml = '<div style="margin-bottom: 6px; font-size: 10px; font-weight: 600; color: ' + crowdColor + '; display: flex; align-items: center; gap: 4px;">' +
+          '<span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ' + crowdColor + ';"></span>' + crowdLabel + ' Crowd</div>';
+
+        // Build arrivals info
+        var arrivalsList = realtimeArrivals[station.id] || [];
+        var arrivalsHtml = '';
+        if (arrivalsList.length > 0) {
+          arrivalsHtml += '<div style="margin-top: 6px; margin-bottom: 8px; padding: 6px; background: ' + (isDark ? 'rgba(0,122,255,0.12)' : '#F0F7FF') + '; border: 0.5px solid ' + (isDark ? 'rgba(0,122,255,0.3)' : '#BFDBFE') + '; border-radius: 6px; font-size: 10px;">';
+          arrivalsHtml += '<div style="font-weight: 700; color: ' + (isDark ? '#30D158' : '#0056B3') + '; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">⏱ Live Next Trains</div>';
+          arrivalsList.forEach(function(arr) {
+            arr.trains.forEach(function(t) {
+              arrivalsHtml += '<div style="display: flex; justify-content: space-between; margin-bottom: 2px; color: ' + (isDark ? '#e5e5ea' : '#1f2937') + ';">' +
+                '<span>' + t.destination + '</span>' +
+                '<span style="font-weight: 700;">' + t.min + ' min</span>' +
+                '</div>';
+            });
+          });
+          arrivalsHtml += '</div>';
+        }
+
         // Popup HTML with Apple styling
-        var popupHtml = '<div style="font-family: inherit;">' +
-          '<div style="font-weight: 700; font-size: 14px; margin-bottom: 2px;">' + station.name + '</div>' +
-          '<div style="color: #8e8e93; font-size: 11px; margin-bottom: 8px;">' + station.lines.join(' &bull; ') + ' Line' + (station.lines.length > 1 ? 's' : '') + '</div>' +
+        var popupHtml = '<div style="font-family: inherit; min-width: 180px;">' +
+          '<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 4px;">' +
+            '<div style="font-weight: 700; font-size: 14px; color: ' + (isDark ? '#ffffff' : '#111827') + ';">' + station.name + '</div>' +
+            interchangeHeader +
+          '</div>' +
+          '<div style="margin-bottom: 6px;">' + lineBadgesHtml + '</div>' +
+          crowdHtml +
+          facilitiesHtml +
+          arrivalsHtml +
+          transferInfoHtml +
           '<div style="display: flex; gap: 8px;">' +
-            '<button onclick="setStationAsStart(\\\'' + station.id + '\\\')" style="flex: 1; border: none; background: ${isDark ? '#30D158' : '#34C759'}; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 11px; cursor: pointer;">From Here</button>' +
-            '<button onclick="setStationAsEnd(\\\'' + station.id + '\\\')" style="flex: 1; border: none; background: ${isDark ? '#FF453A' : '#FF3B30'}; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 11px; cursor: pointer;">To Here</button>' +
+            '<button onclick="setStationAsStart(\\\'' + station.id + '\\\')" style="flex: 1; border: none; background: ' + (isDark ? '#30D158' : '#34C759') + '; color: white; padding: 7px 10px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">From Here</button>' +
+            '<button onclick="setStationAsEnd(\\\'' + station.id + '\\\')" style="flex: 1; border: none; background: ' + (isDark ? '#FF453A' : '#FF3B30') + '; color: white; padding: 7px 10px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">To Here</button>' +
           '</div>' +
         '</div>';
 
@@ -515,13 +631,16 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
     }
 
     // Listen to messages from React Native
-    window.addEventListener('message', function(event) {
-      var message;
-      try {
-        message = JSON.parse(event.data);
-      } catch (e) {
-        return;
+    function handleMessage(event) {
+      var message = event.data;
+      if (typeof message === 'string') {
+        try {
+          message = JSON.parse(message);
+        } catch (e) {
+          return;
+        }
       }
+      if (!message || typeof message !== 'object') return;
 
       if (message.type === 'UPDATE_ROUTE') {
         startStationId = message.startStationId;
@@ -537,6 +656,8 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         map.zoomIn();
       } else if (message.type === 'ZOOM_OUT') {
         map.zoomOut();
+      } else if (message.type === 'LOCATE_USER') {
+        map.locate({ setView: true, maxZoom: 15 });
       } else if (message.type === 'UPDATE_USER_LOCATION') {
         var lat = message.latitude;
         var lng = message.longitude;
@@ -557,7 +678,10 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           map.setView([lat, lng], 14, { animate: true });
         }
       }
-    });
+    }
+
+    window.addEventListener('message', handleMessage);
+    document.addEventListener('message', handleMessage);
 
     // Start Initialization
     initMap();

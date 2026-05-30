@@ -9,6 +9,8 @@ import {
   Platform,
   ActivityIndicator,
   useColorScheme,
+  Linking,
+  PermissionsAndroid,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
@@ -65,19 +67,76 @@ const DELHI_CENTER = {
 export default function MapScreen() {
   const router = useRouter();
   const store = useMetroStore();
-  const activeTheme = "dark";
+  const scheme = useColorScheme() || 'light';
+  const systemTheme = scheme === 'unspecified' ? 'light' : scheme;
+  const activeTheme = store.themeMode === 'system' ? systemTheme : store.themeMode;
   const colors = Colors[activeTheme];
   
   const webViewRef = useRef<WebView | null>(null);
   
+  // Geolocation & GPS tracking state
+  const [userLocation, setUserLocation] = useState<{ latitude: number, longitude: number } | null>(null);
+
+  // Helper to calculate distance in meters using simple Euclidean/spherical projection
+  const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371e3; // Earth radius in meters
+    const phi1 = lat1 * Math.PI / 180;
+    const phi2 = lat2 * Math.PI / 180;
+    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+              Math.cos(phi1) * Math.cos(phi2) *
+              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // distance in meters
+  };
+
+  // Find nearest station globally (if not on-train/no active route)
+  const nearestStationInfo = React.useMemo(() => {
+    if (!userLocation) return null;
+    let minDistance = Infinity;
+    let nearest: any = null;
+    store.stations.forEach(station => {
+      if (station.coordinates && station.coordinates.length === 2) {
+        const dist = getDistance(userLocation.latitude, userLocation.longitude, station.coordinates[0], station.coordinates[1]);
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearest = station;
+        }
+      }
+    });
+    return nearest ? { station: nearest, distance: Math.round(minDistance) } : null;
+  }, [userLocation, store.stations]);
+
+  // Find nearest station along active route (if riding)
+  const nearestActiveRouteStation = React.useMemo(() => {
+    if (!userLocation || !store.activeRoute || !store.activeRoute.path) return null;
+    let minDistance = Infinity;
+    let nearest: any = null;
+    let index = -1;
+    store.activeRoute.path.forEach((station, idx) => {
+      if (station.coordinates && station.coordinates.length === 2) {
+        const dist = getDistance(userLocation.latitude, userLocation.longitude, station.coordinates[0], station.coordinates[1]);
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearest = station;
+          index = idx;
+        }
+      }
+    });
+    return nearest ? { station: nearest, distance: Math.round(minDistance), index } : null;
+  }, [userLocation, store.activeRoute]);
+
   // Lifecycle & Loading State
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState(false);
   const [mapVersion, setMapVersion] = useState(0); // Used to force reload/retry
 
   const mapHtmlSource = React.useMemo(() => {
-    return getMapHtml(store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme);
-  }, [store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme, mapVersion]);
+    return getMapHtml(store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme, store.realtimeArrivals);
+  }, [store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme, store.realtimeArrivals, mapVersion]);
 
   const mapDataUri = React.useMemo(() => {
     try {
@@ -88,6 +147,36 @@ export default function MapScreen() {
       return null;
     }
   }, [mapHtmlSource]);
+
+  // Request Location Permissions at Runtime for Android
+  useEffect(() => {
+    const requestLocationPermission = async () => {
+      if (Platform.OS === "android") {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            {
+              title: "Location Permission",
+              message: "Metroway needs access to your location to show where you are on the map and find the nearest stations.",
+              buttonNeutral: "Ask Me Later",
+              buttonNegative: "Cancel",
+              buttonPositive: "OK",
+            }
+          );
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            console.log("GPS Location permission granted");
+            webViewRef.current?.postMessage(JSON.stringify({ type: "LOCATE_USER" }));
+          } else {
+            console.log("GPS Location permission denied");
+          }
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+    };
+    requestLocationPermission();
+    store.fetchRealtimeTransitData();
+  }, []);
 
   // Keep route synced with WebView when activeRoute, startStation, or endStation changes
   useEffect(() => {
@@ -111,6 +200,12 @@ export default function MapScreen() {
         case "MAP_READY":
           setMapLoading(false);
           setMapError(false);
+          break;
+        case "USER_LOCATION":
+          setUserLocation({
+            latitude: data.latitude,
+            longitude: data.longitude
+          });
           break;
         case "SET_START":
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -161,6 +256,13 @@ export default function MapScreen() {
 
   const getStationName = (id: string) => {
     return store.stations.find((s) => s.id === id)?.name || "";
+  };
+
+  const handleGetDirections = (station: any) => {
+    if (!station || !station.coordinates) return;
+    const originPart = userLocation ? `&origin=${userLocation.latitude},${userLocation.longitude}` : "";
+    const url = `https://www.google.com/maps/dir/?api=1${originPart}&destination=${station.coordinates[0]},${station.coordinates[1]}&travelmode=walking`;
+    Linking.openURL(url).catch(err => console.error("Couldn't open Google Maps", err));
   };
 
   return (
@@ -217,9 +319,41 @@ export default function MapScreen() {
         </View>
       )}
 
+      {/* Active In-Metro Tracker HUD (overlay at the top) */}
+      {!mapLoading && !mapError && store.activeRoute && nearestActiveRouteStation && (
+        <View style={[styles.topLiveTracker, { backgroundColor: colors.backgroundElement }]}>
+          <View style={styles.trackerHeader}>
+            <View style={[styles.liveIndicatorRing, { backgroundColor: 'rgba(52,199,89,0.2)' }]}>
+              <View style={[styles.liveIndicatorDot, { backgroundColor: '#34c759' }]} />
+            </View>
+            <Text style={[styles.trackerHeaderText, { color: colors.textSecondary }]}>IN-TRANSIT LIVE TRACKER</Text>
+          </View>
+          <View style={styles.trackerContent}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.trackerStationName, { color: colors.text }]} numberOfLines={1}>
+                📍 Near {nearestActiveRouteStation.station.name}
+              </Text>
+              {nearestActiveRouteStation.index < store.activeRoute.path.length - 1 ? (
+                <Text style={[styles.trackerNextStation, { color: colors.textSecondary }]} numberOfLines={1}>
+                  Next stop: {store.activeRoute.path[nearestActiveRouteStation.index + 1].name}
+                </Text>
+              ) : (
+                <Text style={[styles.trackerNextStation, { color: '#34c759' }]}>
+                  Arriving at Destination!
+                </Text>
+              )}
+            </View>
+            <Ionicons name="subway-outline" size={24} color="#007aff" />
+          </View>
+        </View>
+      )}
+
       {/* Floating Apple-Style Control Stack */}
       {!mapLoading && !mapError && (
-        <View style={styles.floatingControls}>
+        <View style={[
+          styles.floatingControls,
+          store.activeRoute && nearestActiveRouteStation && { top: Platform.OS === "ios" ? 160 : 140 }
+        ]}>
           {/* Zoom Stack */}
           <View style={[styles.controlGroup, { backgroundColor: colors.backgroundElement }]}>
             <TouchableOpacity style={styles.groupButton} onPress={handleZoomIn}>
@@ -238,6 +372,31 @@ export default function MapScreen() {
           >
             <Ionicons name="navigate-outline" size={22} color={colors.text} />
           </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Nearest Station Banner (when no route active) */}
+      {!mapLoading && !mapError && !store.activeRoute && nearestStationInfo && (
+        <View style={[styles.bottomCard, { backgroundColor: colors.backgroundElement }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <Text style={[styles.bottomRouteText, { color: colors.text }]} numberOfLines={1}>
+                📍 Nearest Station
+              </Text>
+              <Text style={[styles.bottomRouteMeta, { color: colors.textSecondary }]}>
+                {nearestStationInfo.station.name} • {nearestStationInfo.distance >= 1000 ? `${(nearestStationInfo.distance/1000).toFixed(1)} km` : `${nearestStationInfo.distance}m`} away
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.closeRouteBtn}
+              onPress={() => handleGetDirections(nearestStationInfo.station)}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="navigate" size={14} color="#FFFFFF" />
+                <Text style={styles.editBtnText}>Navigate</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -462,5 +621,57 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.3,
     marginTop: 1,
+  },
+  topLiveTracker: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 54 : 36,
+    left: 16,
+    right: 16,
+    borderRadius: 20,
+    padding: 14,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    zIndex: 100,
+  },
+  trackerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+    gap: 6,
+  },
+  liveIndicatorRing: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  liveIndicatorDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  trackerHeaderText: {
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  trackerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  trackerStationName: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+  },
+  trackerNextStation: {
+    fontSize: 12,
+    marginTop: 2,
+    fontWeight: "500",
   },
 });

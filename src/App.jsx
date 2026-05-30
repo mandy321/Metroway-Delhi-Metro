@@ -17,7 +17,9 @@ export default function App() {
     activeRoute,
     stations,
     startStationId,
-    endStationId
+    endStationId,
+    fetchRealtimeTransitData,
+    realtimeAlerts
   } = useMetroStore();
 
   const [activeTab, setActiveTab] = useState("planner");
@@ -45,12 +47,15 @@ export default function App() {
     // 2. Load dynamic metro data from Cloudflare Worker proxy
     loadDynamicData();
 
-    // 3. Setup periodic mock updates representing active web scraping/push streams
+    // 3. Fetch real-time transit data on mount
+    fetchRealtimeTransitData();
+
+    // 4. Setup periodic mock updates representing active web scraping/push streams
     const mockUpdateInterval = setInterval(() => {
       triggerLiveMockUpdates();
     }, 8000); // update some station every 8 seconds
 
-    // 4. Online/Offline status listeners
+    // 5. Online/Offline status listeners
     const handleOnline = () => setOffline(false);
     const handleOffline = () => setOffline(true);
 
@@ -62,7 +67,7 @@ export default function App() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [initializeInfrastructureStatus, loadDynamicData, triggerLiveMockUpdates, setOffline]);
+  }, [initializeInfrastructureStatus, loadDynamicData, triggerLiveMockUpdates, setOffline, fetchRealtimeTransitData]);
 
   return (
     <div className="relative min-h-screen bg-[#070a13] text-slate-100 flex flex-col font-sans overflow-x-hidden selection:bg-cyan-500 selection:text-slate-950">
@@ -73,6 +78,17 @@ export default function App() {
       
       {/* Main Navigation */}
       <Navbar />
+
+      {/* Real-time OTD Transit Alerts Banner */}
+      {realtimeAlerts && realtimeAlerts.length > 0 && (
+        <div className="w-full bg-amber-500/15 border-b border-amber-500/20 text-amber-200 px-4 py-3 text-xs md:text-sm flex items-center gap-3 z-20 animate-pulse-subtle">
+          <AlertTriangle className="h-4 w-4 md:h-5 w-5 text-amber-400 shrink-0" />
+          <div className="flex-1 font-medium">
+            <span className="font-bold text-amber-300 mr-1.5">[Service Advisory]</span>
+            {realtimeAlerts[0].message}
+          </div>
+        </div>
+      )}
 
       {/* Desktop Dashboard Layout (hidden on mobile, lg:flex) */}
       <main className="hidden lg:flex flex-1 w-full max-w-[1400px] mx-auto p-6 lg:p-8 xl:p-12 gap-8 z-10">

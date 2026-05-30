@@ -81,7 +81,9 @@ export default function PlannerScreen() {
     return false;
   };
 
-  const activeTheme = "dark";
+  const scheme = useColorScheme() || 'light';
+  const systemTheme = scheme === 'unspecified' ? 'light' : scheme;
+  const activeTheme = store.themeMode === 'system' ? systemTheme : store.themeMode;
   const colors = Colors[activeTheme];
   const [activeTab, setActiveTab] = useState("timeline");
   const tabProgress = React.useRef(new Animated.Value(0)).current;
@@ -94,6 +96,8 @@ export default function PlannerScreen() {
     if (store.startStationId && store.endStationId) {
       store.calculateActiveRoute();
     }
+    // Fetch live DMRC OTD data on mount
+    store.fetchRealtimeTransitData();
   }, []);
 
   useEffect(() => {
@@ -465,6 +469,14 @@ export default function PlannerScreen() {
       )}
 
       <View style={{ flex: 1, backgroundColor: colors.background }}>
+        {store.realtimeAlerts && store.realtimeAlerts.length > 0 && (
+          <View style={{ backgroundColor: '#FEF3C7', borderBottomWidth: 1, borderBottomColor: '#F59E0B', paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="warning" size={16} color="#D97706" style={{ marginTop: 1 }} />
+            <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '700', flex: 1 }}>
+              {store.realtimeAlerts[0].message}
+            </Text>
+          </View>
+        )}
         {isEditingRoute || !store.activeRoute ? (
           /* Planner Input View */
           <ScrollView style={[styles.scrollContainer, { backgroundColor: colors.background }]} contentContainerStyle={styles.scrollContent}>
@@ -586,7 +598,7 @@ export default function PlannerScreen() {
                   value={store.useSmartCard}
                   onValueChange={(val) => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    store.useSmartCard = val;
+                    store.setUseSmartCard(val);
                     // Force recalc if activeRoute is open
                     if (store.activeRoute) store.calculateActiveRoute();
                   }}
@@ -675,60 +687,70 @@ export default function PlannerScreen() {
         ) : (
           <View style={[styles.routeContainer, { backgroundColor: colors.background }]}>
             {/* Top route card header */}
-            <View style={[styles.routeHeaderCard, { backgroundColor: activeTheme === 'dark' ? '#1c1c1e' : '#007aff' }]}>
+            <View style={[styles.routeHeaderCard, { 
+              backgroundColor: activeTheme === 'dark' ? '#1e1e24' : '#1e293b',
+              borderRadius: 24,
+              padding: 16,
+              margin: 12,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.15,
+              shadowRadius: 10,
+              elevation: 6
+            }]}>
             <View style={styles.routeHeaderRow}>
               <TouchableOpacity
-                style={styles.backToEditBtn}
+                style={[styles.backToEditBtn, { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setIsEditingRoute(true);
                 }}
               >
-                <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-                <Text style={styles.backToEditText}>Edit Route</Text>
+                <Ionicons name="arrow-back" size={16} color="#FFFFFF" />
+                <Text style={[styles.backToEditText, { marginLeft: 4, fontWeight: "600" }]}>Edit Route</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.viewMapBtn}
+                style={[styles.viewMapBtn, { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 }]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   router.push("/map");
                 }}
               >
-                <Ionicons name="map" size={18} color="#FFFFFF" />
-                <Text style={styles.viewMapBtnText}>Map View</Text>
+                <Ionicons name="map" size={16} color="#FFFFFF" />
+                <Text style={[styles.viewMapBtnText, { marginLeft: 4, fontWeight: "600" }]}>Map View</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.routeSummaryRow}>
-              <Text style={styles.summaryStationName} numberOfLines={1}>
+            <View style={[styles.routeSummaryRow, { marginTop: 12 }]}>
+              <Text style={[styles.summaryStationName, { fontSize: 18, fontWeight: "800", color: "#FFFFFF" }]} numberOfLines={1}>
                 {getStationName(store.startStationId)}
               </Text>
-              <Ionicons name="arrow-forward" size={18} color="#E0E1E6" style={{ marginHorizontal: 8 }} />
-              <Text style={styles.summaryStationName} numberOfLines={1}>
+              <Ionicons name="arrow-forward" size={18} color="rgba(255,255,255,0.6)" style={{ marginHorizontal: 10 }} />
+              <Text style={[styles.summaryStationName, { fontSize: 18, fontWeight: "800", color: "#FFFFFF" }]} numberOfLines={1}>
                 {getStationName(store.endStationId)}
               </Text>
             </View>
 
             {/* Travel stats */}
-            <View style={styles.statsGridRow}>
+            <View style={[styles.statsGridRow, { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 12, marginTop: 12 }]}>
               <View style={styles.gridStat}>
                 <Ionicons name="time" size={16} color="#FFFFFF" />
-                <Text style={styles.gridStatValue}>{activeRoute.metrics.time} mins</Text>
-                <Text style={styles.gridStatLabel}>Duration</Text>
+                <Text style={[styles.gridStatValue, { fontSize: 15, fontWeight: "800" }]}>{activeRoute.metrics.time} mins</Text>
+                <Text style={[styles.gridStatLabel, { color: 'rgba(255,255,255,0.6)' }]}>Duration</Text>
               </View>
               <View style={styles.gridStat}>
                 <Ionicons name="git-compare" size={16} color="#FFFFFF" />
-                <Text style={styles.gridStatValue}>
+                <Text style={[styles.gridStatValue, { fontSize: 15, fontWeight: "800" }]}>
                   {activeRoute.metrics.transfers} {activeRoute.metrics.transfers === 1 ? "transfer" : "transfers"}
                 </Text>
-                <Text style={styles.gridStatLabel}>Interchanges</Text>
+                <Text style={[styles.gridStatLabel, { color: 'rgba(255,255,255,0.6)' }]}>Interchanges</Text>
               </View>
               <View style={styles.gridStat}>
                 <Ionicons name="card" size={16} color="#FFFFFF" />
-                <Text style={styles.gridStatValue}>
+                <Text style={[styles.gridStatValue, { fontSize: 15, fontWeight: "800" }]}>
                   ₹{store.useSmartCard ? smartCardFare : regularFare}
                 </Text>
-                <Text style={styles.gridStatLabel}>Fare {store.useSmartCard && "(Discounted)"}</Text>
+                <Text style={[styles.gridStatLabel, { color: 'rgba(255,255,255,0.6)' }]}>Fare {store.useSmartCard && "(Disc.)"}</Text>
               </View>
             </View>
           </View>
@@ -756,12 +778,15 @@ export default function PlannerScreen() {
                       </View>
                     </View>
 
-                    {!isLastLeg && (
-                      <View style={styles.flowTransferItem}>
-                        <Ionicons name="arrow-forward" size={14} color="#8B5CF6" />
-                        <Text style={styles.flowTransferLabel}>Transfer</Text>
-                      </View>
-                    )}
+                    {!isLastLeg && (() => {
+                      const nextLineColor = LINE_COLORS[getCondensedLegs()[idx + 1].line] || "#8B5CF6";
+                      return (
+                        <View style={[styles.flowTransferItem, { paddingHorizontal: 2 }]}>
+                          <Ionicons name="arrow-forward" size={14} color={nextLineColor} />
+                          <Text style={[styles.flowTransferLabel, { color: colors.textSecondary, fontSize: 9 }]}>Transfer</Text>
+                        </View>
+                      );
+                    })()}
                   </React.Fragment>
                 );
               })}
@@ -807,14 +832,21 @@ export default function PlannerScreen() {
                     <View style={{ width: 1, height: 16, backgroundColor: activeTheme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', alignSelf: 'center', marginHorizontal: -0.5 }} />
                   )}
                   <TouchableOpacity
-                    style={styles.tabHeaderButton}
+                    style={[styles.tabHeaderButton, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }]}
                     onPress={() => handleTabChange(tab.id)}
                   >
+                    <Ionicons 
+                      name={tab.icon as any} 
+                      size={14} 
+                      color={isActive ? (activeTheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary} 
+                      style={{ marginRight: 4 }} 
+                    />
                     <Text style={[
                       styles.tabHeaderButtonText, 
                       { 
                         color: isActive ? (activeTheme === 'dark' ? '#ffffff' : '#000000') : colors.textSecondary,
-                        fontWeight: isActive ? "700" : "500"
+                        fontWeight: isActive ? "700" : "500",
+                        fontSize: 11
                       }
                     ]}>
                       {tab.label}
@@ -990,7 +1022,7 @@ export default function PlannerScreen() {
                                   </View>
                                   <View style={[styles.timelineBody, { paddingBottom: 12 }]}>
                                     <View style={styles.stationHeaderRow}>
-                                      <Text style={[styles.stationNodeName, { color: colors.textSecondary, fontSize: 13, fontWeight: "500" }]}>
+                                      <Text style={[styles.stationNodeName, { color: colors.textSecondary, fontSize: 17, fontWeight: "600" }]}>
                                         {runStation.name}
                                       </Text>
                                       {stationAlert && (
@@ -1000,7 +1032,7 @@ export default function PlannerScreen() {
                                         </View>
                                       )}
                                     </View>
-                                    <Text style={[styles.intermediateText, { color: colors.textSecondary, marginTop: 1, fontSize: 10 }]}>
+                                    <Text style={[styles.intermediateText, { color: colors.textSecondary, marginTop: 1, fontSize: 13 }]}>
                                       Ride {currentEdge?.line} Line • Approx. {Math.round(currentEdge?.adjustedTime || currentEdge?.baseTime || 2)} mins
                                     </Text>
                                   </View>
@@ -1094,24 +1126,28 @@ export default function PlannerScreen() {
                             const walkInfo = getTransferWalkInfo(station.id, nextEdge.line);
                             const adjustedWalkTime = store.timeOfDay === "Peak" ? walkInfo.time + 3 : walkInfo.time;
                             const activeLineColor = getLineContrastColor(nextEdge.line, activeTheme === 'dark');
+                            const targetLineColor = LINE_COLORS[nextEdge.line] || "#8B5CF6";
                             return (
                               <View style={[
                                 styles.navigationStepCard, 
                                 { 
                                   backgroundColor: colors.backgroundElement, 
                                   borderLeftWidth: 4, 
-                                  borderLeftColor: "#8B5CF6", // purple for transfer
-                                  borderColor: colors.border
+                                  borderLeftColor: targetLineColor,
+                                  borderColor: colors.border,
+                                  padding: 10,
+                                  marginTop: 6,
+                                  marginBottom: 6
                                 }
                               ]}>
                                 <View style={styles.navCardHeader}>
-                                  <Ionicons name="git-compare" size={15} color="#8B5CF6" />
-                                  <Text style={[styles.navCardTitle, { color: colors.text }]}>Interchange Station</Text>
-                                  <View style={[styles.platformPill, { backgroundColor: LINE_COLORS[nextEdge.line] || "#888888" }]}>
+                                  <Ionicons name="git-compare" size={15} color={targetLineColor} />
+                                  <Text style={[styles.navCardTitle, { color: colors.text, fontSize: 14 }]}>Interchange Station</Text>
+                                  <View style={[styles.platformPill, { backgroundColor: targetLineColor }]}>
                                     <Text style={styles.platformPillText}>Platform {platNum}</Text>
                                   </View>
                                 </View>
-                                <Text style={[styles.navCardDesc, { color: colors.textSecondary }]}>
+                                <Text style={[styles.navCardDesc, { color: colors.textSecondary, fontSize: 13 }]}>
                                   Switch to the <Text style={{ color: activeLineColor, fontWeight: "800" }}>{nextEdge.line} Line</Text> towards <Text style={{ fontWeight: "700", color: colors.text }}>{termName}</Text>.
                                 </Text>
                                 
@@ -1169,7 +1205,7 @@ export default function PlannerScreen() {
                     activeOpacity={0.8}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      store.useSmartCard = false;
+                      store.setUseSmartCard(false);
                       store.calculateActiveRoute();
                     }}
                     style={[
@@ -1218,7 +1254,7 @@ export default function PlannerScreen() {
                     activeOpacity={0.8}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      store.useSmartCard = true;
+                      store.setUseSmartCard(true);
                       store.calculateActiveRoute();
                     }}
                     style={[
@@ -1301,7 +1337,7 @@ export default function PlannerScreen() {
                     ]}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      store.useSmartCard = true;
+                      store.setUseSmartCard(true);
                       store.calculateActiveRoute();
                     }}
                   >
@@ -2244,12 +2280,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   stationNodeName: {
-    fontSize: 16,
+    fontSize: 19,
     color: "#374151",
     fontWeight: "700",
   },
   boldStation: {
-    fontSize: 19,
+    fontSize: 22,
     color: "#111827",
     fontWeight: "900",
   },
@@ -2324,12 +2360,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   walkMetaText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "700",
     color: "#8B5CF6",
   },
   intermediateText: {
-    fontSize: 11,
+    fontSize: 14,
     color: "#6B7280",
     marginTop: 2,
     marginBottom: 6,
@@ -2348,7 +2384,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   destArrivedText: {
-    fontSize: 11,
+    fontSize: 13,
     color: "#065F46",
     fontWeight: "700",
   },

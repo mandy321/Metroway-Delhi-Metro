@@ -17,7 +17,8 @@ import {
   Sparkles,
   CreditCard,
   Gauge,
-  Navigation
+  Navigation,
+  List
 } from "lucide-react";
 
 export default function RouteDetails() {
@@ -432,35 +433,39 @@ export default function RouteDetails() {
       <div className="flex border-b border-white/5 pb-2 space-x-4">
         <button
           onClick={() => setActiveTab("timeline")}
-          className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-all ${
+          className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-all flex items-center gap-1.5 ${
             activeTab === "timeline" ? "text-cyan-400 border-cyan-400" : "text-slate-400 border-transparent hover:text-slate-200"
           }`}
         >
-          Timeline
+          <List className="h-3.5 w-3.5" />
+          <span>Timeline</span>
         </button>
         <button
           onClick={() => setActiveTab("fare")}
-          className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-all ${
+          className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-all flex items-center gap-1.5 ${
             activeTab === "fare" ? "text-cyan-400 border-cyan-400" : "text-slate-400 border-transparent hover:text-slate-200"
           }`}
         >
-          Fare Breakdowns
+          <Coins className="h-3.5 w-3.5" />
+          <span>Fare Breakdowns</span>
         </button>
         <button
           onClick={() => setActiveTab("exits")}
-          className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-all ${
+          className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-all flex items-center gap-1.5 ${
             activeTab === "exits" ? "text-cyan-400 border-cyan-400" : "text-slate-400 border-transparent hover:text-slate-200"
           }`}
         >
-          Exit Recommender
+          <DoorOpen className="h-3.5 w-3.5" />
+          <span>Exit Recommender</span>
         </button>
         <button
           onClick={() => setActiveTab("status")}
-          className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-all ${
+          className={`text-xs font-bold uppercase tracking-wider pb-1 border-b-2 transition-all flex items-center gap-1.5 ${
             activeTab === "status" ? "text-cyan-400 border-cyan-400" : "text-slate-400 border-transparent hover:text-slate-200"
           }`}
         >
-          Facility Outages {pathAlerts.length > 0 && (
+          <AlertTriangle className="h-3.5 w-3.5" />
+          <span>Facility Outages</span> {pathAlerts.length > 0 && (
             <span className="ml-1 bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] px-1.5 py-0.2 rounded-full font-extrabold">
               {pathAlerts.length}
             </span>
@@ -495,7 +500,7 @@ export default function RouteDetails() {
 
                   <div className="flex flex-col space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-outfit text-sm font-bold text-slate-100">{station.name}</span>
+                      <span className={`font-outfit font-bold text-slate-100 ${(isStart || isEnd) ? "text-base md:text-lg text-white" : "text-sm md:text-base text-slate-200"}`}>{station.name}</span>
                       {hasAlert && (
                         <span className="flex items-center space-x-0.5 text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
                           <AlertTriangle className="h-3 w-3" />
@@ -560,7 +565,7 @@ export default function RouteDetails() {
                           <ArrowRight className="h-3 w-3 text-cyan-400" />
                           <span>Ride <span className="font-bold text-white">{nextEdge.line} Line</span></span>
                         </div>
-                        <div className="flex items-center space-x-4 text-[11px]">
+                        <div className="flex items-center space-x-4 text-xs">
                           <span>Duration: <strong>{Math.round(nextEdge.adjustedTime || nextEdge.baseTime)} mins</strong></span>
                           <span>Crowd: <strong className={getCrowdColor(nextEdge.crowdFactor).split(" ")[0]}>{nextEdge.crowdFactor}/10</strong></span>
                         </div>

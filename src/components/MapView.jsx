@@ -26,7 +26,7 @@ function RouteBoundsFitter({ activeRoute }) {
 
 export default function MapView() {
   // Query stations and edges dynamically from the persisted store
-  const { stations, edges, activeRoute, startStationId, endStationId, infrastructureStatus, getStationCrowd } = useMetroStore();
+  const { stations, edges, activeRoute, startStationId, endStationId, infrastructureStatus, getStationCrowd, realtimeArrivals } = useMetroStore();
   
   const [customZoom, setCustomZoom] = useState(null);
   const [centerCoords, setCenterCoords] = useState(null);
@@ -233,9 +233,9 @@ export default function MapView() {
                         key={l}
                         className="text-[9px] font-bold px-1.5 py-0.2 rounded border"
                         style={{
-                          backgroundColor: `${LINE_COLORS[l] || "#cbd5e1"}15`,
-                          color: LINE_COLORS[l] || "#475569",
-                          borderColor: `${LINE_COLORS[l] || "#cbd5e1"}25`
+                           backgroundColor: `${LINE_COLORS[l] || "#cbd5e1"}15`,
+                           color: LINE_COLORS[l] || "#475569",
+                           borderColor: `${LINE_COLORS[l] || "#cbd5e1"}25`
                         }}
                       >
                         {l}
@@ -257,6 +257,38 @@ export default function MapView() {
                       </span>
                     </div>
                   </div>
+
+                  {/* Live Train Arrivals Section */}
+                  {realtimeArrivals && realtimeArrivals[station.id] && (
+                    <div className="mt-2 text-[10px] bg-slate-50 border border-slate-200/60 rounded-lg p-2 mb-2 select-none">
+                      <div className="font-bold text-slate-700 mb-1 flex items-center gap-1">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                        </span>
+                        Live Arrivals
+                      </div>
+                      <div className="space-y-1">
+                        {realtimeArrivals[station.id].map((arrival, aIdx) => (
+                          <div key={aIdx} className="border-b border-slate-200/40 last:border-0 pb-1 last:pb-0">
+                            <span className="font-bold text-slate-600 block text-[9px] uppercase tracking-wide">
+                              {arrival.line} Line
+                            </span>
+                            {arrival.trains && arrival.trains.length > 0 ? (
+                              arrival.trains.map((train, tIdx) => (
+                                <div key={tIdx} className="flex justify-between text-slate-600">
+                                  <span className="truncate max-w-[125px]">➔ {train.destination}</span>
+                                  <span className="font-bold text-cyan-600 shrink-0">{train.min}m</span>
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-slate-400 italic">No trains</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mt-2 text-[9px] text-slate-500 border-t border-slate-100 pt-1">
                     <div className="font-semibold text-slate-700 mb-0.5">Exits:</div>

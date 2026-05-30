@@ -285,7 +285,8 @@ export const STATIONS = [
   { id: "RRTS_GGN", name: "Gurugram RRTS", lines: ["RRTS"], coordinates: [28.4595, 77.0266], baseCrowd: 7, exits: [{"gate":"1","name":"Commercial Complex Exit","lit":"Moderate","accessibility":["Elevator","Escalator"]},{"gate":"2","name":"Park/Garden Side","lit":"Well-Lit","accessibility":["Escalator","Wheelchair Ramp"]}] },
   { id: "RRTS_MDG", name: "Manesar RRTS", lines: ["RRTS"], coordinates: [28.3607, 76.9432], baseCrowd: 5, exits: [{"gate":"1","name":"Commercial Complex Exit","lit":"Dimly-Lit","accessibility":["Escalator","Wheelchair Ramp"]},{"gate":"2","name":"Park/Garden Side","lit":"Moderate","accessibility":["Elevator","Escalator","Tactile Paths"]},{"gate":"3","name":"Civic Centre Exit / Gate 3","lit":"Well-Lit","accessibility":["Elevator","Escalator","Tactile Paths"]},{"gate":"4","name":"Subway Plaza Road / Gate 4","lit":"Moderate","accessibility":["Elevator","Escalator","Tactile Paths"]}] },
   { id: "RRTS_GNO", name: "Greater Noida RRTS", lines: ["RRTS"], coordinates: [28.4744, 77.504], baseCrowd: 6, exits: [{"gate":"1","name":"Main Concourse","lit":"Well-Lit","accessibility":["Escalator"]},{"gate":"2","name":"Market Side Exit","lit":"Moderate","accessibility":["Elevator"]},{"gate":"3","name":"Institutional Area Gate / Gate 3","lit":"Moderate","accessibility":[]}] },
-
+  { id: "NS52", name: "Noida Sector 52", lines: ["Blue"], coordinates: [28.5849, 77.3678], baseCrowd: 6, exits: [] },
+  { id: "NS51", name: "Noida Sector 51", lines: ["Aqua"], coordinates: [28.5832, 77.3702], baseCrowd: 5, exits: [] }
 ];
 
 export const EDGES = [
@@ -678,7 +679,9 @@ export const EDGES = [
   { source: "RRTS_SRJ", target: "SKK", line: "RRTS", baseTime: 5, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
   { source: "RRTS_AV", target: "AV", line: "RRTS", baseTime: 5, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
   { source: "RRTS_GGN", target: "MCC", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
-
+  { source: "NS3", target: "NS52", line: "Blue", baseTime: 3, crowdFactor: 5, safetyRating: 9, comfortFactor: 8 },
+  { source: "NS52", target: "NS51", line: "Skywalk", baseTime: 8, crowdFactor: 2, safetyRating: 9, comfortFactor: 9 },
+  { source: "DK", target: "DDS", line: "Skywalk", baseTime: 10, crowdFactor: 3, safetyRating: 9, comfortFactor: 8 }
 ];
 
 export const LINE_COLORS = {
