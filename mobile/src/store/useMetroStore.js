@@ -90,8 +90,15 @@ export const useMetroStore = create(
         }
 
         // High-fidelity fallback timetables (used when OTD protobuf decode is pending)
+        const currentSysHour = new Date().getHours();
+        const isClosed = currentSysHour >= 23 || currentSysHour <= 5;
+        
         const arrivals = {};
         get().stations.forEach(station => {
+          if (isClosed) {
+            arrivals[station.id] = [];
+            return;
+          }
           arrivals[station.id] = station.lines.map(line => {
             const randomTime1 = Math.floor(Math.random() * 5) + 2;
             const randomTime2 = randomTime1 + Math.floor(Math.random() * 6) + 4;

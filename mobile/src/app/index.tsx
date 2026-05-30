@@ -15,6 +15,7 @@ import {
   PanResponder,
   LayoutAnimation,
   UIManager,
+  AppState,
   useColorScheme,
   Dimensions,
 } from "react-native";
@@ -130,15 +131,30 @@ export default function PlannerScreen() {
   const tabProgress = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Sync current hour to the store on mount so that crowd levels and peak status match the actual system time
-    const currentHour = new Date().getHours();
-    store.setSelectedHour(currentHour);
-    // Recalculate route to apply new peak/hour adjustments
-    if (store.startStationId && store.endStationId) {
-      store.calculateActiveRoute();
-    }
+    // Sync current hour to the store on mount and on resume so that crowd levels match actual system time
+    const syncTime = () => {
+      const currentHour = new Date().getHours();
+      store.setSelectedHour(currentHour);
+      // Recalculate route to apply new peak/hour adjustments
+      if (store.startStationId && store.endStationId) {
+        store.calculateActiveRoute();
+      }
+    };
+    
+    syncTime();
+    
+    const subscription = AppState.addEventListener("change", nextAppState => {
+      if (nextAppState === "active") {
+        syncTime();
+      }
+    });
+
     // Fetch live DMRC OTD data on mount
     store.fetchRealtimeTransitData();
+    
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   useEffect(() => {
