@@ -947,8 +947,8 @@ export default function PlannerScreen() {
                       label: "Crowd",
                       value: activeRoute.metrics.crowd,
                       icon: "people-outline",
-                      color: activeRoute.metrics.crowd > 7 ? "#FF453A" : activeRoute.metrics.crowd > 4 ? "#FF9F0A" : "#34C759",
-                      desc: activeRoute.metrics.crowd > 7 ? "Very Packed" : activeRoute.metrics.crowd > 4 ? "Standing Only" : "Seats Available"
+                      color: activeRoute.metrics.crowd === 0 ? "#8E8E93" : activeRoute.metrics.crowd > 7 ? "#FF453A" : activeRoute.metrics.crowd > 4 ? "#FF9F0A" : "#34C759",
+                      desc: activeRoute.metrics.crowd === 0 ? "Closed" : activeRoute.metrics.crowd > 7 ? "Very Packed" : activeRoute.metrics.crowd > 4 ? "Standing Only" : "Seats Available"
                     },
                     {
                       label: "Comfort",

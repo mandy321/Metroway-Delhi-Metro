@@ -149,6 +149,10 @@ export const useMetroStore = create(
         // DMRC Hourly Rush Multipliers
         const rushMultipliers = [0.27, 0.17, 0.12, 0.11, 0.21, 0.47, 0.68, 0.86, 0.98, 0.90, 0.70, 0.60, 0.63, 0.58, 0.56, 0.63, 0.75, 0.93, 0.98, 0.86, 0.70, 0.58, 0.46, 0.33];
         const hour = selectedHour !== undefined ? selectedHour : 12;
+        
+        // If Metro is closed, crowd is zero
+        if (hour >= 23 || hour <= 5) return 0;
+        
         const rushFactor = rushMultipliers[hour] !== undefined ? rushMultipliers[hour] : 0.6;
         
         crowd = crowd * (rushFactor * 1.5); 
