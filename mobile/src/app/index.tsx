@@ -12,9 +12,11 @@ import {
   Platform,
   StatusBar,
   Animated,
+  PanResponder,
   LayoutAnimation,
   UIManager,
   useColorScheme,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -85,6 +87,45 @@ export default function PlannerScreen() {
   const systemTheme = scheme === 'unspecified' ? 'light' : scheme;
   const activeTheme = store.themeMode === 'system' ? systemTheme : store.themeMode;
   const colors = Colors[activeTheme];
+  
+  const bottomSheetPanY = React.useRef(new Animated.Value(0)).current;
+  const panResponder = React.useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.vy) > Math.abs(gestureState.vx);
+      },
+      onPanResponderGrant: () => {
+        bottomSheetPanY.setOffset((bottomSheetPanY as any)._value || 0);
+        bottomSheetPanY.setValue(0);
+      },
+      onPanResponderMove: Animated.event(
+        [null, { dy: bottomSheetPanY }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: (_, gestureState) => {
+        bottomSheetPanY.flattenOffset();
+        const currentY = (bottomSheetPanY as any)._value || 0;
+        const velocityY = gestureState.vy;
+
+        if (velocityY < -0.5 || currentY < -100) {
+          // Snap UP
+          Animated.spring(bottomSheetPanY, {
+            toValue: -300,
+            useNativeDriver: false,
+            bounciness: 0,
+          }).start();
+        } else {
+          // Snap DOWN
+          Animated.spring(bottomSheetPanY, {
+            toValue: 0,
+            useNativeDriver: false,
+            bounciness: 0,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
   const [activeTab, setActiveTab] = useState("timeline");
   const tabProgress = React.useRef(new Animated.Value(0)).current;
 
@@ -806,8 +847,23 @@ export default function PlannerScreen() {
               </View>
             </ScrollView>
           </View>
+          
+          {/* Draggable Bottom Sheet */}
+          <Animated.View 
+            style={[
+              { backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, shadowColor: "#000", shadowOffset: {width: 0, height: -4}, shadowOpacity: 0.1, shadowRadius: 10, elevation: 8, marginTop: 10, height: Dimensions.get('window').height },
 
+              { transform: [{ translateY: bottomSheetPanY }] }
+            ]}
+          >
+            <View 
+              {...panResponder.panHandlers} 
+              style={{ width: '100%', alignItems: 'center', paddingVertical: 12, backgroundColor: activeTheme === 'dark' ? '#1c1c1e' : '#e3e3e8', borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
+            >
+              <View style={{ width: 40, height: 5, borderRadius: 3, backgroundColor: activeTheme === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)' }} />
+            </View>
           {/* Tab Headers */}
+
           <View style={[styles.tabHeaderContainer, { backgroundColor: activeTheme === 'dark' ? '#1c1c1e' : '#e3e3e8' }]}>
             <Animated.View
               style={[
@@ -1722,9 +1778,10 @@ export default function PlannerScreen() {
             )}
 
           </ScrollView>
-        </View>
-      )}
+        </Animated.View>
       </View>
+    )}
+    </View>
 
       {/* Autocomplete Search Modal */}
       <Modal

@@ -3,6 +3,12 @@
 // Source: https://github.com/AkshatJMe/DMRC-Dataset-Algorithm
 
 export const STATIONS = [
+  { id: "LZN", name: "Laxmi Nagar", lines: ["Blue"], coordinates: [28.6305, 77.2773], baseCrowd: 7, exits: [] },
+  { id: "NVR", name: "Nirman Vihar", lines: ["Blue"], coordinates: [28.6366, 77.2871], baseCrowd: 6, exits: [] },
+  { id: "PRV", name: "Preet Vihar", lines: ["Blue"], coordinates: [28.6384, 77.2947], baseCrowd: 5, exits: [] },
+  { id: "KSM", name: "Kaushambi", lines: ["Blue"], coordinates: [28.6454, 77.3252], baseCrowd: 5, exits: [] },
+  { id: "VSH", name: "Vaishali", lines: ["Blue"], coordinates: [28.6499, 77.3400], baseCrowd: 6, exits: [] },
+
   // Red Line
   { id: "SS", name: "Shaheed Sthal", lines: ["Red"], coordinates: [28.6715, 77.4437], baseCrowd: 6, exits: [{"gate":"1","name":"Bus Stand Link","lit":"Well-Lit","accessibility":["Elevator","Escalator"]},{"gate":"2","name":"Colony Gate","lit":"Well-Lit","accessibility":["Elevator"]},{"gate":"3","name":"City Center Plaza / Gate 3","lit":"Dimly-Lit","accessibility":["Escalator","Wheelchair Ramp"]}] },
   { id: "HR", name: "Hindon River", lines: ["Red"], coordinates: [28.671, 77.4264], baseCrowd: 6, exits: [{"gate":"1","name":"Commercial Complex Exit","lit":"Well-Lit","accessibility":[]},{"gate":"2","name":"Park/Garden Side","lit":"Well-Lit","accessibility":["Elevator","Escalator","Tactile Paths"]}] },
@@ -272,6 +278,7 @@ export const STATIONS = [
   { id: "RRTS_SRJ", name: "Sarai Kale Khan RRTS", lines: ["RRTS"], coordinates: [28.5861, 77.2543], baseCrowd: 7, exits: [{"gate":"1","name":"Residential Area Exit","lit":"Well-Lit","accessibility":["Elevator"]},{"gate":"2","name":"Main Road Exit","lit":"Dimly-Lit","accessibility":["Elevator"]},{"gate":"3","name":"Civic Centre Exit / Gate 3","lit":"Well-Lit","accessibility":["Stairs Only"]}] },
   { id: "RRTS_NCC", name: "New Ashok Nagar RRTS", lines: ["RRTS"], coordinates: [28.593, 77.3062], baseCrowd: 6, exits: [{"gate":"1","name":"Residential Area Exit","lit":"Moderate","accessibility":["Elevator","Escalator","Tactile Paths"]},{"gate":"2","name":"Main Road Exit","lit":"Moderate","accessibility":["Elevator","Escalator"]},{"gate":"3","name":"Civic Centre Exit / Gate 3","lit":"Well-Lit","accessibility":["Elevator"]},{"gate":"4","name":"Railway Station Link / Gate 4","lit":"Moderate","accessibility":["Elevator","Escalator","Tactile Paths"]}] },
   { id: "RRTS_AV", name: "Anand Vihar RRTS", lines: ["RRTS"], coordinates: [28.6461, 77.3159], baseCrowd: 7, exits: [{"gate":"1","name":"Main Concourse","lit":"Well-Lit","accessibility":["Elevator","Escalator","Tactile Paths"]},{"gate":"2","name":"Market Side Exit","lit":"Well-Lit","accessibility":["Stairs Only"]},{"gate":"3","name":"Feeder Bus Stand / Gate 3","lit":"Well-Lit","accessibility":["Stairs Only"]},{"gate":"4","name":"Main Market Gate / Gate 4","lit":"Dimly-Lit","accessibility":["Escalator","Wheelchair Ramp"]}] },
+    { id: "RRTS_SBB", name: "Sahibabad RRTS", lines: ["RRTS"], coordinates: [28.6653, 77.3488], baseCrowd: 6, exits: [] },
   { id: "RRTS_GZB", name: "Ghaziabad RRTS", lines: ["RRTS"], coordinates: [28.6613, 77.41], baseCrowd: 6, exits: [{"gate":"1","name":"Bus Stand Link","lit":"Moderate","accessibility":["Escalator","Wheelchair Ramp"]},{"gate":"2","name":"Colony Gate","lit":"Well-Lit","accessibility":["Stairs Only"]},{"gate":"3","name":"Government Offices Link / Gate 3","lit":"Moderate","accessibility":["Elevator","Escalator","Tactile Paths"]},{"gate":"4","name":"Institutional Area Gate / Gate 4","lit":"Dimly-Lit","accessibility":["Stairs Only"]}] },
   { id: "RRTS_GGZ", name: "Guldhar RRTS", lines: ["RRTS"], coordinates: [28.6709, 77.4398], baseCrowd: 5, exits: [{"gate":"1","name":"Bus Stand Link","lit":"Moderate","accessibility":[]},{"gate":"2","name":"Colony Gate","lit":"Dimly-Lit","accessibility":["Stairs Only"]}] },
   { id: "RRTS_DUR", name: "Duhai RRTS", lines: ["RRTS"], coordinates: [28.6847, 77.4651], baseCrowd: 5, exits: [{"gate":"1","name":"Main Road / Flyover","lit":"Dimly-Lit","accessibility":["Stairs Only"]},{"gate":"2","name":"Residential Colony","lit":"Well-Lit","accessibility":["Escalator","Wheelchair Ramp"]},{"gate":"3","name":"District Court Connector / Gate 3","lit":"Moderate","accessibility":["Escalator"]}] },
@@ -290,6 +297,15 @@ export const STATIONS = [
 ];
 
 export const EDGES = [
+  { source: "IND", target: "YB", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "YB", target: "MVI", line: "Blue", baseTime: 5, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "YB", target: "LZN", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "LZN", target: "NVR", line: "Blue", baseTime: 2, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "NVR", target: "PRV", line: "Blue", baseTime: 2, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "PRV", target: "KK", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "AV", target: "KSM", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+  { source: "KSM", target: "VSH", line: "Blue", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
+
   // Red Line Connections
   { source: "SS", target: "HR", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
   { source: "HR", target: "ART", line: "Red", baseTime: 3, crowdFactor: 6, safetyRating: 8, comfortFactor: 7 },
@@ -585,7 +601,8 @@ export const EDGES = [
   // RRTS Line Connections
   { source: "RRTS_SRJ", target: "RRTS_NCC", line: "RRTS", baseTime: 5, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_NCC", target: "RRTS_AV", line: "RRTS", baseTime: 6, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
-  { source: "RRTS_AV", target: "RRTS_GZB", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_AV", target: "RRTS_SBB", line: "RRTS", baseTime: 5, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_SBB", target: "RRTS_GZB", line: "RRTS", baseTime: 4, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_GZB", target: "RRTS_GGZ", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_GGZ", target: "RRTS_DUR", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_DUR", target: "RRTS_DPT", line: "RRTS", baseTime: 3, crowdFactor: 3, safetyRating: 9, comfortFactor: 9 },
@@ -601,7 +618,8 @@ export const EDGES = [
   { source: "RRTS_GGN", target: "HC", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
   { source: "RRTS_SRJ", target: "RRTS_NCC", line: "RRTS", baseTime: 5, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_NCC", target: "RRTS_AV", line: "RRTS", baseTime: 6, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
-  { source: "RRTS_AV", target: "RRTS_GZB", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_AV", target: "RRTS_SBB", line: "RRTS", baseTime: 5, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_SBB", target: "RRTS_GZB", line: "RRTS", baseTime: 4, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_GZB", target: "RRTS_GGZ", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_GGZ", target: "RRTS_DUR", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_DUR", target: "RRTS_DPT", line: "RRTS", baseTime: 3, crowdFactor: 3, safetyRating: 9, comfortFactor: 9 },
@@ -617,7 +635,8 @@ export const EDGES = [
   { source: "RRTS_GGN", target: "HC", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
   { source: "RRTS_SRJ", target: "RRTS_NCC", line: "RRTS", baseTime: 5, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_NCC", target: "RRTS_AV", line: "RRTS", baseTime: 6, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
-  { source: "RRTS_AV", target: "RRTS_GZB", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_AV", target: "RRTS_SBB", line: "RRTS", baseTime: 5, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_SBB", target: "RRTS_GZB", line: "RRTS", baseTime: 4, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_GZB", target: "RRTS_GGZ", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_GGZ", target: "RRTS_DUR", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_DUR", target: "RRTS_DPT", line: "RRTS", baseTime: 3, crowdFactor: 3, safetyRating: 9, comfortFactor: 9 },
@@ -633,7 +652,8 @@ export const EDGES = [
   { source: "RRTS_GGN", target: "MCC", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
   { source: "RRTS_SRJ", target: "RRTS_NCC", line: "RRTS", baseTime: 5, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_NCC", target: "RRTS_AV", line: "RRTS", baseTime: 6, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
-  { source: "RRTS_AV", target: "RRTS_GZB", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_AV", target: "RRTS_SBB", line: "RRTS", baseTime: 5, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_SBB", target: "RRTS_GZB", line: "RRTS", baseTime: 4, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_GZB", target: "RRTS_GGZ", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_GGZ", target: "RRTS_DUR", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_DUR", target: "RRTS_DPT", line: "RRTS", baseTime: 3, crowdFactor: 3, safetyRating: 9, comfortFactor: 9 },
@@ -649,7 +669,8 @@ export const EDGES = [
   { source: "RRTS_GGN", target: "MCC", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
   { source: "RRTS_SRJ", target: "RRTS_NCC", line: "RRTS", baseTime: 5, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_NCC", target: "RRTS_AV", line: "RRTS", baseTime: 6, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
-  { source: "RRTS_AV", target: "RRTS_GZB", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_AV", target: "RRTS_SBB", line: "RRTS", baseTime: 5, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_SBB", target: "RRTS_GZB", line: "RRTS", baseTime: 4, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_GZB", target: "RRTS_GGZ", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_GGZ", target: "RRTS_DUR", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_DUR", target: "RRTS_DPT", line: "RRTS", baseTime: 3, crowdFactor: 3, safetyRating: 9, comfortFactor: 9 },
@@ -665,7 +686,8 @@ export const EDGES = [
   { source: "RRTS_GGN", target: "MCC", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 8, comfortFactor: 8 },
   { source: "RRTS_SRJ", target: "RRTS_NCC", line: "RRTS", baseTime: 5, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_NCC", target: "RRTS_AV", line: "RRTS", baseTime: 6, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
-  { source: "RRTS_AV", target: "RRTS_GZB", line: "RRTS", baseTime: 8, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_AV", target: "RRTS_SBB", line: "RRTS", baseTime: 5, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
+  { source: "RRTS_SBB", target: "RRTS_GZB", line: "RRTS", baseTime: 4, crowdFactor: 5, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_GZB", target: "RRTS_GGZ", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_GGZ", target: "RRTS_DUR", line: "RRTS", baseTime: 4, crowdFactor: 4, safetyRating: 9, comfortFactor: 9 },
   { source: "RRTS_DUR", target: "RRTS_DPT", line: "RRTS", baseTime: 3, crowdFactor: 3, safetyRating: 9, comfortFactor: 9 },

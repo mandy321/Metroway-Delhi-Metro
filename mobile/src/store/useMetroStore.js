@@ -58,98 +58,78 @@ export const useMetroStore = create(
       fetchRealtimeTransitData: async () => {
         set({ isFetchingRealtime: true });
         try {
-          const response = await fetch("https://metroway-dmrc-proxy.mandy321.workers.dev/api/realtime-transit");
-          let arrivals = {};
-          let alerts = [];
-          if (response.ok) {
-            const data = await response.json();
-            arrivals = data.arrivals || {};
-            alerts = data.alerts || [];
-          }
+          const apiKey = "hOcs5GnBZQVbaUigjQp9BCv5uZyldAmw";
+          const response = await fetch(`https://otd.delhi.gov.in/api/realtime/VehiclePositions.pb?key=${apiKey}`);
           
-          // Generate fallback data to ensure high fidelity arrivals are always rendered
-          if (Object.keys(arrivals).length === 0) {
-            const stationsList = get().stations;
-            stationsList.forEach(station => {
-              arrivals[station.id] = station.lines.map(line => {
-                const randomTime1 = Math.floor(Math.random() * 5) + 2;
-                const randomTime2 = randomTime1 + Math.floor(Math.random() * 6) + 4;
-                
-                // Determine plausible destination based on line
-                let dest1 = "Terminal A";
-                let dest2 = "Terminal B";
-                if (line === "Red") { dest1 = "Shaheed Sthal"; dest2 = "Rithala"; }
-                else if (line === "Yellow") { dest1 = "Samaypur Badli"; dest2 = "Millennium City Centre"; }
-                else if (line === "Blue") { dest1 = "Dwarka Sector 21"; dest2 = "Noida Electronic City / Vaishali"; }
-                else if (line === "Green") { dest1 = "Inderlok / Kirti Nagar"; dest2 = "Brigadier Hoshiyar Singh"; }
-                else if (line === "Violet") { dest1 = "Kashmere Gate"; dest2 = "Raja Nahar Singh"; }
-                else if (line === "Pink") { dest1 = "Majlis Park"; dest2 = "Shiv Vihar"; }
-                else if (line === "Magenta") { dest1 = "Janakpuri West"; dest2 = "Botanical Garden"; }
-                else if (line === "Orange") { dest1 = "New Delhi"; dest2 = "Dwarka Sector 21"; }
-                else if (line === "Aqua") { dest1 = "Noida Sector 51"; dest2 = "Deputy Collector Office"; }
-                else if (line === "RRTS") { dest1 = "Sarai Kale Khan"; dest2 = "Meerut South"; }
-                
-                return {
-                  line: line,
-                  trains: [
-                    { destination: dest1, min: randomTime1 },
-                    { destination: dest2, min: randomTime2 }
-                  ]
-                };
-              });
-            });
-          }
+          const contentType = response.headers.get("Content-Type") || "";
+          console.log(`[Transit API] Status: ${response.status}, Content-Type: ${contentType}`);
 
-          // Generate dynamic network status alert fallback
-          if (alerts.length === 0 && Math.random() > 0.6) {
-            alerts = [
-              {
-                line: "Blue",
-                message: "Blue Line: Technical snag at Rajouri Garden. Trains are running at restricted speed."
-              }
-            ];
+          if (response.ok && (contentType.includes("octet-stream") || contentType.includes("protobuf") || contentType.includes("x-protobuf"))) {
+            // OTD API returns GTFS-RT protobuf binary — successfully reached.
+            // Full protobuf decode requires gtfs-realtime-bindings or protobufjs.
+            // For now: log success and use enriched fallback. Add protobuf parser in next iteration.
+            const buffer = await response.arrayBuffer();
+            console.log(`[Transit API] ✓ GTFS-RT feed received: ${buffer.byteLength} bytes. Protobuf decode pending — using fallback timetables.`);
+            // TODO: decode GTFS-RT FeedMessage from buffer using protobufjs
+            // For now fall through to generate fallback arrivals
+          } else if (response.ok && contentType.includes("application/json")) {
+            // Legacy JSON response path (if worker evolves to return JSON)
+            const data = await response.json();
+            const arrivals = data.arrivals || {};
+            const alerts = data.alerts || [];
+            if (Object.keys(arrivals).length > 0) {
+              set({ realtimeArrivals: arrivals, realtimeAlerts: alerts, isFetchingRealtime: false });
+              return;
+            }
+          } else if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            console.warn(`[Transit API] ✗ Error ${response.status}:`, errData.error || "Unknown", errData.body || "");
           }
-
-          set({
-            realtimeArrivals: arrivals,
-            realtimeAlerts: alerts,
-            isFetchingRealtime: false
-          });
         } catch (error) {
-          console.warn("Could not retrieve transit API feed. Applying fallback timetables.");
-          // Fallback mock generation
-          const arrivals = {};
-          get().stations.forEach(station => {
-            arrivals[station.id] = station.lines.map(line => {
-              const randomTime1 = Math.floor(Math.random() * 5) + 2;
-              const randomTime2 = randomTime1 + Math.floor(Math.random() * 6) + 4;
-              let dest1 = "Terminal A";
-              let dest2 = "Terminal B";
-              if (line === "Red") { dest1 = "Shaheed Sthal"; dest2 = "Rithala"; }
-              else if (line === "Yellow") { dest1 = "Samaypur Badli"; dest2 = "Millennium City Centre"; }
-              else if (line === "Blue") { dest1 = "Dwarka Sector 21"; dest2 = "Noida Electronic City / Vaishali"; }
-              else if (line === "Green") { dest1 = "Inderlok / Kirti Nagar"; dest2 = "Brigadier Hoshiyar Singh"; }
-              else if (line === "Violet") { dest1 = "Kashmere Gate"; dest2 = "Raja Nahar Singh"; }
-              else if (line === "Pink") { dest1 = "Majlis Park"; dest2 = "Shiv Vihar"; }
-              else if (line === "Magenta") { dest1 = "Janakpuri West"; dest2 = "Botanical Garden"; }
-              else if (line === "Orange") { dest1 = "New Delhi"; dest2 = "Dwarka Sector 21"; }
-              else if (line === "Aqua") { dest1 = "Noida Sector 51"; dest2 = "Deputy Collector Office"; }
-              else if (line === "RRTS") { dest1 = "Sarai Kale Khan"; dest2 = "Meerut South"; }
-              return {
-                line: line,
-                trains: [
-                  { destination: dest1, min: randomTime1 },
-                  { destination: dest2, min: randomTime2 }
-                ]
-              };
-            });
-          });
-          set({
-            realtimeArrivals: arrivals,
-            realtimeAlerts: [],
-            isFetchingRealtime: false
-          });
+          console.warn("[Transit API] Network error reaching worker:", error.message);
         }
+
+        // High-fidelity fallback timetables (used when OTD protobuf decode is pending)
+        const arrivals = {};
+        get().stations.forEach(station => {
+          arrivals[station.id] = station.lines.map(line => {
+            const randomTime1 = Math.floor(Math.random() * 5) + 2;
+            const randomTime2 = randomTime1 + Math.floor(Math.random() * 6) + 4;
+            let dest1 = "Terminal A";
+            let dest2 = "Terminal B";
+            if (line === "Red") { dest1 = "Shaheed Sthal"; dest2 = "Rithala"; }
+            else if (line === "Yellow") { dest1 = "Samaypur Badli"; dest2 = "Millennium City Centre"; }
+            else if (line === "Blue") { dest1 = "Dwarka Sector 21"; dest2 = "Noida Electronic City / Vaishali"; }
+            else if (line === "Green") { dest1 = "Inderlok / Kirti Nagar"; dest2 = "Brigadier Hoshiyar Singh"; }
+            else if (line === "Violet") { dest1 = "Kashmere Gate"; dest2 = "Raja Nahar Singh"; }
+            else if (line === "Pink") { dest1 = "Majlis Park"; dest2 = "Shiv Vihar"; }
+            else if (line === "Magenta") { dest1 = "Janakpuri West"; dest2 = "Botanical Garden"; }
+            else if (line === "Orange") { dest1 = "New Delhi"; dest2 = "Dwarka Sector 21"; }
+            else if (line === "Aqua") { dest1 = "Noida Sector 51"; dest2 = "Deputy Collector Office"; }
+            else if (line === "RRTS") { dest1 = "Sarai Kale Khan"; dest2 = "Meerut South"; }
+            return {
+              line: line,
+              trains: [
+                { destination: dest1, min: randomTime1 },
+                { destination: dest2, min: randomTime2 }
+              ]
+            };
+          });
+        });
+
+        let alerts = [];
+        if (Math.random() > 0.6) {
+          alerts = [{
+            line: "Blue",
+            message: "Blue Line: Technical snag at Rajouri Garden. Trains are running at restricted speed."
+          }];
+        }
+
+        set({
+          realtimeArrivals: arrivals,
+          realtimeAlerts: alerts,
+          isFetchingRealtime: false
+        });
       },
 
       getStationCrowd: (stationId) => {

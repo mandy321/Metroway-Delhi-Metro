@@ -2,7 +2,7 @@ import { LEAFLET_CSS, LEAFLET_JS } from "./leafletAssets";
 
 export function getMapHtml(stations: any[], edges: any[], initialRoute: any, startStationId: string, endStationId: string, theme: 'light' | 'dark' = 'dark', realtimeArrivals: Record<string, any> = {}) {
   const isDark = theme === 'dark';
-  const tileUrl = isDark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
   const LINE_COLORS: Record<string, string> = {
     Red: "#E21D24",
@@ -138,28 +138,75 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
 
     .pulse-ring {
       position: absolute;
-      width: 32px;
-      height: 32px;
+      width: 40px;
+      height: 40px;
+      top: -12.5px;
+      left: -12.5px;
       border-radius: 50%;
-      background: rgba(52, 199, 89, 0.2);
+      background: rgba(52, 199, 89, 0.25);
       animation: pulse 1.8s infinite ease-in-out;
       pointer-events: none;
       z-index: -1;
     }
     
     .pin-end .pulse-ring {
-      background: rgba(255, 59, 48, 0.2);
+      background: rgba(255, 59, 48, 0.25);
     }
 
     @keyframes pulse {
-      0% {
-        transform: scale(0.5);
-        opacity: 1;
-      }
-      100% {
-        transform: scale(1.6);
-        opacity: 0;
-      }
+      0% { transform: scale(0.4); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    .pin-intermediate {
+      background: ${isDark ? '#007aff' : '#007aff'} !important;
+      border: 2px solid #ffffff !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
+      width: 12px !important;
+      height: 12px !important;
+      border-radius: 50% !important;
+      margin-left: -6px !important;
+      margin-top: -6px !important;
+      opacity: 1 !important;
+    }
+
+    .flying-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: url('https://img.icons8.com/color/48/superman.png') center/cover no-repeat;
+      background-color: #007aff;
+      box-shadow: 0 0 10px #007aff, 0 0 20px #007aff;
+      border: 2px solid white;
+      z-index: 2000;
+      position: relative;
+    }
+    
+    .flying-icon::after {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+      border-radius: 50%;
+      background: rgba(0, 122, 255, 0.35);
+      animation: pulse-flying 1s infinite;
+      z-index: -1;
+    }
+    
+    @keyframes pulse-flying {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    .skywalk-line {
+      stroke-dasharray: 4, 6;
+      animation: dash-flow 1s linear infinite;
+    }
+
+    @keyframes dash-flow {
+      to { stroke-dashoffset: -10; }
     }
 
     /* Geolocation dot style */
@@ -200,6 +247,11 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
     .leaflet-popup-tip {
       background: ${isDark ? '#1e1e1e' : '#ffffff'};
     }
+    ${isDark ? `
+    .leaflet-tile-pane {
+      filter: invert(95%) hue-rotate(180deg) brightness(90%) contrast(110%);
+    }
+    ` : ''}
   </style>
 </head>
 <body>
@@ -210,6 +262,7 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
   </script>
   <script>
     // Configuration Data
+    var isDark = ${isDark};
     var stations = ${JSON.stringify(stations)};
     var edges = ${JSON.stringify(edges)};
     var lineColors = ${JSON.stringify(LINE_COLORS)};
@@ -263,7 +316,51 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         stationsGroup = L.layerGroup().addTo(map);
 
         map.on('locationfound', function(e) {
+          window.latestUserLatLng = e.latlng;
+          window.lastLocationTime = Date.now();
+
+          // Send location to React Native
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'USER_LOCATION',
+              latitude: e.latlng.lat,
+              longitude: e.latlng.lng
+            }));
+          }
+
+          // Calculate distance to nearest station
+          var minDistance = Infinity;
+          for (var i = 0; i < stations.length; i++) {
+            if (stations[i].coordinates && stations[i].coordinates.length === 2) {
+              var stLatLng = L.latLng(stations[i].coordinates[0], stations[i].coordinates[1]);
+              var dist = e.latlng.distanceTo(stLatLng);
+              if (dist < minDistance) minDistance = dist;
+            }
+          }
+
+          var isNearMetro = minDistance <= 5000; // 5 kilometers threshold
+
+          if (!isNearMetro) {
+            if (userLocationMarker) {
+              map.removeLayer(userLocationMarker);
+              userLocationMarker = null;
+            }
+            if (window.userAccuracyCircle) {
+              map.removeLayer(window.userAccuracyCircle);
+              window.userAccuracyCircle = null;
+            }
+            if (window.forceLocateView) {
+              map.setView([28.6304, 77.2177], 11, { animate: true }); // Reset to Delhi center
+              window.forceLocateView = false;
+              if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'FAR_FROM_METRO' }));
+              }
+            }
+            return;
+          }
+
           if (userLocationMarker) {
+            if (!map.hasLayer(userLocationMarker)) userLocationMarker.addTo(map);
             userLocationMarker.setLatLng(e.latlng);
           } else {
             var userIcon = L.divIcon({
@@ -276,6 +373,7 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           }
 
           if (window.userAccuracyCircle) {
+            if (!map.hasLayer(window.userAccuracyCircle)) window.userAccuracyCircle.addTo(map);
             window.userAccuracyCircle.setLatLng(e.latlng).setRadius(e.accuracy);
           } else {
             window.userAccuracyCircle = L.circle(e.latlng, e.accuracy, {
@@ -286,11 +384,10 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
             }).addTo(map);
           }
 
-          sendToReactNative({
-            type: 'USER_LOCATION',
-            latitude: e.latlng.lat,
-            longitude: e.latlng.lng
-          });
+          if (window.forceLocateView) {
+            map.setView(e.latlng, 15, { animate: true });
+            window.forceLocateView = false;
+          }
         });
 
         map.on('locationerror', function(e) {
@@ -301,9 +398,6 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         // Draw bases
         drawBaseNetwork();
         drawStations();
-        if (activeRoute) {
-          drawActiveRoute();
-        }
 
         // Start locating immediately on launch
         map.locate({ setView: false, maxZoom: 15, watch: true, enableHighAccuracy: true });
@@ -314,14 +408,21 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           if (map) map.invalidateSize();
         }, 100);
         setTimeout(function() {
-          if (map) map.invalidateSize();
+          if (map) {
+            map.invalidateSize();
+            if (activeRoute) {
+              drawActiveRoute();
+            }
+          }
         }, 500);
 
         // Notify app shell
         checkAndNotifyReady();
       } catch (err) {
+        var errorMsg = err && err.message ? err.message : String(err);
+        console.error('Metroway map init error:', errorMsg);
         if (window.ReactNativeWebView) {
-          sendToReactNative({ type: 'MAP_READY' }); // Dismiss overlay
+          sendToReactNative({ type: 'MAP_ERROR', message: errorMsg });
         }
       }
     }
@@ -367,20 +468,7 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           interactive: false
         }).addTo(edgesGroup);
 
-        // Add midpoint skywalk walking indicator
-        if (isSkywalk) {
-          var midLat = (sourceCoords[0] + targetCoords[0]) / 2;
-          var midLng = (sourceCoords[1] + targetCoords[1]) / 2;
-          var walkIcon = L.divIcon({
-            className: 'station-marker',
-            html: '<div style="background: ' + (isDark ? '#1e1e1e' : '#ffffff') + '; border: 1.5px solid #a855f7; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.3); font-size: 11px;">🚶</div>',
-            iconSize: [22, 22],
-            iconAnchor: [11, 11]
-          });
-          L.marker([midLat, midLng], { icon: walkIcon, zIndexOffset: 900 })
-            .bindPopup('<div style="font-family: inherit; font-size: 11px; font-weight: 700; color: ' + (isDark ? '#ffffff' : '#000000') + '; text-align: center;">🚶 Skywalk Pathway<br/><span style="font-weight: 500; font-size: 10px; color: #8e8e93;">(' + edge.baseTime + ' min walk)</span></div>', { closeButton: false })
-            .addTo(edgesGroup);
-        }
+        // Removed midpoint skywalk icon from base network
       });
     }
 
@@ -413,7 +501,7 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         }).addTo(activeRouteGroup);
 
         // Render color foreground stroke
-        L.polyline([sourceCoords, targetCoords], {
+        var activeLine = L.polyline([sourceCoords, targetCoords], {
           color: routeColor,
           weight: 4,
           opacity: 1.0,
@@ -421,6 +509,23 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           lineCap: 'round',
           interactive: false
         }).addTo(activeRouteGroup);
+
+        if (edge.isTransfer && activeLine._path) {
+          activeLine._path.classList.add('skywalk-line');
+        }
+
+        // Add Skywalk icon to active route
+        if (edge.isTransfer || edge.line === 'Skywalk') {
+          var midLat = (sourceCoords[0] + targetCoords[0]) / 2;
+          var midLng = (sourceCoords[1] + targetCoords[1]) / 2;
+          var walkIcon = L.divIcon({
+            className: 'station-marker',
+            html: '<div style="background: ' + (isDark ? 'rgba(30,30,30,0.9)' : 'rgba(255,255,255,0.9)') + '; backdrop-filter: blur(4px); border: 1.5px solid #a855f7; border-radius: 12px; padding: 2px 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(168,85,247,0.4); font-size: 10px; font-weight: 700; color: ' + (isDark ? '#fff' : '#000') + ';">🚶 ' + edge.baseTime + 'm</div>',
+            iconSize: [40, 20],
+            iconAnchor: [20, 10]
+          });
+          L.marker([midLat, midLng], { icon: walkIcon, zIndexOffset: 1500 }).addTo(activeRouteGroup);
+        }
       });
 
       // Fit map bounds to active route
@@ -431,6 +536,114 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           animate: true,
           duration: 0.8
         });
+      }
+
+      // Premium Route Superman Flying Animation
+      if (window.routeAnimationReq) {
+        cancelAnimationFrame(window.routeAnimationReq);
+        window.routeAnimationReq = null;
+      }
+      if (window.flyingMarker) {
+        activeRouteGroup.removeLayer(window.flyingMarker);
+        window.flyingMarker = null;
+      }
+
+      if (activeRoute.path && activeRoute.path.length > 1) {
+        var orderedCoords = activeRoute.path.map(function(s) {
+          return [s.coordinates[0], s.coordinates[1]];
+        });
+
+        var totalTimeMs = 0;
+        var segments = [];
+        for (var i = 0; i < orderedCoords.length - 1; i++) {
+          var p1 = orderedCoords[i];
+          var p2 = orderedCoords[i+1];
+          // Simple euclidean distance for interpolation
+          var dist = Math.sqrt(Math.pow(p2[0] - p1[0], 2) + Math.pow(p2[1] - p1[1], 2));
+          
+          var edgeTimeMinutes = (activeRoute.edges && activeRoute.edges[i]) ? activeRoute.edges[i].baseTime : 2;
+          // Scale: 1 real minute = 3000ms animation (so 2 min = 6 seconds)
+          var segTimeMs = Math.max(edgeTimeMinutes * 3000, 1000);
+
+          segments.push({ p1: p1, p2: p2, dist: dist, timeMs: segTimeMs });
+          totalTimeMs += segTimeMs;
+        }
+
+        var flyingIcon = L.divIcon({
+          className: 'station-marker',
+          html: '<div class="flying-icon"></div>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+        window.flyingMarker = L.marker(orderedCoords[0], { icon: flyingIcon, zIndexOffset: 3000 }).addTo(activeRouteGroup);
+
+        var duration = totalTimeMs; 
+        var start = null;
+        var lastNotifiedStationIndex = -1;
+
+        function animateFly(timestamp) {
+          // If GPS is active and user is near route, snap to it. 
+          // Otherwise, dead reckon using baseTime extrapolation.
+          var hasRecentGps = window.lastLocationTime && (Date.now() - window.lastLocationTime < 10000);
+          var snapped = false;
+
+          if (hasRecentGps && window.latestUserLatLng) {
+            var userPt = L.latLng(window.latestUserLatLng.lat, window.latestUserLatLng.lng);
+            window.flyingMarker.setLatLng(userPt);
+            snapped = true;
+          }
+
+          if (!start) start = timestamp;
+          var elapsed = timestamp - start;
+          
+          var currentSegmentIndex = 0;
+
+          if (!snapped) {
+            // Extrapolate
+            var progressMs = elapsed % duration;
+            var currentMs = 0;
+            var currentPoint = orderedCoords[orderedCoords.length - 1];
+
+            for (var i = 0; i < segments.length; i++) {
+              if (currentMs + segments[i].timeMs >= progressMs) {
+                var segmentProgress = (progressMs - currentMs) / segments[i].timeMs;
+                var lat = segments[i].p1[0] + (segments[i].p2[0] - segments[i].p1[0]) * segmentProgress;
+                var lng = segments[i].p1[1] + (segments[i].p2[1] - segments[i].p1[1]) * segmentProgress;
+                currentPoint = [lat, lng];
+                currentSegmentIndex = i;
+                break;
+              }
+              currentMs += segments[i].timeMs;
+            }
+            if (window.flyingMarker) {
+              window.flyingMarker.setLatLng(currentPoint);
+            }
+          }
+
+          // Trigger Haptic Station Arrival Event if we reached a new station segment
+          if (currentSegmentIndex > lastNotifiedStationIndex) {
+            lastNotifiedStationIndex = currentSegmentIndex;
+            var arrivedStationNode = activeRoute.path[currentSegmentIndex];
+            
+            if (arrivedStationNode) {
+              var isArrEnd = arrivedStationNode.id === endStationId;
+              var isArrInterchange = transferStationIds.has(arrivedStationNode.id);
+              
+              if ((isArrEnd || isArrInterchange) && window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'STATION_ARRIVAL',
+                  stationId: arrivedStationNode.id,
+                  stationName: arrivedStationNode.name,
+                  arrivalType: isArrEnd ? 'DESTINATION' : 'INTERCHANGE'
+                }));
+              }
+            }
+          }
+          
+          window.routeAnimationReq = requestAnimationFrame(animateFly);
+        }
+
+        window.routeAnimationReq = requestAnimationFrame(animateFly);
       }
     }
 
@@ -459,22 +672,24 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         var coords = [station.coordinates[0], station.coordinates[1]];
         var isStart = station.id === startStationId;
         var isEnd = station.id === endStationId;
-        var isInterchange = station.lines.length > 1;
         var isOnActiveRoute = activeStationIds.has(station.id);
-        var opacity = hasActiveRoute ? (isOnActiveRoute || isStart || isEnd ? 1.0 : 0.18) : 1.0;
+        var isIntermediate = isOnActiveRoute && !isStart && !isEnd;
+        var isInterchange = transferStationIds.has(station.id);
+
+        var opacity = hasActiveRoute ? (isOnActiveRoute ? 1.0 : 0.18) : 1.0;
 
         var iconHtml = '';
         var size = [16, 16];
 
         if (isStart) {
           iconHtml = '<div class="pin-selected pin-start"><div class="pulse-ring"></div><span style="color: white; font-size: 8px; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,0.6); line-height: 1;">START</span></div>';
-          size = [38, 38];
+          size = [24, 24]; // Reduced size
         } else if (isEnd) {
-          iconHtml = '<div class="pin-selected pin-end"><div class="pulse-ring"></div><span style="color: white; font-size: 9px; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,0.6); line-height: 1;">END</span></div>';
-          size = [38, 38];
-        } else if (transferStationIds.has(station.id)) {
-          iconHtml = '<div class="pin-transfer"></div>';
-          size = [20, 20];
+          iconHtml = '<div class="pin-selected pin-end"><div class="pulse-ring"></div><span style="color: white; font-size: 8px; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,0.6); line-height: 1;">END</span></div>';
+          size = [24, 24]; // Reduced size
+        } else if (isIntermediate) {
+          iconHtml = '<div class="pin-intermediate"></div>';
+          size = [12, 12];
         } else if (isInterchange) {
           iconHtml = '<div class="station-dot-interchange" style="display: flex; align-items: center; justify-content: center;"><div style="width: 6px; height: 6px; border-radius: 50%; background: ' + (isDark ? '#ffffff' : '#111111') + ';"></div></div>';
           size = [20, 20];
@@ -650,6 +865,11 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         drawBaseNetwork();
         drawActiveRoute();
         drawStations();
+      } else if (message.type === 'UPDATE_ARRIVALS') {
+        // Inject fresh realtime arrivals without rebuilding the entire WebView
+        realtimeArrivals = message.arrivals || {};
+        // Re-render station markers to show updated arrival badges in popups
+        if (typeof drawStations === 'function') drawStations();
       } else if (message.type === 'CENTER_ON_DELHI') {
         map.setView([28.6304, 77.2177], 11, { animate: true });
       } else if (message.type === 'ZOOM_IN') {
@@ -657,7 +877,8 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
       } else if (message.type === 'ZOOM_OUT') {
         map.zoomOut();
       } else if (message.type === 'LOCATE_USER') {
-        map.locate({ setView: true, maxZoom: 15 });
+        window.forceLocateView = true;
+        map.locate({ setView: false, maxZoom: 15 });
       } else if (message.type === 'UPDATE_USER_LOCATION') {
         var lat = message.latitude;
         var lng = message.longitude;

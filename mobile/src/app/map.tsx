@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -9,55 +9,23 @@ import {
   Platform,
   ActivityIndicator,
   useColorScheme,
-  Linking,
   PermissionsAndroid,
+  Vibration,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system/legacy";
 import { useMetroStore } from "../store/useMetroStore";
 import { Colors } from "../constants/theme";
 import { getMapHtml } from "../utils/mapHtml";
 
-// Pure JavaScript UTF-8 Base64 Encoder
-function base64Encode(str: string): string {
-  const b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  let encoded = '';
-  let i = 0;
-  
-  const utf8Bytes: number[] = [];
-  for (let j = 0; j < str.length; j++) {
-    let c = str.charCodeAt(j);
-    if (c < 128) {
-      utf8Bytes.push(c);
-    } else if (c < 2048) {
-      utf8Bytes.push((c >> 6) | 192);
-      utf8Bytes.push((c & 63) | 128);
-    } else {
-      utf8Bytes.push((c >> 12) | 224);
-      utf8Bytes.push(((c >> 6) & 63) | 128);
-      utf8Bytes.push((c & 63) | 128);
-    }
-  }
-
-  while (i < utf8Bytes.length) {
-    const byte1 = utf8Bytes[i++];
-    const byte2 = i < utf8Bytes.length ? utf8Bytes[i++] : NaN;
-    const byte3 = i < utf8Bytes.length ? utf8Bytes[i++] : NaN;
-
-    const enc1 = byte1 >> 2;
-    const enc2 = ((byte1 & 3) << 4) | (isNaN(byte2) ? 0 : byte2 >> 4);
-    const enc3 = isNaN(byte2) ? 64 : ((byte2 & 15) << 2) | (isNaN(byte3) ? 0 : byte3 >> 6);
-    const enc4 = isNaN(byte3) ? 64 : byte3 & 63;
-
-    encoded += b64chars.charAt(enc1) + b64chars.charAt(enc2) +
-               (enc3 === 64 ? '=' : b64chars.charAt(enc3)) +
-               (enc4 === 64 ? '=' : b64chars.charAt(enc4));
-  }
-  return encoded;
-}
+// Write HTML to a temp file to avoid Android WebView base64 URI size limits
+// (base64 data URIs >300KB cause blank/grey screens on Android WebView)
+const MAP_TEMP_FILE = (FileSystem.cacheDirectory || '') + 'metroway_map.html';
 
 const DELHI_CENTER = {
   latitude: 28.6304,
@@ -131,46 +99,83 @@ export default function MapScreen() {
 
   // Lifecycle & Loading State
   const [mapLoading, setMapLoading] = useState(true);
-  const [mapError, setMapError] = useState(false);
+  const [mapReady, setMapReady] = useState(false);   // True only after successful JS init
+  const [mapError, setMapError] = useState<string | null>(null);
   const [mapVersion, setMapVersion] = useState(0); // Used to force reload/retry
+  const [mapFileUri, setMapFileUri] = useState<string | null>(null);
+  const [locationPermissionDone, setLocationPermissionDone] = useState(
+    Platform.OS === 'ios' // iOS doesn't need runtime FINE_LOCATION permission here
+  );
 
-  const mapHtmlSource = React.useMemo(() => {
-    return getMapHtml(store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme, store.realtimeArrivals);
-  }, [store.stations, store.edges, store.activeRoute, store.startStationId, store.endStationId, activeTheme, store.realtimeArrivals, mapVersion]);
+  // Haptic Arrival Alert State
+  const [arrivalAlert, setArrivalAlert] = useState<{stationName: string, arrivalType: string} | null>(null);
+  const vibrationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const mapDataUri = React.useMemo(() => {
+  const dismissArrivalAlert = useCallback(() => {
+    Vibration.cancel();
+    if (vibrationTimeoutRef.current) clearTimeout(vibrationTimeoutRef.current);
+    setArrivalAlert(null);
+  }, []);
+
+  // Rebuild and write the map HTML to a cache file whenever core data changes.
+  // NOTE: realtimeArrivals is intentionally EXCLUDED — it is pushed via postMessage
+  // to avoid a full WebView reload every time live data refreshes.
+  const buildAndWriteMapFile = useCallback(async () => {
     try {
-      const base64Content = base64Encode(mapHtmlSource);
-      return "data:text/html;base64," + base64Content;
+      const html = getMapHtml(
+        store.stations,
+        store.edges,
+        store.activeRoute, // It will capture the initial state
+        store.startStationId,
+        store.endStationId,
+        activeTheme,
+        {} // arrivals injected via postMessage after load
+      );
+      await FileSystem.writeAsStringAsync(MAP_TEMP_FILE, html, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      // Add cache-bust query so WebView actually reloads the updated file
+      setMapFileUri(`${MAP_TEMP_FILE}?v=${Date.now()}`);
     } catch (e) {
-      console.warn("Base64 encoding failed:", e);
-      return null;
+      console.error('[MapScreen] Failed to write map HTML file:', e);
+      setMapError('Failed to prepare map file. Please retry.');
+      setMapLoading(false);
     }
-  }, [mapHtmlSource]);
+  }, [store.stations, store.edges, activeTheme, mapVersion]);
+
+  // Re-build map file when core data or theme changes
+  useEffect(() => {
+    buildAndWriteMapFile();
+  }, [buildAndWriteMapFile]);
 
   // Request Location Permissions at Runtime for Android
+  // We resolve permission BEFORE allowing WebView to render so Leaflet's
+  // map.locate() fires after the host app already holds the permission grant.
   useEffect(() => {
     const requestLocationPermission = async () => {
-      if (Platform.OS === "android") {
+      if (Platform.OS === 'android') {
         try {
           const granted = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
             {
-              title: "Location Permission",
-              message: "Metroway needs access to your location to show where you are on the map and find the nearest stations.",
-              buttonNeutral: "Ask Me Later",
-              buttonNegative: "Cancel",
-              buttonPositive: "OK",
+              title: 'Location Permission',
+              message:
+                'Metroway needs access to your location to show where you are on the map and find the nearest stations.',
+              buttonNeutral: 'Ask Me Later',
+              buttonNegative: 'Cancel',
+              buttonPositive: 'OK',
             }
           );
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            console.log("GPS Location permission granted");
-            webViewRef.current?.postMessage(JSON.stringify({ type: "LOCATE_USER" }));
+            console.log('[MapScreen] GPS Location permission granted');
           } else {
-            console.log("GPS Location permission denied");
+            console.log('[MapScreen] GPS Location permission denied — map will load without geolocation');
           }
         } catch (err) {
-          console.warn(err);
+          console.warn('[MapScreen] Permission request error:', err);
+        } finally {
+          // Always unblock WebView render regardless of permission outcome
+          setLocationPermissionDone(true);
         }
       }
     };
@@ -178,18 +183,30 @@ export default function MapScreen() {
     store.fetchRealtimeTransitData();
   }, []);
 
-  // Keep route synced with WebView when activeRoute, startStation, or endStation changes
+  // Push live arrivals into WebView via postMessage whenever they update
+  // — avoids a full HTML rebuild + WebView reload on every data refresh
   useEffect(() => {
-    if (!mapLoading && !mapError && webViewRef.current) {
+    if (mapReady && webViewRef.current && store.realtimeArrivals) {
+      webViewRef.current.postMessage(JSON.stringify({
+        type: 'UPDATE_ARRIVALS',
+        arrivals: store.realtimeArrivals,
+      }));
+    }
+  }, [mapReady, store.realtimeArrivals]);
+
+  // Keep route synced with WebView when activeRoute/stations change
+  // Uses mapReady (not !mapLoading) to ensure JS context is actually alive
+  useEffect(() => {
+    if (mapReady && webViewRef.current) {
       const message = {
-        type: "UPDATE_ROUTE",
+        type: 'UPDATE_ROUTE',
         startStationId: store.startStationId,
         endStationId: store.endStationId,
         activeRoute: store.activeRoute,
       };
       webViewRef.current.postMessage(JSON.stringify(message));
     }
-  }, [mapLoading, mapError, store.startStationId, store.endStationId, store.activeRoute]);
+  }, [mapReady, store.startStationId, store.endStationId, store.activeRoute]);
 
   // Handle Messages from WebView Leaflet Map
   const handleWebViewMessage = (event: any) => {
@@ -197,38 +214,57 @@ export default function MapScreen() {
       const data = JSON.parse(event.nativeEvent.data);
       
       switch (data.type) {
-        case "MAP_READY":
+        case 'MAP_READY':
+          console.log('[MapScreen] Leaflet map initialised successfully');
           setMapLoading(false);
-          setMapError(false);
+          setMapReady(true);
+          setMapError(null);
+          // Now that map is ready, send location signal if permission granted
+          webViewRef.current?.postMessage(JSON.stringify({ type: 'LOCATE_USER' }));
           break;
-        case "USER_LOCATION":
+        case 'MAP_ERROR':
+          console.error('[MapScreen] Leaflet init error:', data.message);
+          setMapLoading(false);
+          setMapReady(false);
+          setMapError(data.message || 'Map failed to initialise');
+          break;
+        case 'USER_LOCATION':
           setUserLocation({
             latitude: data.latitude,
-            longitude: data.longitude
+            longitude: data.longitude,
           });
           break;
-        case "SET_START":
+        case 'SET_START':
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           store.setStartStationId(data.stationId);
-          if (store.endStationId) {
-            store.calculateActiveRoute();
-          }
+          if (store.endStationId) store.calculateActiveRoute();
           break;
-        case "SET_END":
+        case 'SET_END':
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           store.setEndStationId(data.stationId);
-          if (store.startStationId) {
-            store.calculateActiveRoute();
-          }
+          if (store.startStationId) store.calculateActiveRoute();
           break;
-        case "STATION_CLICK":
+        case 'STATION_ARRIVAL':
+          console.log('[MapScreen] Reached station:', data.stationName, data.arrivalType);
+          setArrivalAlert({ stationName: data.stationName, arrivalType: data.arrivalType });
+          
+          // Trigger 10-second repeating beating pattern
+          // Pattern: [delay, vibrate, delay, vibrate...]
+          Vibration.vibrate([0, 400, 200, 400, 800], true);
+          
+          if (vibrationTimeoutRef.current) clearTimeout(vibrationTimeoutRef.current);
+          vibrationTimeoutRef.current = setTimeout(() => {
+             dismissArrivalAlert();
+          }, 10000);
+          break;
+        case 'STATION_CLICK':
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           break;
         default:
           break;
       }
     } catch (e) {
-      console.warn("Error parsing WebView message:", e);
+      console.warn('[MapScreen] Error parsing WebView message:', e);
     }
   };
 
@@ -250,7 +286,8 @@ export default function MapScreen() {
   const handleRetry = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setMapLoading(true);
-    setMapError(false);
+    setMapReady(false);
+    setMapError(null);
     setMapVersion((prev) => prev + 1);
   };
 
@@ -267,29 +304,38 @@ export default function MapScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={activeTheme === "dark" ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+      <StatusBar barStyle={activeTheme === 'dark' ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />
 
-      {/* Interactive Map WebView */}
-      {!mapError && mapDataUri && (
+      {/* Interactive Map WebView — only renders after:
+           1. Location permission resolved (Android)
+           2. Map HTML temp file written to disk */}
+      {!mapError && mapFileUri && locationPermissionDone && (
         <WebView
           ref={webViewRef}
-          originWhitelist={["*"]}
-          source={{ uri: mapDataUri }}
+          originWhitelist={['*']}
+          source={{ uri: mapFileUri }}
           style={styles.mapWebView}
           onMessage={handleWebViewMessage}
           onError={(e) => {
-            console.warn("WebView error:", e.nativeEvent);
-            setMapError(true);
+            const msg = e.nativeEvent.description || 'WebView failed to load';
+            console.error('[MapScreen] WebView error:', msg);
+            setMapError(msg);
             setMapLoading(false);
+            setMapReady(false);
           }}
           onHttpError={(e) => {
-            console.warn("WebView HTTP error:", e.nativeEvent);
-            setMapError(true);
+            const msg = `HTTP ${e.nativeEvent.statusCode}: ${e.nativeEvent.url}`;
+            console.error('[MapScreen] WebView HTTP error:', msg);
+            setMapError(msg);
             setMapLoading(false);
+            setMapReady(false);
           }}
           domStorageEnabled={true}
           javaScriptEnabled={true}
           geolocationEnabled={true}
+          allowFileAccess={true}
+          allowUniversalAccessFromFileURLs={true}
+          allowFileAccessFromFileURLs={true}
           mixedContentMode="always"
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}
@@ -298,7 +344,7 @@ export default function MapScreen() {
       )}
 
       {/* Loading Skeleton State */}
-      {mapLoading && !mapError && (
+      {(mapLoading || !locationPermissionDone || !mapFileUri) && !mapError && (
         <View style={[styles.overlayContainer, { backgroundColor: colors.background }]}>
           <ActivityIndicator size="large" color="#007aff" />
           <Text style={[styles.overlayText, { color: colors.textSecondary }]}>Loading Metro Network...</Text>
@@ -309,12 +355,12 @@ export default function MapScreen() {
       {mapError && (
         <View style={[styles.overlayContainer, { backgroundColor: colors.background }]}>
           <Ionicons name="cloud-offline-outline" size={48} color="#ff3b30" />
-          <Text style={[styles.errorTitle, { color: colors.text }]}>Connection Failed</Text>
+          <Text style={[styles.errorTitle, { color: colors.text }]}>Map Failed to Load</Text>
           <Text style={[styles.errorSub, { color: colors.textSecondary }]}>
-            Unable to load metro map tiles. Please check your internet connection and try again.
+            {mapError}
           </Text>
           <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-            <Text style={styles.retryButtonText}>Retry Connection</Text>
+            <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -387,15 +433,30 @@ export default function MapScreen() {
                 {nearestStationInfo.station.name} • {nearestStationInfo.distance >= 1000 ? `${(nearestStationInfo.distance/1000).toFixed(1)} km` : `${nearestStationInfo.distance}m`} away
               </Text>
             </View>
-            <TouchableOpacity
-              style={styles.closeRouteBtn}
-              onPress={() => handleGetDirections(nearestStationInfo.station)}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Ionicons name="navigate" size={14} color="#FFFFFF" />
-                <Text style={styles.editBtnText}>Navigate</Text>
-              </View>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                style={[styles.closeRouteBtn, { backgroundColor: '#34c759' }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  store.setStartStationId(nearestStationInfo.station.id);
+                  if (store.endStationId) store.calculateActiveRoute();
+                  else router.push("/");
+                }}
+              >
+                <Text style={styles.editBtnText}>Set Start</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.closeRouteBtn, { backgroundColor: '#ff3b30' }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  store.setEndStationId(nearestStationInfo.station.id);
+                  if (store.startStationId) store.calculateActiveRoute();
+                  else router.push("/");
+                }}
+              >
+                <Text style={styles.editBtnText}>Set End</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       )}
@@ -447,6 +508,28 @@ export default function MapScreen() {
               </Text>
               <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>Fare</Text>
             </View>
+          </View>
+        </View>
+      )}
+
+      {/* Premium Haptic Arrival Overlay */}
+      {arrivalAlert && (
+        <View style={styles.arrivalOverlay}>
+          <View style={[styles.arrivalCard, { backgroundColor: activeTheme === 'dark' ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.95)' }]}>
+            <View style={[styles.arrivalIconWrap, { backgroundColor: arrivalAlert.arrivalType === 'DESTINATION' ? 'rgba(255,59,48,0.1)' : 'rgba(88,86,214,0.1)' }]}>
+              <Ionicons name={arrivalAlert.arrivalType === 'DESTINATION' ? "flag" : "git-compare"} size={28} color={arrivalAlert.arrivalType === 'DESTINATION' ? "#ff3b30" : "#5856d6"} />
+            </View>
+            <View style={styles.arrivalTextCol}>
+              <Text style={[styles.arrivalTitle, { color: colors.text }]}>
+                {arrivalAlert.arrivalType === 'DESTINATION' ? 'Destination Reached' : 'Interchange on this Station'}
+              </Text>
+              <Text style={[styles.arrivalSub, { color: colors.textSecondary }]}>
+                {arrivalAlert.stationName}
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.arrivalDismissBtn} onPress={dismissArrivalAlert}>
+              <Text style={styles.arrivalDismissText}>Dismiss</Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -552,8 +635,8 @@ const styles = StyleSheet.create({
     bottom: Platform.OS === "ios" ? 100 : 80,
     left: 16,
     right: 16,
-    borderRadius: 24,
-    padding: 16,
+    borderRadius: 16,
+    padding: 12,
     elevation: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
@@ -567,20 +650,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(142,142,147,0.2)",
-    paddingBottom: 12,
-    marginBottom: 14,
+    paddingBottom: 8,
+    marginBottom: 8,
   },
   bottomCardRoute: {
     flex: 1,
     paddingRight: 10,
   },
   bottomRouteText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
     letterSpacing: -0.3,
   },
   bottomRouteMeta: {
-    fontSize: 11,
+    fontSize: 10,
     marginTop: 2,
   },
   closeRouteBtn: {
@@ -612,11 +695,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   bottomStatVal: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "700",
   },
   bottomStatLbl: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.3,
@@ -674,4 +757,58 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: "500",
   },
+  arrivalOverlay: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    left: 16,
+    right: 16,
+    zIndex: 200,
+    alignItems: 'center',
+  },
+  arrivalCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 10,
+    width: '100%',
+  },
+  arrivalIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  arrivalTextCol: {
+    flex: 1,
+  },
+  arrivalTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  arrivalSub: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  arrivalDismissBtn: {
+    backgroundColor: '#007aff',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    marginLeft: 8,
+  },
+  arrivalDismissText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  }
 });
