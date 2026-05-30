@@ -51,3 +51,8 @@ mobile/
 - When modifying the UI, prioritize native `Animated` over adding new dependencies.
 - Modifications to the transit network require updating both `stations` and `edges` in `metroData.js`.
 - Always check `mapHtml.ts` if Leaflet rendering issues occur.
+
+### 4. Crowd Prediction & Next-Train Engine (`useMetroStore.js` / `index.tsx`)
+- **App State Time Sync:** The app uses `AppState.addEventListener` in `index.tsx` to automatically re-sync the system time (`new Date().getHours()`) when the app is brought out of the background. This prevents the state from getting stuck in "rush hour" if the user leaves the app open for hours.
+- **Midnight Closure Logic:** The DMRC network officially closes at night. If the hour is between 11:00 PM and 5:59 AM (hours 23 to 5), the mock GTFS realtime arrival generator instantly halts and returns empty arrays.
+- **Crowd Fallback:** During these closed hours, the crowd estimation mathematically returns `0`, which dynamically switches the Route Metrics and UI text to boldly read **"Closed"** instead of "Seats Available" or "Moderate".
