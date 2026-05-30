@@ -527,9 +527,9 @@ export default function PlannerScreen() {
 
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         {store.realtimeAlerts && store.realtimeAlerts.length > 0 && (
-          <View style={{ backgroundColor: '#FEF3C7', borderBottomWidth: 1, borderBottomColor: '#F59E0B', paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Ionicons name="warning" size={16} color="#D97706" style={{ marginTop: 1 }} />
-            <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '700', flex: 1 }}>
+          <View style={{ backgroundColor: activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.15)' : '#FFFBEB', borderBottomWidth: 1, borderBottomColor: activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.3)' : '#FDE68A', paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons name="warning" size={16} color="#F59E0B" style={{ marginTop: 1 }} />
+            <Text style={{ color: activeTheme === 'dark' ? '#FCD34D' : '#92400E', fontSize: 13, fontWeight: '600', flex: 1 }}>
               {store.realtimeAlerts[0].message}
             </Text>
           </View>

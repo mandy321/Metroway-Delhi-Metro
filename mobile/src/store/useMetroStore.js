@@ -125,7 +125,7 @@ export const useMetroStore = create(
         });
 
         let alerts = [];
-        if (Math.random() > 0.6) {
+        if (!isClosed && Math.random() > 0.6) {
           alerts = [{
             line: "Blue",
             message: "Blue Line: Technical snag at Rajouri Garden. Trains are running at restricted speed."
