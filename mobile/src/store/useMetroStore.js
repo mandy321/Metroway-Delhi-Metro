@@ -227,7 +227,10 @@ export const useMetroStore = create(
 
       calculateActiveRoute: () => {
         const { stations, edges, startStationId, endStationId, mode, timeOfDay, getStationCrowd } = get();
-        if (!startStationId || !endStationId || !stations || !edges) return;
+        if (!startStationId || !endStationId || !stations || !edges) {
+          set({ activeRoute: null });
+          return;
+        }
 
         const routeResult = calculateRoute(stations, edges, startStationId, endStationId, mode, timeOfDay, getStationCrowd);
         if (routeResult) {

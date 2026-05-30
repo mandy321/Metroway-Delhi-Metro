@@ -432,6 +432,17 @@ export default function MapScreen() {
               <Text style={[styles.bottomRouteMeta, { color: colors.textSecondary }]}>
                 {nearestStationInfo.station.name} • {nearestStationInfo.distance >= 1000 ? `${(nearestStationInfo.distance/1000).toFixed(1)} km` : `${nearestStationInfo.distance}m`} away
               </Text>
+              {(() => {
+                const cVal = store.getStationCrowd(nearestStationInfo.station.id);
+                const cColor = cVal === 0 ? "#8E8E93" : cVal > 7 ? "#FF453A" : cVal > 4 ? "#FF9F0A" : "#34C759";
+                const cText = cVal === 0 ? "Closed" : cVal > 7 ? "Very Packed" : cVal > 4 ? "Standing Only" : "Seats Available";
+                return (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>
+                    <Ionicons name="people" size={12} color={cColor} />
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: cColor }}>{cText}</Text>
+                  </View>
+                );
+              })()}
             </View>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TouchableOpacity
