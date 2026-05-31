@@ -1,3 +1,4 @@
+// Forced rebuild cache 1
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   StyleSheet,
@@ -39,11 +40,12 @@ export default function MapScreen() {
   const systemTheme = scheme === 'unspecified' ? 'light' : scheme;
   const activeTheme = store.themeMode === 'system' ? systemTheme : store.themeMode;
   const colors = Colors[activeTheme];
-  
+
   const webViewRef = useRef<WebView | null>(null);
-  
+
   // Geolocation & GPS tracking state
   const [userLocation, setUserLocation] = useState<{ latitude: number, longitude: number } | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Helper to calculate distance in meters using simple Euclidean/spherical projection
   const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -54,8 +56,8 @@ export default function MapScreen() {
     const deltaLambda = (lon2 - lon1) * Math.PI / 180;
 
     const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-              Math.cos(phi1) * Math.cos(phi2) *
-              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+      Math.cos(phi1) * Math.cos(phi2) *
+      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c; // distance in meters
@@ -107,9 +109,11 @@ export default function MapScreen() {
     Platform.OS === 'ios' // iOS doesn't need runtime FINE_LOCATION permission here
   );
 
-  // Haptic Arrival Alert State
-  const [arrivalAlert, setArrivalAlert] = useState<{stationName: string, arrivalType: string} | null>(null);
+  const [arrivalAlert, setArrivalAlert] = useState<{ stationName: string, arrivalType: string } | null>(null);
   const vibrationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // State for hiding UI elements when locating user
+  const [isBottomCardTransparent, setIsBottomCardTransparent] = useState(false);
 
   const dismissArrivalAlert = useCallback(() => {
     Vibration.cancel();
@@ -122,14 +126,22 @@ export default function MapScreen() {
   // to avoid a full WebView reload every time live data refreshes.
   const buildAndWriteMapFile = useCallback(async () => {
     try {
+      const initialCrowdScores: Record<string, number> = {};
+      const sysTime = new Date(store.timeOfDay || Date.now());
+      const currentSysHour = sysTime.getHours();
+      initialCrowdScores['IS_CLOSED'] = (currentSysHour >= 23 || currentSysHour <= 5) ? 1 : 0;
+      store.stations.forEach(s => {
+        initialCrowdScores[s.id] = store.getStationCrowd ? store.getStationCrowd(s.id) : (s.baseCrowd || 0);
+      });
+
       const html = getMapHtml(
         store.stations,
         store.edges,
-        store.activeRoute, // It will capture the initial state
+        store.activeRoute,
         store.startStationId,
         store.endStationId,
         activeTheme,
-        {} // arrivals injected via postMessage after load
+        { ...store.realtimeArrivals, crowdScores: initialCrowdScores }
       );
       await FileSystem.writeAsStringAsync(MAP_TEMP_FILE, html, {
         encoding: FileSystem.EncodingType.UTF8,
@@ -147,6 +159,13 @@ export default function MapScreen() {
   useEffect(() => {
     buildAndWriteMapFile();
   }, [buildAndWriteMapFile]);
+
+  const [simulatedRouteIndex, setSimulatedRouteIndex] = useState(-1);
+
+  // Reset simulation tracking if activeRoute changes
+  useEffect(() => {
+    setSimulatedRouteIndex(-1);
+  }, [store.activeRoute]);
 
   // Request Location Permissions at Runtime for Android
   // We resolve permission BEFORE allowing WebView to render so Leaflet's
@@ -187,12 +206,25 @@ export default function MapScreen() {
   // — avoids a full HTML rebuild + WebView reload on every data refresh
   useEffect(() => {
     if (mapReady && webViewRef.current && store.realtimeArrivals) {
-      webViewRef.current.postMessage(JSON.stringify({
+      const crowdScores: Record<string, number> = {};
+      const sysTime = new Date(store.timeOfDay || Date.now());
+      const currentSysHour = sysTime.getHours();
+      const isClosed = currentSysHour >= 23 || currentSysHour <= 5;
+      crowdScores['IS_CLOSED'] = isClosed ? 1 : 0;
+
+      store.stations.forEach(s => {
+        crowdScores[s.id] = store.getStationCrowd ? store.getStationCrowd(s.id) : (s.baseCrowd || 0);
+      });
+
+      const message = {
         type: 'UPDATE_ARRIVALS',
-        arrivals: store.realtimeArrivals,
-      }));
+        arrivals: { ...store.realtimeArrivals, crowdScores },
+      };
+      console.log("[MapScreen] Sending UPDATE_ARRIVALS with crowdScores:", Object.keys(crowdScores).length);
+      webViewRef.current.postMessage(JSON.stringify(message));
     }
-  }, [mapReady, store.realtimeArrivals]);
+
+  }, [mapReady, store.realtimeArrivals, store.timeOfDay]);
 
   // Keep route synced with WebView when activeRoute/stations change
   // Uses mapReady (not !mapLoading) to ensure JS context is actually alive
@@ -212,7 +244,7 @@ export default function MapScreen() {
   const handleWebViewMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      
+
       switch (data.type) {
         case 'MAP_READY':
           console.log('[MapScreen] Leaflet map initialised successfully');
@@ -228,11 +260,27 @@ export default function MapScreen() {
           setMapReady(false);
           setMapError(data.message || 'Map failed to initialise');
           break;
-        case 'USER_LOCATION':
-          setUserLocation({
-            latitude: data.latitude,
-            longitude: data.longitude,
-          });
+        case 'UPDATE_USER_LOCATION':
+          setUserLocation({ latitude: data.latitude, longitude: data.longitude });
+          if (data.recenter) {
+            let minDistance = Infinity;
+            let nearest: any = null;
+            store.stations.forEach(s => {
+              if (s.coordinates && s.coordinates.length === 2) {
+                const dist = getDistance(data.latitude, data.longitude, s.coordinates[0], s.coordinates[1]);
+                if (dist < minDistance) {
+                  minDistance = dist;
+                  nearest = s;
+                }
+              }
+            });
+            if (nearest) {
+              const d = Math.round(minDistance);
+              const distStr = d > 1000 ? (d / 1000).toFixed(1) + ' km' : d + ' m';
+              setToastMessage(`Nearest Station: ${nearest.name} (${distStr})`);
+              setTimeout(() => setToastMessage(null), 4000);
+            }
+          }
           break;
         case 'SET_START':
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -246,16 +294,26 @@ export default function MapScreen() {
           break;
         case 'STATION_ARRIVAL':
           console.log('[MapScreen] Reached station:', data.stationName, data.arrivalType);
-          setArrivalAlert({ stationName: data.stationName, arrivalType: data.arrivalType });
-          
-          // Trigger 10-second repeating beating pattern
-          // Pattern: [delay, vibrate, delay, vibrate...]
-          Vibration.vibrate([0, 400, 200, 400, 800], true);
-          
-          if (vibrationTimeoutRef.current) clearTimeout(vibrationTimeoutRef.current);
-          vibrationTimeoutRef.current = setTimeout(() => {
-             dismissArrivalAlert();
-          }, 10000);
+          if (data.arrivalType === 'INTERCHANGE' || data.arrivalType === 'DESTINATION') {
+            setArrivalAlert({ stationName: data.stationName, arrivalType: data.arrivalType });
+
+            // Trigger 15-second repeating beating pattern
+            // Pattern: [delay, vibrate, delay, vibrate...]
+            Vibration.vibrate([0, 400, 200, 400, 800], true);
+
+            if (vibrationTimeoutRef.current) clearTimeout(vibrationTimeoutRef.current);
+            vibrationTimeoutRef.current = setTimeout(() => {
+              dismissArrivalAlert();
+            }, 15000);
+          }
+          break;
+        case 'STATION_DEPARTED':
+          console.log('[MapScreen] Departed station:', data.stationId);
+          dismissArrivalAlert();
+          if (store.activeRoute && store.activeRoute.path) {
+            const idx = store.activeRoute.path.findIndex((s: any) => s.id === data.stationId);
+            if (idx !== -1) setSimulatedRouteIndex(idx + 1);
+          }
           break;
         case 'STATION_CLICK':
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -281,6 +339,8 @@ export default function MapScreen() {
   const handleCenterMap = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     webViewRef.current?.postMessage(JSON.stringify({ type: "LOCATE_USER" }));
+    setIsBottomCardTransparent(true);
+    setTimeout(() => setIsBottomCardTransparent(false), 4000);
   };
 
   const handleRetry = () => {
@@ -300,6 +360,49 @@ export default function MapScreen() {
     const originPart = userLocation ? `&origin=${userLocation.latitude},${userLocation.longitude}` : "";
     const url = `https://www.google.com/maps/dir/?api=1${originPart}&destination=${station.coordinates[0]},${station.coordinates[1]}&travelmode=walking`;
     Linking.openURL(url).catch(err => console.error("Couldn't open Google Maps", err));
+  };
+
+  const getRouteDynamicStats = () => {
+    if (!store.activeRoute) return null;
+    let remainingTime = store.activeRoute.metrics.time;
+    let stationsToDestination = store.activeRoute.path.length - 1;
+    let stationsToInterchange = -1;
+    
+    let currentIndex = 0;
+    if (simulatedRouteIndex !== -1) {
+      currentIndex = simulatedRouteIndex;
+    } else if (nearestActiveRouteStation && nearestActiveRouteStation.distance < 2000) {
+      currentIndex = nearestActiveRouteStation.index;
+    }
+    
+    if (store.activeRoute.edges) {
+        let rTime = 0;
+        for (let i = currentIndex; i < store.activeRoute.edges.length; i++) {
+          rTime += store.activeRoute.edges[i].baseTime;
+        }
+        remainingTime = Math.ceil(rTime);
+      }
+    
+    stationsToDestination = Math.max(0, store.activeRoute.path.length - 1 - currentIndex);
+    
+    if (store.activeRoute.edges) {
+      for (let i = currentIndex; i < store.activeRoute.edges.length; i++) {
+        if (store.activeRoute.edges[i].isTransfer) {
+          stationsToInterchange = i - currentIndex;
+          break;
+        }
+      }
+    }
+    
+    const arrivalDate = new Date(Date.now() + remainingTime * 60000);
+    const etaString = arrivalDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    
+    return {
+      remainingTime,
+      etaString,
+      stationsToInterchange,
+      stationsToDestination
+    };
   };
 
   return (
@@ -430,7 +533,7 @@ export default function MapScreen() {
                 📍 Nearest Station
               </Text>
               <Text style={[styles.bottomRouteMeta, { color: colors.textSecondary }]}>
-                {nearestStationInfo.station.name} • {nearestStationInfo.distance >= 1000 ? `${(nearestStationInfo.distance/1000).toFixed(1)} km` : `${nearestStationInfo.distance}m`} away
+                {nearestStationInfo.station.name} • {nearestStationInfo.distance >= 1000 ? `${(nearestStationInfo.distance / 1000).toFixed(1)} km` : `${nearestStationInfo.distance}m`} away
               </Text>
               {(() => {
                 const cVal = store.getStationCrowd(nearestStationInfo.station.id);
@@ -473,8 +576,11 @@ export default function MapScreen() {
       )}
 
       {/* Premium Apple-Style Active Route Summary Bottom Card */}
-      {!mapLoading && !mapError && store.activeRoute && (
-        <View style={[styles.bottomCard, { backgroundColor: colors.backgroundElement }]}>
+      {!mapLoading && !mapError && store.activeRoute && (() => {
+        const stats = getRouteDynamicStats();
+        if (!stats) return null;
+        return (
+        <View style={[styles.bottomCard, { backgroundColor: colors.backgroundElement, opacity: isBottomCardTransparent ? 0 : 1 }]}>
           <View style={styles.bottomCardHeader}>
             <View style={styles.bottomCardRoute}>
               <Text style={[styles.bottomRouteText, { color: colors.text }]} numberOfLines={1}>
@@ -500,28 +606,27 @@ export default function MapScreen() {
               <View style={[styles.statIconWrap, { backgroundColor: 'rgba(0,122,255,0.1)' }]}>
                 <Ionicons name="time" size={18} color="#007aff" />
               </View>
-              <Text style={[styles.bottomStatVal, { color: colors.text }]}>{store.activeRoute.metrics.time}m</Text>
-              <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>Time</Text>
+              <Text style={[styles.bottomStatVal, { color: colors.text }]}>{stats.remainingTime} min</Text>
+              <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>ETA {stats.etaString}</Text>
             </View>
             <View style={styles.bottomStatItem}>
               <View style={[styles.statIconWrap, { backgroundColor: 'rgba(88,86,214,0.1)' }]}>
-                <Ionicons name="git-compare" size={18} color="#5856d6" />
+                <Ionicons name="swap-horizontal" size={18} color="#5856d6" />
               </View>
-              <Text style={[styles.bottomStatVal, { color: colors.text }]}>{store.activeRoute.metrics.transfers}</Text>
-              <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>Transfers</Text>
+              <Text style={[styles.bottomStatVal, { color: colors.text }]}>{stats.stationsToInterchange !== -1 ? stats.stationsToInterchange : '-'}</Text>
+              <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>{stats.stationsToInterchange !== -1 ? 'To Transfer' : 'No Transfer'}</Text>
             </View>
             <View style={styles.bottomStatItem}>
               <View style={[styles.statIconWrap, { backgroundColor: 'rgba(52,199,89,0.1)' }]}>
-                <Ionicons name="card" size={18} color="#34c759" />
+                <Ionicons name="location" size={18} color="#34c759" />
               </View>
-              <Text style={[styles.bottomStatVal, { color: colors.text }]}>
-                ₹{store.useSmartCard ? Math.round(store.activeRoute.metrics.fare * 0.9) : store.activeRoute.metrics.fare}
-              </Text>
-              <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>Fare</Text>
+              <Text style={[styles.bottomStatVal, { color: colors.text }]}>{stats.stationsToDestination}</Text>
+              <Text style={[styles.bottomStatLbl, { color: colors.textSecondary }]}>Destination</Text>
             </View>
           </View>
         </View>
-      )}
+        );
+      })()}
 
       {/* Premium Haptic Arrival Overlay */}
       {arrivalAlert && (
@@ -544,11 +649,38 @@ export default function MapScreen() {
           </View>
         </View>
       )}
+
+      {/* Floating Nearest Station Toast */}
+      {toastMessage && (
+        <View style={styles.toastContainer}>
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  toastContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    zIndex: 9999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  toastText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
   },
@@ -820,6 +952,5 @@ const styles = StyleSheet.create({
   arrivalDismissText: {
     color: '#fff',
     fontSize: 13,
-    fontWeight: '600',
   }
 });
