@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useMetroStore } from "../store/useMetroStore";
 import { LINE_COLORS } from "../data/metroData";
 import {
@@ -37,6 +38,7 @@ export default function RouteDetails() {
     calculateActiveRoute
   } = useMetroStore();
   const [activeTab, setActiveTab] = useState("timeline");
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const [reportingStationId, setReportingStationId] = useState("");
   const [reportedLevel, setReportedLevel] = useState("Moderate");
@@ -334,7 +336,31 @@ export default function RouteDetails() {
   const pathAlerts = getPathStatusAlerts();
 
   return (
-    <div className="glass-panel flex-1 p-5 rounded-2xl flex flex-col space-y-5 border border-white/10 shadow-xl overflow-hidden">
+
+    <div className="glass-panel flex-1 px-5 pt-3 pb-5 rounded-2xl flex flex-col space-y-5 border border-white/10 shadow-xl overflow-hidden relative transition-all duration-300">
+      {/* Resizable / Drag Handle to slide up and down */}
+      <motion.div
+        className="w-full flex justify-center pb-3 cursor-ns-resize group relative z-50 touch-none"
+        onClick={() => setIsExpanded(!isExpanded)}
+        onPanEnd={(e, info) => {
+          if (info.offset.y < -30) {
+            setIsExpanded(true);
+          } else if (info.offset.y > 30) {
+            setIsExpanded(false);
+          }
+        }}
+      >
+
+        <div className="flex flex-col items-center space-y-1">
+          <div className="w-16 h-1.5 bg-slate-600 group-hover:bg-cyan-400 rounded-full transition-all shadow-sm" />
+          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+            {isExpanded ? "Slide Down" : "Slide Up"}
+          </span>
+        </div>
+
+      </motion.div>
+
+
       
       {/* Route Overview Metrics */}
       <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
@@ -474,7 +500,7 @@ export default function RouteDetails() {
       </div>
 
       {/* Tab Contents */}
-      <div className="flex-1 overflow-y-auto max-h-[350px]">
+      <div className={`flex-1 overflow-y-auto ${isExpanded ? 'max-h-[70vh]' : 'max-h-[350px]'} transition-all duration-300`}>
         
         {/* Timeline */}
         {activeTab === "timeline" && (
@@ -677,7 +703,7 @@ export default function RouteDetails() {
 
         {/* Exits */}
         {activeTab === "exits" && (
-          <div className="space-y-4">
+          <div className="space-y-4 pb-6">
             {recommendedExit ? (
               <div className="bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 border border-cyan-500/25 p-4 rounded-xl space-y-2">
                 <div className="flex items-center space-x-2 text-cyan-300">
