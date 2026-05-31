@@ -64,6 +64,41 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
     }
     ` : ''}
 
+    /* Neon Glow & Route Morphing Animations */
+    .neon-glow path {
+      filter: drop-shadow(0 0 6px currentColor);
+    }
+    .halo-pulse-line {
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      animation: pulseHalo 2s ease-in-out infinite alternate;
+    }
+    @keyframes pulseHalo {
+      0% { 
+        stroke-width: 6px; 
+        stroke-opacity: 0.15; 
+        filter: drop-shadow(0 0 2px currentColor); 
+      }
+      100% { 
+        stroke-width: 12px; 
+        stroke-opacity: 0.4; 
+        filter: drop-shadow(0 0 6px currentColor); 
+      }
+    }
+    
+    @keyframes drawRoute {
+      0% {
+        stroke-dasharray: 0, 5000px;
+      }
+      100% {
+        stroke-dasharray: 5000px, 0;
+      }
+    }
+    
+    .route-morph-line path {
+      animation: drawRoute 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
     /* Custom Pins */
     .station-marker {
       display: flex;
@@ -87,7 +122,7 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
       height: 100%;
       border-radius: 50%;
       background: #ffffff;
-      border: 3px solid #111111;
+      border: 3.5px dotted #111111;
       box-shadow: 0 2px 4px rgba(0,0,0,0.25);
     }
 
@@ -174,10 +209,10 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
       width: 24px;
       height: 24px;
       border-radius: 50%;
-      background: url('https://img.icons8.com/color/48/superman.png') center/cover no-repeat;
-      background-color: #007aff;
+      background: white url('https://img.icons8.com/fluency/48/train.png') no-repeat center center;
+      background-size: 18px 18px;
       box-shadow: 0 0 10px #007aff, 0 0 20px #007aff;
-      border: 2px solid white;
+      border: 2px solid #007aff;
       z-index: 2000;
       position: relative;
     }
@@ -211,12 +246,11 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
 
     /* Geolocation dot style */
     .user-location-dot {
-      width: 12px;
-      height: 12px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      background: #007aff;
-      border: 3px solid #ffffff;
-      box-shadow: 0 0 0 2px rgba(0,122,255,0.4), 0 2px 6px rgba(0,0,0,0.3);
+      background: url('https://img.icons8.com/color/48/superman.png') center/cover no-repeat;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
     }
     
     .user-location-pulse {
@@ -261,6 +295,15 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
     ${LEAFLET_JS}
   </script>
   <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'MAP_ERROR',
+          message: 'JS Error: ' + message + ' at ' + lineno + ':' + colno
+        }));
+      }
+    };
+    
     // Configuration Data
     var isDark = ${isDark};
     var stations = ${JSON.stringify(stations)};
@@ -315,6 +358,89 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         activeRouteGroup = L.layerGroup().addTo(map);
         stationsGroup = L.layerGroup().addTo(map);
 
+        window.showUserLocationPopup = function(overrideStartStationId) {
+          if (!userLocationMarker || !window.latestUserLatLng) return;
+          var nearest = null;
+          var minDist = Infinity;
+          
+          stations.forEach(function(s) {
+            if (s.coordinates && s.coordinates.length === 2) {
+              var stLatLng = L.latLng(s.coordinates[0], s.coordinates[1]);
+              var d = window.latestUserLatLng.distanceTo(stLatLng);
+              if (d < minDist) {
+                minDist = d;
+                nearest = s;
+              }
+            }
+          });
+          
+          if (nearest) {
+            var d = Math.round(minDist);
+            var distStr = d > 1000 ? (d / 1000).toFixed(1) + ' km' : d + ' m';
+            var msg = "";
+            var targetSt = nearest; // default to nearest station for line drawing
+            
+            if (d < 100) {
+              msg = "<b>You are at " + nearest.name + "</b>";
+            } else {
+              msg = "<b>Nearest Station:</b> " + nearest.name + "<br>" + distStr;
+            }
+            
+            var sId = overrideStartStationId || startStationId;
+            if (sId) {
+              var startSt = stations.find(function(s) { return s.id === sId; });
+              if (startSt && startSt.coordinates && startSt.coordinates.length === 2 && startSt.id !== nearest.id) {
+                var startLatLng = L.latLng(startSt.coordinates[0], startSt.coordinates[1]);
+                var startD = Math.round(window.latestUserLatLng.distanceTo(startLatLng));
+                var startDistStr = startD > 1000 ? (startD / 1000).toFixed(1) + ' km' : startD + ' m';
+                msg += "<br><br><b>Start Station:</b> " + startSt.name + "<br>" + startDistStr;
+                targetSt = startSt; // Draw line to Start Station instead if route is active
+              }
+            }
+            
+            // Draw temporary dotted line to target station
+            if (window.nearestStationLine) {
+              map.removeLayer(window.nearestStationLine);
+            }
+            var targetLatLng = L.latLng(targetSt.coordinates[0], targetSt.coordinates[1]);
+            window.nearestStationLine = L.polyline([window.latestUserLatLng, targetLatLng], {
+              color: '#007aff',
+              weight: 3,
+              dashArray: '5, 10',
+              className: 'nearest-station-line' // Optional animation
+            }).addTo(map);
+
+            // Zoom map to fit both user and target station so we see the full dotted line
+            var bounds = L.latLngBounds(window.latestUserLatLng, targetLatLng);
+            map.fitBounds(bounds, { padding: [50, 50], animate: true, maxZoom: 15 });
+
+            userLocationMarker.bindPopup(msg, { className: 'custom-popup', autoClose: true, closeOnClick: true }).openPopup();
+            
+            setTimeout(function() {
+              if (userLocationMarker && userLocationMarker.isPopupOpen()) {
+                userLocationMarker.closePopup();
+              }
+              // Fade out and remove the dotted line
+              if (window.nearestStationLine) {
+                var el = window.nearestStationLine._path;
+                if (el) {
+                  el.style.transition = 'opacity 0.5s ease-out';
+                  el.style.opacity = '0';
+                  setTimeout(function() {
+                    if (window.nearestStationLine && map.hasLayer(window.nearestStationLine)) {
+                      map.removeLayer(window.nearestStationLine);
+                      window.nearestStationLine = null;
+                    }
+                  }, 500);
+                } else {
+                  map.removeLayer(window.nearestStationLine);
+                  window.nearestStationLine = null;
+                }
+              }
+            }, 4000);
+          }
+        };
+
         map.on('locationfound', function(e) {
           window.latestUserLatLng = e.latlng;
           window.lastLocationTime = Date.now();
@@ -330,38 +456,28 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
 
           // Calculate distance to nearest station
           var minDistance = Infinity;
+          var nearestStationLatLng = null;
           for (var i = 0; i < stations.length; i++) {
             if (stations[i].coordinates && stations[i].coordinates.length === 2) {
               var stLatLng = L.latLng(stations[i].coordinates[0], stations[i].coordinates[1]);
               var dist = e.latlng.distanceTo(stLatLng);
-              if (dist < minDistance) minDistance = dist;
+              if (dist < minDistance) {
+                minDistance = dist;
+                nearestStationLatLng = stLatLng;
+              }
             }
           }
 
-          var isNearMetro = minDistance <= 5000; // 5 kilometers threshold
-
-          if (!isNearMetro) {
-            if (userLocationMarker) {
-              map.removeLayer(userLocationMarker);
-              userLocationMarker = null;
-            }
-            if (window.userAccuracyCircle) {
-              map.removeLayer(window.userAccuracyCircle);
-              window.userAccuracyCircle = null;
-            }
-            if (window.forceLocateView) {
-              map.setView([28.6304, 77.2177], 11, { animate: true }); // Reset to Delhi center
-              window.forceLocateView = false;
-              if (window.ReactNativeWebView) {
-                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'FAR_FROM_METRO' }));
-              }
-            }
-            return;
+          if (window.forceLocateView) {
+            map.setView(e.latlng, 15, { animate: true }); // Always center on user if forceLocateView is true
+            window.forceLocateView = false;
           }
 
           if (userLocationMarker) {
             if (!map.hasLayer(userLocationMarker)) userLocationMarker.addTo(map);
             userLocationMarker.setLatLng(e.latlng);
+            // Don't fully hide Superman, just reduce opacity slightly so they know he's there
+            userLocationMarker.setOpacity(minDistance < 100 ? 0.7 : 1);
           } else {
             var userIcon = L.divIcon({
               className: 'station-marker',
@@ -369,7 +485,12 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
               iconSize: [28, 28],
               iconAnchor: [14, 14]
             });
-            userLocationMarker = L.marker(e.latlng, { icon: userIcon, zIndexOffset: 2000 }).addTo(map);
+            userLocationMarker = L.marker(e.latlng, { icon: userIcon, zIndexOffset: 9000, opacity: minDistance < 100 ? 0.7 : 1 }).addTo(map);
+            userLocationMarker.on('click', function() {
+              if (window.showUserLocationPopup) {
+                window.showUserLocationPopup();
+              }
+            });
           }
 
           if (window.userAccuracyCircle) {
@@ -489,7 +610,8 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         routeCoords.push(sourceCoords);
         routeCoords.push(targetCoords);
 
-        var routeColor = edge.isTransfer ? '#a855f7' : (lineColors[edge.line] || '#0072BB');
+        var isRealSkywalk = edge.line === 'Skywalk';
+        var routeColor = isRealSkywalk ? '#a855f7' : (lineColors[edge.line] || '#0072BB');
 
         // Render black background stroke for highlight separation
         L.polyline([sourceCoords, targetCoords], {
@@ -500,29 +622,44 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           interactive: false
         }).addTo(activeRouteGroup);
 
+        // Render neon glow underlayer (only for solid lines to avoid messy dashes)
+        if (!isRealSkywalk && ${isDark}) {
+          L.polyline([sourceCoords, targetCoords], {
+            color: routeColor,
+            weight: 12,
+            opacity: 0.3,
+            lineCap: 'round',
+            interactive: false,
+            className: 'neon-glow route-morph-line'
+          }).addTo(activeRouteGroup);
+        }
+
         // Render color foreground stroke
         var activeLine = L.polyline([sourceCoords, targetCoords], {
           color: routeColor,
           weight: 4,
           opacity: 1.0,
-          dashArray: edge.isTransfer ? '5, 5' : null,
+          dashArray: isRealSkywalk ? '5, 5' : null,
           lineCap: 'round',
-          interactive: false
+          interactive: false,
+          className: isRealSkywalk ? '' : 'route-morph-line'
         }).addTo(activeRouteGroup);
 
-        if (edge.isTransfer && activeLine._path) {
+        if (isRealSkywalk && activeLine._path) {
           activeLine._path.classList.add('skywalk-line');
         }
 
-        // Add Skywalk icon to active route
-        if (edge.isTransfer || edge.line === 'Skywalk') {
+        // Add Transfer/Skywalk icon to active route
+        if (edge.isTransfer) {
           var midLat = (sourceCoords[0] + targetCoords[0]) / 2;
           var midLng = (sourceCoords[1] + targetCoords[1]) / 2;
+          var walkColor = isRealSkywalk ? '#a855f7' : '#5856d6';
+          var walkShadow = isRealSkywalk ? 'rgba(168,85,247,0.4)' : 'rgba(88,86,214,0.4)';
           var walkIcon = L.divIcon({
             className: 'station-marker',
-            html: '<div style="background: ' + (isDark ? 'rgba(30,30,30,0.9)' : 'rgba(255,255,255,0.9)') + '; backdrop-filter: blur(4px); border: 1.5px solid #a855f7; border-radius: 12px; padding: 2px 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(168,85,247,0.4); font-size: 10px; font-weight: 700; color: ' + (isDark ? '#fff' : '#000') + ';">🚶 ' + edge.baseTime + 'm</div>',
-            iconSize: [40, 20],
-            iconAnchor: [20, 10]
+            html: '<div style="background: ' + (isDark ? 'rgba(30,30,30,0.9)' : 'rgba(255,255,255,0.9)') + '; backdrop-filter: blur(4px); border: 1.5px solid ' + walkColor + '; border-radius: 12px; padding: 2px 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px ' + walkShadow + '; font-size: 10px; font-weight: 700; color: ' + (isDark ? '#fff' : '#000') + ';">🚶 ' + edge.baseTime + ' min</div>',
+            iconSize: [50, 20],
+            iconAnchor: [25, 25] // Offset it slightly upwards so it floats above the station dot
           });
           L.marker([midLat, midLng], { icon: walkIcon, zIndexOffset: 1500 }).addTo(activeRouteGroup);
         }
@@ -549,15 +686,15 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
       }
 
       if (activeRoute.path && activeRoute.path.length > 1) {
-        var orderedCoords = activeRoute.path.map(function(s) {
+        window.orderedCoords = activeRoute.path.map(function(s) {
           return [s.coordinates[0], s.coordinates[1]];
         });
 
         var totalTimeMs = 0;
         var segments = [];
-        for (var i = 0; i < orderedCoords.length - 1; i++) {
-          var p1 = orderedCoords[i];
-          var p2 = orderedCoords[i+1];
+        for (var i = 0; i < window.orderedCoords.length - 1; i++) {
+          var p1 = window.orderedCoords[i];
+          var p2 = window.orderedCoords[i+1];
           // Simple euclidean distance for interpolation
           var dist = Math.sqrt(Math.pow(p2[0] - p1[0], 2) + Math.pow(p2[1] - p1[1], 2));
           
@@ -569,17 +706,124 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           totalTimeMs += segTimeMs;
         }
 
+        var initialLine = activeRoute.edges && activeRoute.edges.length > 0 ? activeRoute.edges[0].line : 'Blue';
+        var initialRouteColor = initialLine === 'Skywalk' ? '#a855f7' : (lineColors[initialLine] || '#007aff');
+        var c = initialRouteColor;
+        
+        // Single SVG, 3 <g> groups so each coach can be individually rotated for articulation
+        // Viewbox: 80 wide × 18 tall. Coach 1 (tail) x=0, Coach 2 (mid) x=28, Coach 3 (nose) x=56
+        var trainHtml = '<div class="train-container" style="transition: transform 0.25s linear; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.55));">' +
+          '<svg id="train-svg" width="80" height="18" viewBox="0 0 80 18" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+            // Tail coach
+            '<g id="coach-tail" style="transition: transform 0.25s linear; transform-origin: 13px 9px;">' +
+              '<rect x="0" y="1" width="24" height="16" rx="3" fill="#e5e7eb" stroke="#374151" stroke-width="1.2"/>' +
+              '<rect x="0" y="7" width="24" height="5" fill="' + c + '"/>' +
+              '<rect x="2" y="3" width="5" height="3" rx="1" fill="rgba(0,0,0,0.2)"/>' +
+              '<rect x="17" y="3" width="5" height="3" rx="1" fill="rgba(0,0,0,0.2)"/>' +
+            '</g>' +
+            // Coupler 1
+            '<rect x="24" y="7" width="4" height="4" rx="1" fill="#1f2937"/>' +
+            // Mid coach
+            '<g id="coach-mid" style="transition: transform 0.25s linear; transform-origin: 40px 9px;">' +
+              '<rect x="28" y="1" width="24" height="16" rx="3" fill="#e5e7eb" stroke="#374151" stroke-width="1.2"/>' +
+              '<rect x="28" y="7" width="24" height="5" fill="' + c + '"/>' +
+              '<rect x="30" y="3" width="5" height="3" rx="1" fill="rgba(0,0,0,0.2)"/>' +
+              '<rect x="45" y="3" width="5" height="3" rx="1" fill="rgba(0,0,0,0.2)"/>' +
+            '</g>' +
+            // Coupler 2
+            '<rect x="52" y="7" width="4" height="4" rx="1" fill="#1f2937"/>' +
+            // Front/nose coach — rounded nose on right
+            '<g id="coach-front" style="transition: transform 0.25s linear; transform-origin: 67px 9px;">' +
+              '<rect x="56" y="1" width="24" height="16" rx="5" fill="#e5e7eb" stroke="#374151" stroke-width="1.2"/>' +
+              '<rect x="56" y="7" width="22" height="5" fill="' + c + '"/>' +
+              '<rect x="58" y="3" width="5" height="3" rx="1" fill="rgba(0,0,0,0.2)"/>' +
+              // Headlights on nose
+              '<rect x="76" y="4" width="3" height="3" rx="1" fill="#fef3c7"/>' +
+              '<rect x="76" y="11" width="3" height="3" rx="1" fill="#fef3c7"/>' +
+            '</g>' +
+          '</svg>' +
+          '</div>';
+            
         var flyingIcon = L.divIcon({
           className: 'station-marker',
-          html: '<div class="flying-icon"></div>',
-          iconSize: [24, 24],
-          iconAnchor: [12, 12]
+          html: trainHtml,
+          iconSize: [80, 18],
+          iconAnchor: [40, 9]
         });
-        window.flyingMarker = L.marker(orderedCoords[0], { icon: flyingIcon, zIndexOffset: 3000 }).addTo(activeRouteGroup);
+        window.flyingMarker = L.marker(window.orderedCoords[0], { icon: flyingIcon, zIndexOffset: 3000 }).addTo(activeRouteGroup);
+        
+        window.flyingMarker.on('click', function() {
+          var content = '<div class="popup-dynamic-content" style="font-size:12px;font-weight:700;padding:2px;text-align:center;line-height:1.4;color:#444;">';
+          if (window.isTrainStopped) {
+            content += '📍 Arrived at<br/><span style="color:#007aff;font-size:14px;">' + (window.currentStationName || 'Station') + '</span>';
+          } else {
+            content += '➡️ Arriving at<br/><span style="color:#34c759;font-size:14px;">' + (window.nextStationName || 'Next Station') + '</span>';
+          }
+          content += '</div>';
+          window.flyingMarker.bindPopup(content, { autoClose: true, closeOnClick: true, offset: [0, -10] }).openPopup();
+        });
 
         var duration = totalTimeMs; 
         var start = null;
         var lastNotifiedStationIndex = -1;
+        var lastDepartedStationIndex = -1;
+
+        // Initialize the popup state variables from the first segment
+        window.isTrainStopped = false;
+        window.lastAngle = undefined;
+        if (activeRoute.edges && activeRoute.edges.length > 0) {
+          var firstTarget = stations.find(function(s) { return s.id === activeRoute.edges[0].target; });
+          window.nextStationName = firstTarget ? firstTarget.name : '';
+          window.currentStationName = window.nextStationName;
+        }
+
+        // Helper for Train snapping: calculate shortest distance from point to line segment
+        function distanceToSegment(p, v, w) {
+          var l2 = v.distanceTo(w);
+          l2 = l2 * l2; // distance squared
+          if (l2 == 0) return p.distanceTo(v);
+          var dy = w.lat - v.lat;
+          var dx = w.lng - v.lng;
+          var t = ((p.lng - v.lng) * dx + (p.lat - v.lat) * dy) / (dx*dx + dy*dy); // Simple planar projection approximation for short distances
+          t = Math.max(0, Math.min(1, t));
+          var proj = L.latLng(v.lat + t * dy, v.lng + t * dx);
+          return p.distanceTo(proj);
+        }
+
+        // Apply rotation to the whole train + stagger each coach so they look articulated through curves
+        function applyTrainRotation(angle, segIdx, segs) {
+          if (!window.flyingMarker) return;
+          var el = window.flyingMarker.getElement();
+          if (!el) return;
+          
+          // Whole train wrapper rotates
+          var container = el.querySelector('.train-container');
+          if (container) {
+            container.style.transform = 'rotate(' + angle + 'deg)';
+          }
+          
+          // Previous segment angle (for tail/mid coach articulation)
+          var prevAngle = angle;
+          if (segIdx > 0 && segs[segIdx - 1]) {
+            var pDy = segs[segIdx - 1].p2[0] - segs[segIdx - 1].p1[0];
+            var pDx = segs[segIdx - 1].p2[1] - segs[segIdx - 1].p1[1];
+            prevAngle = Math.atan2(-pDy, pDx) * 180 / Math.PI;
+            var d = prevAngle - angle;
+            if (d > 180) d -= 360;
+            if (d < -180) d += 360;
+            prevAngle = angle + d;
+          }
+          
+          // Individual coach articulation via SVG <g> groups
+          var tailG = el.querySelector('#coach-tail');
+          var midG  = el.querySelector('#coach-mid');
+          if (tailG && midG) {
+            var midOffset  = (prevAngle - angle) * 0.3;
+            var tailOffset = (prevAngle - angle) * 0.6;
+            tailG.style.transform = 'rotate(' + (-tailOffset) + 'deg)';
+            midG.style.transform  = 'rotate(' + (-midOffset)  + 'deg)';
+          }
+        }
 
         function animateFly(timestamp) {
           // If GPS is active and user is near route, snap to it. 
@@ -587,57 +831,193 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           var hasRecentGps = window.lastLocationTime && (Date.now() - window.lastLocationTime < 10000);
           var snapped = false;
 
-          if (hasRecentGps && window.latestUserLatLng) {
-            var userPt = L.latLng(window.latestUserLatLng.lat, window.latestUserLatLng.lng);
-            window.flyingMarker.setLatLng(userPt);
+          // Determine if user is mathematically standing on the tracks
+          var isUserNearRoute = false;
+          if (window.latestUserLatLng && window.orderedCoords && window.orderedCoords.length > 0) {
+            var minRouteDist = Infinity;
+            var uLatLng = L.latLng(window.latestUserLatLng.lat, window.latestUserLatLng.lng);
+            for (var i = 0; i < window.orderedCoords.length - 1; i++) {
+              var p1 = L.latLng(window.orderedCoords[i][0], window.orderedCoords[i][1]);
+              var p2 = L.latLng(window.orderedCoords[i+1][0], window.orderedCoords[i+1][1]);
+              var d = distanceToSegment(uLatLng, p1, p2);
+              if (d < minRouteDist) minRouteDist = d;
+            }
+            if (minRouteDist < 50) { // Must be within 50 meters of the tracks
+              isUserNearRoute = true;
+            }
+          }
+
+          if (hasRecentGps && isUserNearRoute) {
             snapped = true;
+            window.flyingMarker.setLatLng(window.latestUserLatLng);
+            
+            if (segments[currentSegmentIndex]) {
+              var dy = segments[currentSegmentIndex].p2[0] - segments[currentSegmentIndex].p1[0];
+              var dx = segments[currentSegmentIndex].p2[1] - segments[currentSegmentIndex].p1[1];
+              var angle = Math.atan2(-dy, dx) * 180 / Math.PI;
+              
+              if (typeof window.lastAngle === 'undefined') window.lastAngle = angle;
+              var diff = angle - (window.lastAngle % 360);
+              if (diff > 180) diff -= 360;
+              if (diff < -180) diff += 360;
+              var targetAngle = window.lastAngle + diff;
+              window.lastAngle = targetAngle;
+              
+              applyTrainRotation(targetAngle, currentSegmentIndex, segments);
+            }
           }
 
           if (!start) start = timestamp;
-          var elapsed = timestamp - start;
           
           var currentSegmentIndex = 0;
+          var segmentProgress = 0;
 
-          if (!snapped) {
-            // Extrapolate
-            var progressMs = elapsed % duration;
-            var currentMs = 0;
-            var currentPoint = orderedCoords[orderedCoords.length - 1];
-
+          if (snapped) {
+            // GPS mode: position already set above. Now determine segment index from GPS.
+            var minRouteDist2 = Infinity;
+            var uLatLng2 = L.latLng(window.latestUserLatLng.lat, window.latestUserLatLng.lng);
             for (var i = 0; i < segments.length; i++) {
-              if (currentMs + segments[i].timeMs >= progressMs) {
-                var segmentProgress = (progressMs - currentMs) / segments[i].timeMs;
-                var lat = segments[i].p1[0] + (segments[i].p2[0] - segments[i].p1[0]) * segmentProgress;
-                var lng = segments[i].p1[1] + (segments[i].p2[1] - segments[i].p1[1]) * segmentProgress;
-                currentPoint = [lat, lng];
+              var sp1 = L.latLng(segments[i].p1[0], segments[i].p1[1]);
+              var sp2 = L.latLng(segments[i].p2[0], segments[i].p2[1]);
+              var sd = distanceToSegment(uLatLng2, sp1, sp2);
+              if (sd < minRouteDist2) {
+                minRouteDist2 = sd;
                 currentSegmentIndex = i;
-                break;
               }
-              currentMs += segments[i].timeMs;
             }
-            if (window.flyingMarker) {
-              window.flyingMarker.setLatLng(currentPoint);
+            var closestSeg2 = segments[currentSegmentIndex];
+            var cs2p1 = L.latLng(closestSeg2.p1[0], closestSeg2.p1[1]);
+            var cs2p2 = L.latLng(closestSeg2.p2[0], closestSeg2.p2[1]);
+            var segLen2 = cs2p1.distanceTo(cs2p2);
+            segmentProgress = segLen2 > 0 ? Math.min(cs2p1.distanceTo(uLatLng2) / segLen2, 1) : 0;
+          }
+          // If not snapped (no GPS / not near route) — train stays frozen at last GPS position.
+          // No simulation, no dead-reckoning. Train stays at its GPS position.
+          
+          // Halo Effect for current segment
+          if (segments[currentSegmentIndex]) {
+            if (!window.haloLine) {
+              window.haloLine = L.polyline([], {
+                color: '#ffffff',
+                weight: 12,
+                opacity: 0.5,
+                className: 'halo-pulse-line',
+                interactive: false
+              }).addTo(activeRouteGroup);
+            }
+            
+            var edge = activeRoute.edges[currentSegmentIndex];
+            var routeColor = edge.line === 'Skywalk' ? '#a855f7' : (lineColors[edge.line] || '#0072BB');
+            
+            window.haloLine.setLatLngs([segments[currentSegmentIndex].p1, segments[currentSegmentIndex].p2]);
+            window.haloLine.setStyle({ color: routeColor });
+            
+            var markerEl = window.flyingMarker.getElement();
+            if (markerEl) {
+              // Update the colored stripe fill in all 3 coach groups
+              var stripes = markerEl.querySelectorAll('#coach-tail rect:nth-child(2), #coach-mid rect:nth-child(2), #coach-front rect:nth-child(2)');
+              stripes.forEach(function(r) { r.setAttribute('fill', routeColor); });
             }
           }
 
-          // Trigger Haptic Station Arrival Event if we reached a new station segment
+          var transferStationIds = new Set();
+          if (activeRoute && activeRoute.edges) {
+            activeRoute.edges.forEach(function(e) {
+              if (e.isTransfer) transferStationIds.add(e.source);
+            });
+          }
+
+          // Trigger Haptic Station Arrival Event BEFORE reaching the upcoming station (at 50% progress)
+          // OR if we skipped past it (e.g. GPS jump), we must process the missed station.
+          var shouldNotify = false;
+          var targetNotifyIndex = lastNotifiedStationIndex;
+          
           if (currentSegmentIndex > lastNotifiedStationIndex) {
-            lastNotifiedStationIndex = currentSegmentIndex;
-            var arrivedStationNode = activeRoute.path[currentSegmentIndex];
+            // We jumped past the >0.5 mark entirely for the lastNotifiedStationIndex segment!
+            // We must notify for it NOW to guarantee we never miss a station.
+            shouldNotify = true;
+            targetNotifyIndex = lastNotifiedStationIndex;
+          } else if (currentSegmentIndex === lastNotifiedStationIndex && segmentProgress > 0.5) {
+            // We are naturally reaching the 50% mark of the current segment
+            shouldNotify = true;
+            targetNotifyIndex = currentSegmentIndex;
+          }
+          
+          if (currentSegmentIndex > lastDepartedStationIndex) {
+            lastDepartedStationIndex = currentSegmentIndex;
+            if (window.ReactNativeWebView && activeRoute.path[currentSegmentIndex]) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'STATION_DEPARTED',
+                stationId: activeRoute.path[currentSegmentIndex].id
+              }));
+            }
+          }
+
+          if (shouldNotify) {
+            lastNotifiedStationIndex = targetNotifyIndex + 1; // Mark this one as processed
             
-            if (arrivedStationNode) {
-              var isArrEnd = arrivedStationNode.id === endStationId;
-              var isArrInterchange = transferStationIds.has(arrivedStationNode.id);
+            var upcomingStationNode = activeRoute.path[targetNotifyIndex + 1];
+            if (upcomingStationNode) {
+              var isArrEnd = upcomingStationNode.id === endStationId;
+              var isArrInterchange = transferStationIds.has(upcomingStationNode.id);
               
-              if ((isArrEnd || isArrInterchange) && window.ReactNativeWebView) {
+              if (window.ReactNativeWebView) {
                 window.ReactNativeWebView.postMessage(JSON.stringify({
                   type: 'STATION_ARRIVAL',
-                  stationId: arrivedStationNode.id,
-                  stationName: arrivedStationNode.name,
-                  arrivalType: isArrEnd ? 'DESTINATION' : 'INTERCHANGE'
+                  stationId: upcomingStationNode.id,
+                  stationName: upcomingStationNode.name,
+                  arrivalType: isArrEnd ? 'DESTINATION' : (isArrInterchange ? 'INTERCHANGE' : 'STOP'),
+                  isDestination: isArrEnd,
+                  isInterchange: isArrInterchange,
+                  interchangeLine: isArrInterchange && activeRoute.edges[targetNotifyIndex + 1] ? activeRoute.edges[targetNotifyIndex + 1].line : null
                 }));
               }
             }
+          }
+
+          // Tooltip tracking: Next / Current Station — runs every frame
+          var tEdge = activeRoute.edges[currentSegmentIndex];
+          if (tEdge) {
+            var tNextStation = stations.find(function(s) { return s.id === tEdge.target; });
+            var tCurrentStation = stations.find(function(s) { return s.id === tEdge.source; });
+            
+            if (segmentProgress >= 0.90) {
+              // Nearly arrived at the target station
+              if (tNextStation) window.currentStationName = tNextStation.name;
+              window.isTrainStopped = true;
+            } else {
+              // In transit between two stations
+              if (tNextStation) window.nextStationName = tNextStation.name;
+              if (tCurrentStation) window.currentStationName = tCurrentStation.name;
+              window.isTrainStopped = false;
+            }
+
+            // Live-update the open popup DOM directly
+            if (window.flyingMarker && window.flyingMarker.isPopupOpen()) {
+              var popupEl = window.flyingMarker.getPopup().getElement();
+              if (popupEl) {
+                var contentWrapper = popupEl.querySelector('.popup-dynamic-content');
+                if (contentWrapper) {
+                  if (window.isTrainStopped) {
+                    contentWrapper.innerHTML = '📍 Arrived at<br/><span style="color:#007aff;font-size:14px;">' + (window.currentStationName || '') + '</span>';
+                  } else {
+                    contentWrapper.innerHTML = '➡️ Arriving at<br/><span style="color:#34c759;font-size:14px;">' + (window.nextStationName || '') + '</span>';
+                  }
+                }
+              }
+            }
+          }
+
+          // Station Departed trigger (early in the segment)
+          if (segmentProgress < 0.1 && currentSegmentIndex > lastDepartedStationIndex && currentSegmentIndex > 0) {
+            var sourceStationId = activeRoute.edges[currentSegmentIndex].source;
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'STATION_DEPARTED',
+                stationId: sourceStationId
+              }));
+            }
+            lastDepartedStationIndex = currentSegmentIndex;
           }
           
           window.routeAnimationReq = requestAnimationFrame(animateFly);
@@ -673,13 +1053,23 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         var isStart = station.id === startStationId;
         var isEnd = station.id === endStationId;
         var isOnActiveRoute = activeStationIds.has(station.id);
-        var isIntermediate = isOnActiveRoute && !isStart && !isEnd;
         var isInterchange = transferStationIds.has(station.id);
+        var isIntermediate = isOnActiveRoute && !isStart && !isEnd && !isInterchange;
+        var isActiveInterchange = isOnActiveRoute && isInterchange && !isStart && !isEnd;
 
         var opacity = hasActiveRoute ? (isOnActiveRoute ? 1.0 : 0.18) : 1.0;
 
         var iconHtml = '';
         var size = [16, 16];
+
+        var crowdScore = realtimeArrivals && realtimeArrivals.crowdScores ? realtimeArrivals.crowdScores[station.id] : undefined;
+        var isClosed = realtimeArrivals && realtimeArrivals.crowdScores && realtimeArrivals.crowdScores['IS_CLOSED'];
+        
+        var getBgColor = function(defaultBg) {
+          if (isClosed) return '#8E8E93';
+          if (crowdScore !== undefined) return crowdScore >= 8.5 ? '#FF453A' : (crowdScore >= 6.0 ? '#FF9F0A' : '#30D158');
+          return defaultBg;
+        };
 
         if (isStart) {
           iconHtml = '<div class="pin-selected pin-start"><div class="pulse-ring"></div><span style="color: white; font-size: 8px; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,0.6); line-height: 1;">START</span></div>';
@@ -688,16 +1078,24 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           iconHtml = '<div class="pin-selected pin-end"><div class="pulse-ring"></div><span style="color: white; font-size: 8px; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,0.6); line-height: 1;">END</span></div>';
           size = [24, 24]; // Reduced size
         } else if (isIntermediate) {
-          iconHtml = '<div class="pin-intermediate"></div>';
+          var bgColor = getBgColor('#ffffff');
+          iconHtml = '<div class="pin-intermediate" style="background-color: ' + bgColor + ' !important;"></div>';
           size = [12, 12];
+        } else if (isActiveInterchange) {
+          var bgColor = getBgColor('#ffffff');
+          iconHtml = '<div class="pin-intermediate" style="background-color: ' + bgColor + ' !important; border: 3px dotted #ffffff !important; width: 16px !important; height: 16px !important;"></div>';
+          size = [16, 16];
         } else if (isInterchange) {
-          iconHtml = '<div class="station-dot-interchange" style="display: flex; align-items: center; justify-content: center;"><div style="width: 6px; height: 6px; border-radius: 50%; background: ' + (isDark ? '#ffffff' : '#111111') + ';"></div></div>';
+          var bgColor = getBgColor(isDark ? '#1e1e1e' : '#ffffff');
+          iconHtml = '<div class="station-dot-interchange" style="background-color: ' + bgColor + ' !important; display: flex; align-items: center; justify-content: center;"><div style="width: 6px; height: 6px; border-radius: 50%; background: ' + (isDark ? '#ffffff' : '#111111') + ';"></div></div>';
           size = [20, 20];
         } else {
           var lineColor = lineColors[station.lines[0]] || '#888888';
-          iconHtml = '<div class="station-dot" style="border-color: ' + lineColor + ';"></div>';
+          var bgColor = getBgColor(isDark ? '#1e1e1e' : '#ffffff');
+          iconHtml = '<div class="station-dot" style="border-color: ' + lineColor + '; background-color: ' + bgColor + ' !important;"></div>';
           size = [16, 16];
         }
+
 
         var customIcon = L.divIcon({
           className: 'station-marker',
@@ -785,6 +1183,7 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           });
           arrivalsHtml += '</div>';
         }
+        arrivalsHtml = '<div id="live-arrivals-' + station.id + '">' + arrivalsHtml + '</div>';
 
         // Popup HTML with Apple styling
         var popupHtml = '<div style="font-family: inherit; min-width: 180px;">' +
@@ -866,38 +1265,76 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         drawActiveRoute();
         drawStations();
       } else if (message.type === 'UPDATE_ARRIVALS') {
-        // Inject fresh realtime arrivals without rebuilding the entire WebView
         realtimeArrivals = message.arrivals || {};
-        // Re-render station markers to show updated arrival badges in popups
-        if (typeof drawStations === 'function') drawStations();
+        
+        stations.forEach(function(station) {
+          // 1. Update in-place popup DOM if it is open
+          var arrivalsContainer = document.getElementById('live-arrivals-' + station.id);
+          if (arrivalsContainer) {
+            var arrivalsList = realtimeArrivals[station.id] || [];
+            var arrivalsHtml = '';
+            if (arrivalsList.length > 0) {
+              arrivalsHtml += '<div style="margin-top: 6px; margin-bottom: 8px; padding: 6px; background: ' + (isDark ? 'rgba(0,122,255,0.12)' : '#F0F7FF') + '; border: 0.5px solid ' + (isDark ? 'rgba(0,122,255,0.3)' : '#BFDBFE') + '; border-radius: 6px; font-size: 10px;">';
+              arrivalsHtml += '<div style="font-weight: 700; color: ' + (isDark ? '#30D158' : '#0056B3') + '; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">⏱ Live Next Trains</div>';
+              arrivalsList.forEach(function(arr) {
+                arr.trains.forEach(function(t) {
+                  arrivalsHtml += '<div style="display: flex; justify-content: space-between; margin-bottom: 2px; color: ' + (isDark ? '#e5e5ea' : '#1f2937') + ';">' +
+                    '<span>' + t.destination + '</span>' +
+                    '<span style="font-weight: 700;">' + t.min + ' min</span>' +
+                    '</div>';
+                });
+              });
+              arrivalsHtml += '</div>';
+            }
+            arrivalsContainer.innerHTML = arrivalsHtml;
+          }
+
+          // 2. Update marker dot background color in-place
+          var marker = stationMarkers[station.id];
+          if (marker) {
+            var el = marker.getElement();
+            if (el) {
+              var dot = el.querySelector('.station-dot') || el.querySelector('.pin-intermediate') || el.querySelector('.station-dot-interchange');
+              if (dot) {
+                var crowdScore = realtimeArrivals && realtimeArrivals.crowdScores ? realtimeArrivals.crowdScores[station.id] : undefined;
+                var isClosed = realtimeArrivals && realtimeArrivals.crowdScores && realtimeArrivals.crowdScores['IS_CLOSED'];
+                var getBgColor = function(defaultBg) {
+                  if (isClosed) return '#8E8E93';
+                  if (crowdScore !== undefined) return crowdScore >= 8.5 ? '#FF453A' : (crowdScore >= 6.0 ? '#FF9F0A' : '#30D158');
+                  return defaultBg;
+                };
+                dot.style.setProperty('background-color', getBgColor(isDark ? '#1e1e1e' : '#ffffff'), 'important');
+              }
+            }
+          }
+        });
       } else if (message.type === 'CENTER_ON_DELHI') {
         map.setView([28.6304, 77.2177], 11, { animate: true });
       } else if (message.type === 'ZOOM_IN') {
         map.zoomIn();
       } else if (message.type === 'ZOOM_OUT') {
         map.zoomOut();
+        map.zoomOut();
       } else if (message.type === 'LOCATE_USER') {
-        window.forceLocateView = true;
-        map.locate({ setView: false, maxZoom: 15 });
-      } else if (message.type === 'UPDATE_USER_LOCATION') {
-        var lat = message.latitude;
-        var lng = message.longitude;
-        
-        if (userLocationMarker) {
-          userLocationMarker.setLatLng([lat, lng]);
+        if (window.latestUserLatLng && userLocationMarker) {
+          if (window.showUserLocationPopup) {
+            window.showUserLocationPopup(message.startStationId);
+          }
         } else {
-          var userIcon = L.divIcon({
-            className: 'station-marker',
-            html: '<div class="user-location-pulse"></div><div class="user-location-dot"></div>',
-            iconSize: [28, 28],
-            iconAnchor: [14, 14]
-          });
-          userLocationMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 2000 }).addTo(map);
+          window.forceLocateView = true;
+          map.locate({ setView: false, maxZoom: 15 });
         }
-        
-        if (message.recenter) {
-          map.setView([lat, lng], 14, { animate: true });
-        }
+      } else if (message.type === 'UPDATE_USER_LOCATION') {
+        window.latestUserLatLng = {
+          lat: message.latitude,
+          lng: message.longitude
+        };
+        window.lastLocationTime = Date.now();
+
+        map.fireEvent('locationfound', {
+          latlng: L.latLng(message.latitude, message.longitude),
+          accuracy: message.accuracy || 15
+        });
       }
     }
 
