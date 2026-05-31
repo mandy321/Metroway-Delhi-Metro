@@ -2,6 +2,8 @@
 
 **Live Webapp URL:** [https://mandy321.github.io/Metroway-Delhi-Metro/](https://mandy321.github.io/Metroway-Delhi-Metro/)
 
+**[📥 Download Latest APK](https://github.com/mandy321/Metroway-Delhi-Metro/releases/download/v1.9.6/app-release.apk)
+
 Metroway Delhi Metro is a premium, feature-rich Progressive Web App (PWA) designed to calculate optimal paths across the Delhi Metro network. It operates entirely offline after the initial load, utilizing an aggressive caching strategy for application assets and Leaflet map tiles.
 
 
