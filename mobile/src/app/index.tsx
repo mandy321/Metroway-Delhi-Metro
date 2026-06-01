@@ -93,7 +93,7 @@ export default function PlannerScreen() {
   const panResponder = React.useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.vy) > Math.abs(gestureState.vx);
+        return Math.abs(gestureState.dy) > 25 && Math.abs(gestureState.vy) > Math.abs(gestureState.vx) * 2;
       },
       onPanResponderGrant: () => {
         bottomSheetPanY.setOffset((bottomSheetPanY as any)._value || 0);
@@ -111,7 +111,7 @@ export default function PlannerScreen() {
         if (velocityY < -0.5 || currentY < -100) {
           // Snap UP
           Animated.spring(bottomSheetPanY, {
-            toValue: -300,
+            toValue: -Dimensions.get('window').height * 0.5,
             useNativeDriver: false,
             bounciness: 0,
           }).start();
@@ -876,7 +876,8 @@ export default function PlannerScreen() {
               {...panResponder.panHandlers} 
               style={{ width: '100%', alignItems: 'center', paddingVertical: 12, backgroundColor: activeTheme === 'dark' ? '#1c1c1e' : '#e3e3e8', borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
             >
-              <View style={{ width: 40, height: 5, borderRadius: 3, backgroundColor: activeTheme === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)' }} />
+              <View style={{ width: 48, height: 5, borderRadius: 3, backgroundColor: activeTheme === 'dark' ? '#4B5563' : '#9CA3AF', marginBottom: 4 }} />
+              <Text style={{ fontSize: 9, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.6 }}>Slide Up / Down</Text>
             </View>
           {/* Tab Headers */}
 
