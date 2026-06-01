@@ -93,7 +93,7 @@ export default function PlannerScreen() {
   const panResponder = React.useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > 25 && Math.abs(gestureState.vy) > Math.abs(gestureState.vx) * 2;
+        return Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.vy) > Math.abs(gestureState.vx);
       },
       onPanResponderGrant: () => {
         bottomSheetPanY.setOffset((bottomSheetPanY as any)._value || 0);
@@ -2463,6 +2463,7 @@ const styles = StyleSheet.create({
   },
   tabContentContainer: {
     padding: 4,
+    paddingBottom: 400,
   },
   fareCardsRow: {
     flexDirection: "row",
