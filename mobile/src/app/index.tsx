@@ -2247,7 +2247,7 @@ const styles = StyleSheet.create({
   },
   timelineContent: {
     padding: 16,
-    paddingBottom: 400,
+    paddingBottom: 580,
   },
   journeyMetricsGrid: {
     flexDirection: "row",
@@ -2463,7 +2463,6 @@ const styles = StyleSheet.create({
   },
   tabContentContainer: {
     padding: 4,
-    paddingBottom: 400,
   },
   fareCardsRow: {
     flexDirection: "row",
