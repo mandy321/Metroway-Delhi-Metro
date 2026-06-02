@@ -1955,7 +1955,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingTop: 0,
-    paddingBottom: 40,
+    paddingBottom: 24,
   },
   inputCard: {
     backgroundColor: "#FFFFFF",
