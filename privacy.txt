@@ -1,0 +1,26 @@
+📜 Privacy Policy 
+Effective Date: June 2, 2026
+
+1. No Data Collection
+Metroway Delhi Metro is designed with your privacy as the top priority. The app does not collect, store, or share any personal information. It does not require you to create an account or log in.
+
+2. Offline Operation
+All route calculations, maps, and station data are stored locally on your device. The app works entirely offline, meaning no travel searches or location data are ever sent to any external server.
+
+3. No Tracking or Analytics
+We do not use any analytics SDKs, tracking pixels, or crash reporting tools that could identify you. The app makes no network requests except to optionally check for facility status updates (like outages), which do not contain personal data.
+
+4. Permissions
+The app may ask for location permission only to show nearby stations on the map. This data stays on your device and is never transmitted. You can deny this permission and still use the app fully.
+
+5. Third-Party Services
+The app uses open-source map tiles (CartoDB/OpenStreetMap). These requests go through the app's internal service worker and do not send any information about you.
+
+6. Children's Privacy
+The app does not knowingly collect any data from anyone, including children under 13.
+
+7. Changes to This Policy
+If this policy changes, the updated date will be reflected at the top. Continued use of the app means acceptance of the policy.
+
+8. Contact
+For questions: mtewatia67@gmail.com (via mail).
