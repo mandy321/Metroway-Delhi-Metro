@@ -2,7 +2,7 @@
 
 **Live Webapp URL:** [https://mandy321.github.io/Metroway-Delhi-Metro/](https://mandy321.github.io/Metroway-Delhi-Metro/)
 
-**[📥 Download Latest Android APK](https://github.com/mandy321/Metroway-Delhi-Metro/releases/download/v2.0.0/app-release.apk)**
+**[📥 Download Latest Android APK](https://github.com/mandy321/Metroway-Delhi-Metro/releases/download/v2.1.0/app-release.apk)**
 
 Metroway is a premium, offline-first transit navigation suite designed for the Delhi Metro network. It combines high-performance routing, interactive mapping, and real-time system intelligence into a sleek, gesture-driven interface.
 
