@@ -18,6 +18,7 @@ import {
   AppState,
   useColorScheme,
   Dimensions,
+  BackHandler,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -147,6 +148,24 @@ export default function PlannerScreen() {
 
   const [activeTab, setActiveTab] = useState("timeline");
   const tabProgress = React.useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const backAction = () => {
+      if (!isEditingRoute && store.activeRoute) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setIsEditingRoute(true);
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [isEditingRoute, store.activeRoute]);
 
   useEffect(() => {
     // Sync current hour to the store on mount and on resume so that crowd levels match actual system time

@@ -761,6 +761,14 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           }
           content += '</div>';
           window.flyingMarker.bindPopup(content, { autoClose: true, closeOnClick: true, offset: [0, -10] }).openPopup();
+
+          // Also show nearest station dotted line when Superman is clicked
+          if (window.showUserLocationPopup) {
+            // Delay slightly so the popup doesn't clash with the line fitBounds
+            setTimeout(function() {
+              window.showUserLocationPopup();
+            }, 100);
+          }
         });
 
         var duration = totalTimeMs; 
