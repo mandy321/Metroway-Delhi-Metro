@@ -414,7 +414,14 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
             var bounds = L.latLngBounds(window.latestUserLatLng, targetLatLng);
             map.fitBounds(bounds, { padding: [50, 50], animate: true, maxZoom: 15 });
 
-            userLocationMarker.bindPopup(msg, { className: 'custom-popup', autoClose: true, closeOnClick: true }).openPopup();
+            if (userLocationMarker) {
+              if (userLocationMarker.getPopup()) {
+                userLocationMarker.setPopupContent(msg);
+              } else {
+                userLocationMarker.bindPopup(msg, { className: 'custom-popup', autoClose: true, closeOnClick: true });
+              }
+              userLocationMarker.openPopup();
+            }
             
             setTimeout(function() {
               if (userLocationMarker && userLocationMarker.isPopupOpen()) {
@@ -657,7 +664,7 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           var walkShadow = isRealSkywalk ? 'rgba(168,85,247,0.4)' : 'rgba(88,86,214,0.4)';
           var walkIcon = L.divIcon({
             className: 'station-marker',
-            html: '<div style="background: ' + (isDark ? 'rgba(30,30,30,0.9)' : 'rgba(255,255,255,0.9)') + '; backdrop-filter: blur(4px); border: 1.5px solid ' + walkColor + '; border-radius: 12px; padding: 2px 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px ' + walkShadow + '; font-size: 10px; font-weight: 700; color: ' + (isDark ? '#fff' : '#000') + ';">🚶 ' + edge.baseTime + ' min</div>',
+            html: '<div style="background: ' + (isDark ? 'rgba(30,30,30,0.9)' : 'rgba(255,255,255,0.9)') + '; backdrop-filter: blur(4px); border: 1.5px solid ' + walkColor + '; border-radius: 12px; padding: 2px 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px ' + walkShadow + '; font-size: 10px; font-weight: 700; color: ' + (isDark ? '#fff' : '#000') + ';">🚶 ' + (edge.adjustedTime || edge.baseTime) + ' min</div>',
             iconSize: [50, 20],
             iconAnchor: [25, 25] // Offset it slightly upwards so it floats above the station dot
           });
@@ -755,20 +762,36 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         window.flyingMarker.on('click', function() {
           var content = '<div class="popup-dynamic-content" style="font-size:12px;font-weight:700;padding:2px;text-align:center;line-height:1.4;color:#444;">';
 
-          var nextOrArrived = window.isTrainStopped ? '📍 Arrived at' : '➡️ Arriving at';
-          var stationName = window.isTrainStopped ? (window.currentStationName || 'Station') : (window.nextStationName || 'Next Station');
+          var isAtStation = window.isTrainStopped;
+          var nextOrArrived = isAtStation ? '📍 Arrived at' : '➡️ Arriving at';
+          var stationName = isAtStation ? (window.currentStationName || 'Station') : (window.nextStationName || 'Next Station');
           var remMin = window.remainingMinutes || 0;
           var remKm = window.remainingDistanceKm || 0;
 
           content += '<div style="color:#8e8e93; font-size:10px; text-transform:uppercase; margin-bottom:2px;">Journey Status</div>';
           content += nextOrArrived + '<br/><span style="color:#34c759;font-size:14px;">' + stationName + '</span>';
-          content += '<div style="border-top:0.5px solid #eee; margin-top:6px; padding-top:4px; display:flex; justify-content:space-between; gap:10px;">';
-          content += '<span>⏱ ' + remMin + 'm left</span>';
-          content += '<span>🏁 ' + remKm.toFixed(1) + ' km</span>';
-          content += '</div>';
+
+          if (!isAtStation) {
+            content += '<div style="border-top:0.5px solid #eee; margin-top:6px; padding-top:4px; display:flex; justify-content:space-between; gap:10px;">';
+            content += '<span>⏱ ' + remMin + 'm left</span>';
+            content += '<span>🏁 ' + remKm.toFixed(1) + ' km</span>';
+            content += '</div>';
+          }
+
           content += '</div>';
 
-          window.flyingMarker.bindPopup(content, { autoClose: true, closeOnClick: true, offset: [0, -10] }).openPopup();
+          window.flyingMarker.setPopupContent(content);
+          if (!window.flyingMarker.isPopupOpen()) {
+             window.flyingMarker.openPopup();
+          }
+        });
+
+        // Initial binding
+        window.flyingMarker.bindPopup('<div class="popup-dynamic-content">Loading Status...</div>', {
+          autoClose: false,
+          closeOnClick: false,
+          offset: [0, -10],
+          className: 'custom-popup'
         });
 
         var duration = totalTimeMs; 
@@ -1024,17 +1047,21 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
               if (popupEl) {
                 var contentWrapper = popupEl.querySelector('.popup-dynamic-content');
                 if (contentWrapper) {
-                  var nextOrArrived = window.isTrainStopped ? '📍 Arrived at' : '➡️ Arriving at';
-                  var stationName = window.isTrainStopped ? (window.currentStationName || '') : (window.nextStationName || '');
+                  var isAtStation = window.isTrainStopped;
+                  var nextOrArrived = isAtStation ? '📍 Arrived at' : '➡️ Arriving at';
+                  var stationName = isAtStation ? (window.currentStationName || '') : (window.nextStationName || '');
                   var remMin = window.remainingMinutes || 0;
                   var remKm = window.remainingDistanceKm || 0;
 
                   var inner = '<div style="color:#8e8e93; font-size:10px; text-transform:uppercase; margin-bottom:2px;">Journey Status</div>';
                   inner += nextOrArrived + '<br/><span style="color:#34c759;font-size:14px;">' + stationName + '</span>';
-                  inner += '<div style="border-top:0.5px solid #eee; margin-top:6px; padding-top:4px; display:flex; justify-content:space-between; gap:10px;">';
-                  inner += '<span>⏱ ' + remMin + 'm left</span>';
-                  inner += '<span>🏁 ' + remKm.toFixed(1) + ' km</span>';
-                  inner += '</div>';
+
+                  if (!isAtStation) {
+                    inner += '<div style="border-top:0.5px solid #eee; margin-top:6px; padding-top:4px; display:flex; justify-content:space-between; gap:10px;">';
+                    inner += '<span>⏱ ' + remMin + 'm left</span>';
+                    inner += '<span>🏁 ' + remKm.toFixed(1) + ' km</span>';
+                    inner += '</div>';
+                  }
 
                   contentWrapper.innerHTML = inner;
                 }
