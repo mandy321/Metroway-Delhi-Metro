@@ -127,7 +127,7 @@ export default function MapScreen() {
   const buildAndWriteMapFile = useCallback(async () => {
     try {
       const initialCrowdScores: Record<string, number> = {};
-      const sysTime = new Date(store.timeOfDay || Date.now());
+      const sysTime = new Date();
       const currentSysHour = sysTime.getHours();
       initialCrowdScores['IS_CLOSED'] = (currentSysHour >= 23 || currentSysHour <= 5) ? 1 : 0;
       store.stations.forEach(s => {
@@ -207,7 +207,7 @@ export default function MapScreen() {
   useEffect(() => {
     if (mapReady && webViewRef.current && store.realtimeArrivals) {
       const crowdScores: Record<string, number> = {};
-      const sysTime = new Date(store.timeOfDay || Date.now());
+      const sysTime = new Date();
       const currentSysHour = sysTime.getHours();
       const isClosed = currentSysHour >= 23 || currentSysHour <= 5;
       crowdScores['IS_CLOSED'] = isClosed ? 1 : 0;

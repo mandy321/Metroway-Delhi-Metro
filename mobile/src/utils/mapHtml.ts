@@ -1154,13 +1154,16 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         }
 
         // Crowd Estimator
-        var crowdVal = station.baseCrowd || 5;
+        var finalCrowdVal = crowdScore !== undefined ? crowdScore : (station.baseCrowd || 5);
         var crowdLabel = 'Low';
         var crowdColor = '#34c759'; // Apple Green
-        if (crowdVal > 7) {
+        if (isClosed) {
+          crowdLabel = 'Closed';
+          crowdColor = '#8E8E93';
+        } else if (finalCrowdVal >= 8.5) {
           crowdLabel = 'Heavy Rush';
           crowdColor = '#ff3b30'; // Apple Red
-        } else if (crowdVal > 4) {
+        } else if (finalCrowdVal >= 6.0) {
           crowdLabel = 'Moderate';
           crowdColor = '#ff9500'; // Apple Orange
         }
