@@ -20,6 +20,7 @@ import {
   Dimensions,
   BackHandler,
 } from "react-native";
+import { useFocusEffect } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -148,6 +149,15 @@ export default function PlannerScreen() {
 
   const [activeTab, setActiveTab] = useState("timeline");
   const tabProgress = React.useRef(new Animated.Value(0)).current;
+
+  // Auto-switch to route result view if we focus and have a route
+  useFocusEffect(
+    React.useCallback(() => {
+      if (store.activeRoute) {
+        setIsEditingRoute(false);
+      }
+    }, [store.activeRoute])
+  );
 
   useEffect(() => {
     const backAction = () => {

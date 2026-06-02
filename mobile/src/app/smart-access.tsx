@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -11,7 +11,9 @@ import {
   Platform,
   StatusBar,
   useColorScheme,
+  BackHandler,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -37,9 +39,25 @@ const LINE_COLORS: Record<string, string> = {
 };
 
 export default function SmartAccessScreen() {
+  const router = useRouter();
   const store = useMetroStore();
   const activeTheme = "dark";
   const colors = Colors[activeTheme];
+
+  useEffect(() => {
+    const backAction = () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      router.replace("/");
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   // Local state
   const [searchQuery, setSearchQuery] = useState("");

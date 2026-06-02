@@ -13,6 +13,7 @@ import {
   PermissionsAndroid,
   Vibration,
   Linking,
+  BackHandler,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
@@ -114,6 +115,21 @@ export default function MapScreen() {
   
   // State for hiding UI elements when locating user
   const [isBottomCardTransparent, setIsBottomCardTransparent] = useState(false);
+
+  useEffect(() => {
+    const backAction = () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      router.replace("/");
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   const dismissArrivalAlert = useCallback(() => {
     Vibration.cancel();

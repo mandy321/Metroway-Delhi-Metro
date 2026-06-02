@@ -658,17 +658,39 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
 
         // Add Transfer/Skywalk icon to active route
         if (edge.isTransfer) {
-          var midLat = (sourceCoords[0] + targetCoords[0]) / 2;
-          var midLng = (sourceCoords[1] + targetCoords[1]) / 2;
+          var sourceSt = stations.find(s => s.id === edge.source);
+          var pos = [sourceCoords[0], sourceCoords[1]];
+
+          // If it's a known multi-station walk, use midpoint, else use station location
+          if (edge.source !== edge.target && source && target) {
+            pos = [(sourceCoords[0] + targetCoords[0]) / 2, (sourceCoords[1] + targetCoords[1]) / 2];
+          }
+
           var walkColor = isRealSkywalk ? '#a855f7' : '#5856d6';
           var walkShadow = isRealSkywalk ? 'rgba(168,85,247,0.4)' : 'rgba(88,86,214,0.4)';
+
+          // Dynamic coloring based on crowd
+          var crowdVal = (realtimeArrivals && realtimeArrivals.crowdScores && sourceSt) ? realtimeArrivals.crowdScores[sourceSt.id] : 5;
+          var crowdBadgeColor = (isDark ? 'rgba(30,30,30,0.9)' : 'rgba(255,255,255,0.9)');
+
+          if (crowdVal >= 8.5) {
+            walkColor = '#ff3b30'; // Red for heavy rush
+            walkShadow = 'rgba(255,59,48,0.4)';
+          } else if (crowdVal >= 6.0) {
+            walkColor = '#ff9500'; // Orange for moderate
+            walkShadow = 'rgba(255,149,0,0.4)';
+          } else {
+            walkColor = '#34c759'; // Green for low
+            walkShadow = 'rgba(52,199,89,0.4)';
+          }
+
           var walkIcon = L.divIcon({
             className: 'station-marker',
-            html: '<div style="background: ' + (isDark ? 'rgba(30,30,30,0.9)' : 'rgba(255,255,255,0.9)') + '; backdrop-filter: blur(4px); border: 1.5px solid ' + walkColor + '; border-radius: 12px; padding: 2px 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px ' + walkShadow + '; font-size: 10px; font-weight: 700; color: ' + (isDark ? '#fff' : '#000') + ';">🚶 ' + (edge.adjustedTime || edge.baseTime) + ' min</div>',
+            html: '<div style="background: ' + crowdBadgeColor + '; backdrop-filter: blur(4px); border: 1.5px solid ' + walkColor + '; border-radius: 12px; padding: 2px 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px ' + walkShadow + '; font-size: 10px; font-weight: 700; color: ' + (isDark ? '#fff' : '#000') + ';">🚶 ' + (edge.adjustedTime || edge.baseTime) + ' min</div>',
             iconSize: [50, 20],
-            iconAnchor: [25, 25] // Offset it slightly upwards so it floats above the station dot
+            iconAnchor: [25, 30] // Adjusted anchor to be closer to station/segment
           });
-          L.marker([midLat, midLng], { icon: walkIcon, zIndexOffset: 1500 }).addTo(activeRouteGroup);
+          L.marker(pos, { icon: walkIcon, zIndexOffset: 1500 }).addTo(activeRouteGroup);
         }
       });
 
