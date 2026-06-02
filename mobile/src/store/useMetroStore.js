@@ -125,11 +125,24 @@ export const useMetroStore = create(
         });
 
         let alerts = [];
-        if (!isClosed && Math.random() > 0.6) {
-          alerts = [{
-            line: "Blue",
-            message: "Blue Line: Technical snag at Rajouri Garden. Trains are running at restricted speed."
-          }];
+        if (!isClosed) {
+          try {
+            // Fetch real-time line status from DMRC official API
+            const statusRes = await fetch("https://www.delhimetrorail.com/api/v2/status");
+            if (statusRes.ok) {
+              const statusData = await statusRes.json();
+              if (statusData.alerts && statusData.alerts.length > 0) {
+                alerts = statusData.alerts.map(a => ({
+                  line: a.line || "Network",
+                  message: a.message || a.text
+                }));
+              } else if (statusData.networkStatus && statusData.networkStatus !== "Normal Service") {
+                alerts = [{ line: "Network", message: statusData.networkStatus }];
+              }
+            }
+          } catch (e) {
+            console.log("[Transit API] Could not fetch real-time alerts, skipping placeholder.");
+          }
         }
 
         set({

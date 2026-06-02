@@ -95,14 +95,21 @@ export const useMetroStore = create(
             });
           }
 
-          // Generate dynamic network status alert fallback
-          if (alerts.length === 0 && Math.random() > 0.6) {
-            alerts = [
-              {
-                line: "Blue",
-                message: "Blue Line: Technical snag at Rajouri Garden. Trains are running at restricted speed."
+          // Attempt to fetch real-time service alerts from DMRC
+          if (alerts.length === 0) {
+            try {
+              const statusRes = await fetch("https://www.delhimetrorail.com/api/v2/status");
+              if (statusRes.ok) {
+                const statusData = await statusRes.json();
+                if (statusData.alerts && statusData.alerts.length > 0) {
+                  alerts = statusData.alerts.map(a => ({ line: a.line || "All", message: a.message }));
+                } else if (statusData.networkStatus && statusData.networkStatus !== "Normal Service") {
+                  alerts = [{ line: "Network", message: statusData.networkStatus }];
+                }
               }
-            ];
+            } catch (e) {
+              console.log("Skipping mock alert generation.");
+            }
           }
 
           set({
