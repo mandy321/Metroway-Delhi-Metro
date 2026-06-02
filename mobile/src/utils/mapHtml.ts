@@ -754,21 +754,21 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
         
         window.flyingMarker.on('click', function() {
           var content = '<div class="popup-dynamic-content" style="font-size:12px;font-weight:700;padding:2px;text-align:center;line-height:1.4;color:#444;">';
-          if (window.isTrainStopped) {
-            content += '📍 Arrived at<br/><span style="color:#007aff;font-size:14px;">' + (window.currentStationName || 'Station') + '</span>';
-          } else {
-            content += '➡️ Arriving at<br/><span style="color:#34c759;font-size:14px;">' + (window.nextStationName || 'Next Station') + '</span>';
-          }
-          content += '</div>';
-          window.flyingMarker.bindPopup(content, { autoClose: true, closeOnClick: true, offset: [0, -10] }).openPopup();
 
-          // Also show nearest station dotted line when Superman is clicked
-          if (window.showUserLocationPopup) {
-            // Delay slightly so the popup doesn't clash with the line fitBounds
-            setTimeout(function() {
-              window.showUserLocationPopup();
-            }, 100);
-          }
+          var nextOrArrived = window.isTrainStopped ? '📍 Arrived at' : '➡️ Arriving at';
+          var stationName = window.isTrainStopped ? (window.currentStationName || 'Station') : (window.nextStationName || 'Next Station');
+          var remMin = window.remainingMinutes || 0;
+          var remKm = window.remainingDistanceKm || 0;
+
+          content += '<div style="color:#8e8e93; font-size:10px; text-transform:uppercase; margin-bottom:2px;">Journey Status</div>';
+          content += nextOrArrived + '<br/><span style="color:#34c759;font-size:14px;">' + stationName + '</span>';
+          content += '<div style="border-top:0.5px solid #eee; margin-top:6px; padding-top:4px; display:flex; justify-content:space-between; gap:10px;">';
+          content += '<span>⏱ ' + remMin + 'm left</span>';
+          content += '<span>🏁 ' + remKm.toFixed(1) + ' km</span>';
+          content += '</div>';
+          content += '</div>';
+
+          window.flyingMarker.bindPopup(content, { autoClose: true, closeOnClick: true, offset: [0, -10] }).openPopup();
         });
 
         var duration = totalTimeMs; 
@@ -901,7 +901,25 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
           }
           // If not snapped (no GPS / not near route) — train stays frozen at last GPS position.
           // No simulation, no dead-reckoning. Train stays at its GPS position.
-          
+
+          // Calculate remaining journey telemetry
+          var remTimeMs = 0;
+          if (segments[currentSegmentIndex]) {
+            remTimeMs = segments[currentSegmentIndex].timeMs * (1 - segmentProgress);
+            for (var k = currentSegmentIndex + 1; k < segments.length; k++) {
+              remTimeMs += segments[k].timeMs;
+            }
+          }
+          // Scale back: 3000ms animation = 1 real minute
+          window.remainingMinutes = Math.ceil(remTimeMs / 3000);
+
+          // Estimate distance proportional to time for simplicity in the UI
+          if (activeRoute.metrics.time > 0) {
+            window.remainingDistanceKm = (window.remainingMinutes / activeRoute.metrics.time) * activeRoute.metrics.distance;
+          } else {
+            window.remainingDistanceKm = 0;
+          }
+
           // Halo Effect for current segment
           if (segments[currentSegmentIndex]) {
             if (!window.haloLine) {
@@ -1006,11 +1024,19 @@ export function getMapHtml(stations: any[], edges: any[], initialRoute: any, sta
               if (popupEl) {
                 var contentWrapper = popupEl.querySelector('.popup-dynamic-content');
                 if (contentWrapper) {
-                  if (window.isTrainStopped) {
-                    contentWrapper.innerHTML = '📍 Arrived at<br/><span style="color:#007aff;font-size:14px;">' + (window.currentStationName || '') + '</span>';
-                  } else {
-                    contentWrapper.innerHTML = '➡️ Arriving at<br/><span style="color:#34c759;font-size:14px;">' + (window.nextStationName || '') + '</span>';
-                  }
+                  var nextOrArrived = window.isTrainStopped ? '📍 Arrived at' : '➡️ Arriving at';
+                  var stationName = window.isTrainStopped ? (window.currentStationName || '') : (window.nextStationName || '');
+                  var remMin = window.remainingMinutes || 0;
+                  var remKm = window.remainingDistanceKm || 0;
+
+                  var inner = '<div style="color:#8e8e93; font-size:10px; text-transform:uppercase; margin-bottom:2px;">Journey Status</div>';
+                  inner += nextOrArrived + '<br/><span style="color:#34c759;font-size:14px;">' + stationName + '</span>';
+                  inner += '<div style="border-top:0.5px solid #eee; margin-top:6px; padding-top:4px; display:flex; justify-content:space-between; gap:10px;">';
+                  inner += '<span>⏱ ' + remMin + 'm left</span>';
+                  inner += '<span>🏁 ' + remKm.toFixed(1) + ' km</span>';
+                  inner += '</div>';
+
+                  contentWrapper.innerHTML = inner;
                 }
               }
             }
