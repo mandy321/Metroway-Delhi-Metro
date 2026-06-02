@@ -9,29 +9,34 @@ Metroway is a premium, offline-first transit navigation suite designed for the D
 ---
 
 ## 🌟 Key Features
-- **Smart Path Routing:** Uses a modified Dijkstra's algorithm supporting 4 routing modes (Balanced, Fastest, Least Crowd, Comfortable) with realistic travel estimation.
+- **Smart Path Routing:** Uses a modified Dijkstra's algorithm supporting 4 routing modes (Balanced, Fastest, Least Crowd, Comfortable).
 - **Aggressive Offline Mapping:** Custom Leaflet engine with high-speed rendering and dark-mode tiles, fully operational without an internet connection.
-- **Floating Journey Panel:** A gorgeous, floating bottom sheet that snaps to key positions, providing instant access to journey details without obscuring the map.
-- **Smart Exit Recommender:** Suggests the safest and most convenient exit gates based on lighting levels and accessibility configurations.
-- **Live System Alerts:** Real-time tracking of escalator/elevator statuses and community-driven crowd reporting.
+- **Floating Journey Panel:** A sleek, floating bottom sheet that snaps to key positions, providing instant access to journey details.
+- **Smart Exit Recommender:** Suggests the safest and most convenient exit gates based on lighting levels and accessibility.
+- **Live System Alerts:** Real-time tracking of official DMRC alerts, escalator/elevator statuses, and community crowd reporting.
+
+---
+
+## 🗺️ Advanced Map & Interaction
+The mobile app offers deep integration with live GPS and interactive elements:
+- **Nearest Station Finder:** Instantly identifies the nearest metro station to your current location.
+- **Proximity Awareness:** Shows exactly how far you are from your selected starting station with a dedicated distance indicator.
+- **Live Train Animation:** Watch your journey come to life with dynamic train icons that move along the tracks in real-time as you transit through stations.
+- **Haptic Arrival Buzz:** Never miss your stop! The app triggers a distinct vibration pattern (buzz) at interchange stations and your final destination.
 
 ---
 
 ## 📱 Android Application Details
-The mobile app (`/mobile`) is built with React Native and Expo, offering a high-performance experience:
-
-- **Compact & Modern UI:** Aggressively optimized layout that maximizes screen real estate while maintaining a premium aesthetic.
-- **Real-Time System Intelligence:**
-  - **Crowd Reporting:** Community-driven live crowd density tracking.
-  - **Infrastructure Alerts:** Real-time status of lifts and escalators.
-  - **Midnight Closure Logic:** Automatically adjusts to system hours (11 PM - 6 AM).
-- **Automatic Time Sync:** Re-calculates metrics upon app resume to ensure crowd and arrival estimates match the current wall-clock time.
+Built with React Native and Expo for a high-performance, compact experience:
+- **Compact & Modern UI:** Aggressively optimized layout that maximizes screen real estate.
+- **Real-Time System Intelligence:** Live crowd density tracking and automated Midnight Closure logic (11 PM - 6 AM).
+- **Automatic Time Sync:** Re-calculates metrics upon app resume to match the current wall-clock time.
 
 ---
 
 ## 🤖 AI Context & Handoff
 For developers or AI agents working on this project, please refer to:
-- **[AI_HANDOFF.md](./AI_HANDOFF.md)**: A comprehensive technical guide covering the tech stack, project structure, and core systems. Use this file to provide complete context to any AI model.
+- **[AI_HANDOFF.md](./AI_HANDOFF.md)**: A technical guide covering the tech stack, project structure, and core systems.
 
 ---
 
@@ -40,42 +45,17 @@ For developers or AI agents working on this project, please refer to:
 - **Language:** TypeScript / JavaScript
 - **State:** Zustand (`useMetroStore`) with AsyncStorage persistence.
 - **Map:** Leaflet via `react-native-webview` with optimized dark-matter filters.
-- **Animations:** React Native `Animated` API (using Native Driver for 60fps performance).
-- **Backend Stub:** Cloudflare Workers for scraping and proxying transit data.
-
----
-
-## 📁 Project Structure
-```
-├── mobile/                 # React Native / Expo Mobile App Source
-│   ├── src/
-│   │   ├── app/            # Expo Router screens (index, map, settings)
-│   │   ├── store/          # Zustand state management
-│   │   ├── data/           # Transit graph & station database
-│   │   └── utils/          # Routing engine & map HTML generators
-├── src/                    # Web Application Source
-├── AI_HANDOFF.md           # Technical handoff for AI/Devs
-└── README.md               # Main project documentation
-```
+- **Animations:** React Native `Animated` API and custom SVG articulation.
+- **Haptics:** Expo Haptics & React Native Vibration for geofenced alerts.
 
 ---
 
 ## 🚀 Building the Release
 ### Android Release (EAS Build)
-To build the production-ready artifacts for the Google Play Store:
-
-1. **Production AAB (App Bundle):**
-   ```bash
-   cd mobile && eas build --platform android --profile production
-   ```
-2. **Preview APK:**
-   ```bash
-   cd mobile && eas build --platform android --profile preview
-   ```
+1. **Production AAB:** `cd mobile && eas build --platform android --profile production`
+2. **Preview APK:** `cd mobile && eas build --platform android --profile preview`
 
 ---
 
 ## 🛡️ License & Copyright
 Copyright © 2026 Metroway (Mandeep). All rights reserved.
-
-This project is proprietary and confidential. Unauthorized copying, distribution, or modification of this source code and compiled binaries is strictly prohibited.
